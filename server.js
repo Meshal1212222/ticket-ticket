@@ -12,13 +12,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Telegram Configuration
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+// Ultra Msg WhatsApp Configuration
+const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID;
+const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN;
+const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
 
-// Function to send message to Telegram
-async function sendToTelegram(message) {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+// Function to send message to WhatsApp Group via Ultra Msg
+async function sendToWhatsApp(message) {
+    const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`;
 
     try {
         const response = await fetch(url, {
@@ -27,16 +28,22 @@ async function sendToTelegram(message) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                text: message,
-                parse_mode: 'HTML'
+                token: ULTRAMSG_TOKEN,
+                to: WHATSAPP_GROUP_ID,
+                body: message
             })
         });
 
         const data = await response.json();
+
+        if (data.error) {
+            console.error('Ultra Msg Error:', data.error);
+            throw new Error(data.error);
+        }
+
         return data;
     } catch (error) {
-        console.error('Error sending to Telegram:', error);
+        console.error('Error sending to WhatsApp:', error);
         throw error;
     }
 }
@@ -48,29 +55,27 @@ function generateTicketId() {
     return `TKT-${timestamp}-${random}`;
 }
 
-// Format ticket message for Telegram
+// Format ticket message for WhatsApp
 function formatTicketMessage(ticket) {
     const now = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh' });
 
-    return `
-🎫 <b>بلاغ جديد</b>
+    return `🎫 *بلاغ جديد*
 
-📋 <b>رقم التذكرة:</b> <code>${ticket.ticketId}</code>
-👤 <b>الاسم:</b> ${ticket.name}
-📧 <b>البريد:</b> ${ticket.email || 'غير محدد'}
-📱 <b>الجوال:</b> ${ticket.phone || 'غير محدد'}
-📂 <b>نوع البلاغ:</b> ${ticket.category}
-⚡ <b>الأولوية:</b> ${ticket.priority}
+📋 *رقم التذكرة:* ${ticket.ticketId}
+👤 *الاسم:* ${ticket.name}
+📧 *البريد:* ${ticket.email || 'غير محدد'}
+📱 *الجوال:* ${ticket.phone || 'غير محدد'}
+📂 *نوع البلاغ:* ${ticket.category}
+⚡ *الأولوية:* ${ticket.priority}
 
-📝 <b>العنوان:</b>
+📝 *العنوان:*
 ${ticket.subject}
 
-📄 <b>التفاصيل:</b>
+📄 *التفاصيل:*
 ${ticket.description}
 
-🕐 <b>التاريخ:</b> ${now}
-━━━━━━━━━━━━━━━━━━━━━
-    `.trim();
+🕐 *التاريخ:* ${now}
+━━━━━━━━━━━━━━━━━━━━━`;
 }
 
 // API Route - Submit Ticket
@@ -99,20 +104,20 @@ app.post('/api/ticket', async (req, res) => {
             createdAt: new Date()
         };
 
-        // Check Telegram configuration
-        if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-            console.warn('Telegram not configured. Ticket saved locally only.');
+        // Check Ultra Msg configuration
+        if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN || !WHATSAPP_GROUP_ID) {
+            console.warn('Ultra Msg not configured. Ticket saved locally only.');
             return res.json({
                 success: true,
                 message: 'تم إرسال البلاغ بنجاح',
                 ticketId: ticket.ticketId,
-                warning: 'لم يتم إعداد تيليجرام'
+                warning: 'لم يتم إعداد واتساب'
             });
         }
 
-        // Format and send to Telegram
-        const telegramMessage = formatTicketMessage(ticket);
-        await sendToTelegram(telegramMessage);
+        // Format and send to WhatsApp
+        const whatsappMessage = formatTicketMessage(ticket);
+        await sendToWhatsApp(whatsappMessage);
 
         res.json({
             success: true,
@@ -131,7 +136,10 @@ app.post('/api/ticket', async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', telegram: !!TELEGRAM_BOT_TOKEN });
+    res.json({
+        status: 'ok',
+        whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
+    });
 });
 
 // Serve frontend
@@ -142,5 +150,5 @@ app.get('/', (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📱 Telegram: ${TELEGRAM_BOT_TOKEN ? 'Configured' : 'Not configured'}`);
+    console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
 });
