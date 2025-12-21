@@ -145,10 +145,10 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         const { name, email, phone, category, priority, subject, description } = req.body;
 
         // Validation
-        if (!name || !category || !subject || !description) {
+        if (!name || !email || !phone || !category || !subject || !description) {
             return res.status(400).json({
                 success: false,
-                message: 'الرجاء تعبئة جميع الحقول المطلوبة'
+                message: 'الرجاء تعبئة جميع الحقول المطلوبة (الاسم، البريد، الجوال، النوع، العنوان، التفاصيل)'
             });
         }
 
