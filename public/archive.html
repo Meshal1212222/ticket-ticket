@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أرشيف البلاغات</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-card h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .login-card button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .header button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .stat-card.new .number { color: #3b82f6; }
+        .stat-card.progress .number { color: #f59e0b; }
+        .stat-card.resolved .number { color: #10b981; }
+
+        .container {
+            padding: 0 30px 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: #333;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            padding: 10px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 250px;
+        }
+
+        .search-box select {
+            padding: 10px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .tickets-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: right;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.new {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .badge.progress {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge.resolved {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .badge.low {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .badge.medium {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge.high {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .ticket-id {
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .action-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+            width: 120px;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .status-select {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 15px;
+            }
+
+            .container {
+                padding: 0 15px 15px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .tickets-table {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 700px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="loginPage">
+        <div class="login-card">
+            <h2>🔐 تسجيل الدخول</h2>
+            <input type="password" id="adminKey" placeholder="مفتاح الأدمن">
+            <button onclick="login()">دخول</button>
+            <p id="loginError" style="color: red; text-align: center; margin-top: 15px; display: none;"></p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <div class="header">
+            <h1>📋 أرشيف البلاغات</h1>
+            <button onclick="logout()">تسجيل خروج</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number" id="totalCount">0</div>
+                <div class="label">إجمالي البلاغات</div>
+            </div>
+            <div class="stat-card new">
+                <div class="number" id="newCount">0</div>
+                <div class="label">جديد</div>
+            </div>
+            <div class="stat-card progress">
+                <div class="number" id="progressCount">0</div>
+                <div class="label">قيد المعالجة</div>
+            </div>
+            <div class="stat-card resolved">
+                <div class="number" id="resolvedCount">0</div>
+                <div class="label">تم الحل</div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="section-header">
+                <h2>جميع البلاغات</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="بحث..." onkeyup="filterTickets()">
+                    <select id="statusFilter" onchange="filterTickets()">
+                        <option value="">كل الحالات</option>
+                        <option value="جديد">جديد</option>
+                        <option value="قيد المعالجة">قيد المعالجة</option>
+                        <option value="تم الحل">تم الحل</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="tickets-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>رقم التذكرة</th>
+                            <th>الاسم</th>
+                            <th>الجوال</th>
+                            <th>النوع</th>
+                            <th>الأولوية</th>
+                            <th>الحالة</th>
+                            <th>التاريخ</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Detail Modal -->
+    <div class="modal" id="ticketModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تفاصيل البلاغ</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="ticketDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        let adminKey = '';
+        let allTickets = [];
+
+        function login() {
+            adminKey = document.getElementById('adminKey').value;
+
+            fetch(`/api/stats?key=${adminKey}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('loginPage').style.display = 'none';
+                        document.getElementById('dashboard').style.display = 'block';
+                        loadStats();
+                        loadTickets();
+                    } else {
+                        document.getElementById('loginError').textContent = 'مفتاح خاطئ';
+                        document.getElementById('loginError').style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('loginError').textContent = 'خطأ في الاتصال';
+                    document.getElementById('loginError').style.display = 'block';
+                });
+        }
+
+        function logout() {
+            adminKey = '';
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('adminKey').value = '';
+        }
+
+        function loadStats() {
+            fetch(`/api/stats?key=${adminKey}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('totalCount').textContent = data.stats.total;
+                        document.getElementById('newCount').textContent = data.stats.new;
+                        document.getElementById('progressCount').textContent = data.stats.inProgress;
+                        document.getElementById('resolvedCount').textContent = data.stats.resolved;
+                    }
+                });
+        }
+
+        function loadTickets() {
+            fetch(`/api/tickets?key=${adminKey}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        allTickets = data.tickets;
+                        renderTickets(allTickets);
+                    }
+                });
+        }
+
+        function renderTickets(tickets) {
+            const tbody = document.getElementById('ticketsBody');
+
+            if (tickets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <div>📭</div>
+                            <div>لا توجد بلاغات</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = tickets.map(ticket => `
+                <tr>
+                    <td><span class="ticket-id">${ticket.ticketId}</span></td>
+                    <td>${ticket.name}</td>
+                    <td>${ticket.phone || '-'}</td>
+                    <td>${ticket.category}</td>
+                    <td><span class="badge ${getPriorityClass(ticket.priority)}">${ticket.priority}</span></td>
+                    <td><span class="badge ${getStatusClass(ticket.status)}">${ticket.status}</span></td>
+                    <td>${formatDate(ticket.createdAt)}</td>
+                    <td><button class="action-btn" onclick="viewTicket('${ticket.ticketId}')">عرض</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function filterTickets() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = allTickets.filter(ticket => {
+                const matchSearch = ticket.name.toLowerCase().includes(search) ||
+                    ticket.ticketId.toLowerCase().includes(search) ||
+                    ticket.phone?.includes(search) ||
+                    ticket.subject.toLowerCase().includes(search);
+
+                const matchStatus = !status || ticket.status === status;
+
+                return matchSearch && matchStatus;
+            });
+
+            renderTickets(filtered);
+        }
+
+        function viewTicket(ticketId) {
+            const ticket = allTickets.find(t => t.ticketId === ticketId);
+            if (!ticket) return;
+
+            const details = `
+                <div class="detail-row">
+                    <div class="detail-label">رقم التذكرة</div>
+                    <div class="detail-value"><span class="ticket-id">${ticket.ticketId}</span></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">الاسم</div>
+                    <div class="detail-value">${ticket.name}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">الجوال</div>
+                    <div class="detail-value">${ticket.phone || '-'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">البريد</div>
+                    <div class="detail-value">${ticket.email || '-'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">النوع</div>
+                    <div class="detail-value">${ticket.category}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">الأولوية</div>
+                    <div class="detail-value"><span class="badge ${getPriorityClass(ticket.priority)}">${ticket.priority}</span></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">العنوان</div>
+                    <div class="detail-value">${ticket.subject}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">التفاصيل</div>
+                    <div class="detail-value">${ticket.description}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">التاريخ</div>
+                    <div class="detail-value">${formatDate(ticket.createdAt)}</div>
+                </div>
+                <select class="status-select" onchange="updateStatus('${ticket.ticketId}', this.value)">
+                    <option value="جديد" ${ticket.status === 'جديد' ? 'selected' : ''}>جديد</option>
+                    <option value="قيد المعالجة" ${ticket.status === 'قيد المعالجة' ? 'selected' : ''}>قيد المعالجة</option>
+                    <option value="تم الحل" ${ticket.status === 'تم الحل' ? 'selected' : ''}>تم الحل</option>
+                </select>
+            `;
+
+            document.getElementById('ticketDetails').innerHTML = details;
+            document.getElementById('ticketModal').style.display = 'flex';
+        }
+
+        function updateStatus(ticketId, status) {
+            fetch(`/api/tickets/${ticketId}?key=${adminKey}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        loadStats();
+                        loadTickets();
+                    }
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('ticketModal').style.display = 'none';
+        }
+
+        function getStatusClass(status) {
+            if (status === 'جديد') return 'new';
+            if (status === 'قيد المعالجة') return 'progress';
+            if (status === 'تم الحل') return 'resolved';
+            return '';
+        }
+
+        function getPriorityClass(priority) {
+            if (priority === 'منخفض') return 'low';
+            if (priority === 'متوسط') return 'medium';
+            if (priority === 'عاجل') return 'high';
+            return '';
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ar-SA') + ' ' + date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Close modal on outside click
+        document.getElementById('ticketModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Enter key for login
+        document.getElementById('adminKey').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>
