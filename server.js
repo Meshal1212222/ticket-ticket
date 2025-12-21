@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,10 +13,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// API Key Configuration
+const API_KEY = process.env.API_KEY || crypto.randomBytes(32).toString('hex');
+
 // Ultra Msg WhatsApp Configuration
 const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID;
 const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN;
 const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
+
+// API Key Authentication Middleware
+function authenticateAPI(req, res, next) {
+    const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+
+    if (!apiKey || apiKey !== API_KEY) {
+        return res.status(401).json({
+            success: false,
+            message: 'مفتاح API غير صالح'
+        });
+    }
+    next();
+}
 
 // Function to send message to WhatsApp Group via Ultra Msg
 async function sendToWhatsApp(message) {
@@ -78,8 +95,8 @@ ${ticket.description}
 ━━━━━━━━━━━━━━━━━━━━━`;
 }
 
-// API Route - Submit Ticket
-app.post('/api/ticket', async (req, res) => {
+// API Route - Submit Ticket (Protected with API Key)
+app.post('/api/ticket', authenticateAPI, async (req, res) => {
     try {
         const { name, email, phone, category, priority, subject, description } = req.body;
 
@@ -150,5 +167,6 @@ app.get('/', (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🔑 API Key: ${API_KEY}`);
     console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
 });
