@@ -1,13 +1,15 @@
 {
   "name": "ticket-reporting-system",
   "version": "1.0.0",
-  "description": "نظام بلاغات يرسل التذاكر إلى تيليجرام",
+  "description": "نظام بلاغات يرسل التذاكر إلى واتساب عبر Ultra Msg",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
-  "keywords": ["ticket", "telegram", "reporting"],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["ticket", "whatsapp", "ultramsg", "reporting"],
   "author": "",
   "license": "MIT",
   "dependencies": {
