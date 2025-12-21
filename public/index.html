@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام البلاغات</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group label .required {
+            color: #e53e3e;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 500px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #c6f6d5;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .ticket-id {
+            font-family: monospace;
+            font-weight: bold;
+            background: #edf2f7;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .priority-select {
+            display: flex;
+            gap: 10px;
+        }
+
+        .priority-option {
+            flex: 1;
+            text-align: center;
+        }
+
+        .priority-option input {
+            display: none;
+        }
+
+        .priority-option label {
+            display: block;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .priority-option input:checked + label {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .priority-option.low label {
+            color: #38a169;
+        }
+        .priority-option.low input:checked + label {
+            background: #c6f6d5;
+            border-color: #38a169;
+        }
+
+        .priority-option.medium label {
+            color: #d69e2e;
+        }
+        .priority-option.medium input:checked + label {
+            background: #fefcbf;
+            border-color: #d69e2e;
+        }
+
+        .priority-option.high label {
+            color: #e53e3e;
+        }
+        .priority-option.high input:checked + label {
+            background: #fed7d7;
+            border-color: #e53e3e;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>نظام البلاغات</h1>
+                <p>أرسل بلاغك وسنتواصل معك في أقرب وقت</p>
+            </div>
+
+            <div class="form-container">
+                <div id="alert" class="alert"></div>
+
+                <form id="ticketForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>الاسم <span class="required">*</span></label>
+                            <input type="text" name="name" id="name" required placeholder="الاسم الكامل">
+                        </div>
+                        <div class="form-group">
+                            <label>رقم الجوال</label>
+                            <input type="tel" name="phone" id="phone" placeholder="05xxxxxxxx">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" name="email" id="email" placeholder="example@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>نوع البلاغ <span class="required">*</span></label>
+                        <select name="category" id="category" required>
+                            <option value="">اختر نوع البلاغ</option>
+                            <option value="شكوى">شكوى</option>
+                            <option value="اقتراح">اقتراح</option>
+                            <option value="استفسار">استفسار</option>
+                            <option value="مشكلة تقنية">مشكلة تقنية</option>
+                            <option value="طلب دعم">طلب دعم</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>الأولوية</label>
+                        <div class="priority-select">
+                            <div class="priority-option low">
+                                <input type="radio" name="priority" id="priority-low" value="منخفض">
+                                <label for="priority-low">منخفض</label>
+                            </div>
+                            <div class="priority-option medium">
+                                <input type="radio" name="priority" id="priority-medium" value="متوسط" checked>
+                                <label for="priority-medium">متوسط</label>
+                            </div>
+                            <div class="priority-option high">
+                                <input type="radio" name="priority" id="priority-high" value="عاجل">
+                                <label for="priority-high">عاجل</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>عنوان البلاغ <span class="required">*</span></label>
+                        <input type="text" name="subject" id="subject" required placeholder="عنوان مختصر للبلاغ">
+                    </div>
+
+                    <div class="form-group">
+                        <label>تفاصيل البلاغ <span class="required">*</span></label>
+                        <textarea name="description" id="description" required placeholder="اشرح تفاصيل البلاغ بشكل واضح..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" id="submitBtn">
+                        إرسال البلاغ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('ticketForm');
+        const alert = document.getElementById('alert');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function showAlert(message, type) {
+            alert.textContent = '';
+            alert.innerHTML = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 10000);
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                category: document.getElementById('category').value,
+                priority: document.querySelector('input[name="priority"]:checked').value,
+                subject: document.getElementById('subject').value,
+                description: document.getElementById('description').value
+            };
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'جاري الإرسال... <span class="loading"></span>';
+
+            try {
+                const response = await fetch('/api/ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(
+                        `تم إرسال البلاغ بنجاح!<br>رقم التذكرة: <span class="ticket-id">${data.ticketId}</span>`,
+                        'success'
+                    );
+                    form.reset();
+                    document.getElementById('priority-medium').checked = true;
+                } else {
+                    showAlert(data.message || 'حدث خطأ أثناء الإرسال', 'error');
+                }
+            } catch (error) {
+                showAlert('حدث خطأ في الاتصال بالخادم', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'إرسال البلاغ';
+            }
+        });
+    </script>
+</body>
+</html>
