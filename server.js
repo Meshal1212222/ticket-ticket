@@ -169,21 +169,7 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         // Save to database
         saveTicket(ticket);
 
-        // Check Ultra Msg configuration
-        if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN || !WHATSAPP_GROUP_ID) {
-            console.warn('Ultra Msg not configured. Ticket saved locally only.');
-            return res.json({
-                success: true,
-                message: 'تم إرسال البلاغ بنجاح',
-                ticketId: ticket.ticketId,
-                warning: 'لم يتم إعداد واتساب'
-            });
-        }
-
-        // Format and send to WhatsApp
-        const whatsappMessage = formatTicketMessage(ticket);
-        await sendToWhatsApp(whatsappMessage);
-
+        // Return success
         res.json({
             success: true,
             message: 'تم إرسال البلاغ بنجاح',
