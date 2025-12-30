@@ -115,12 +115,13 @@ async function getNextTicketNumber() {
 // Format ticket message for WhatsApp (مختصرة)
 function formatTicketMessage(ticket) {
     return `🎫 *بلاغ #${ticket.ticketNumber}*
-
 👤 ${ticket.name}
 📱 ${ticket.phone}
+📧 ${ticket.email}
 📂 ${ticket.category}
-
-📝 ${ticket.description}`;
+⚡ ${ticket.priority}
+📝 ${ticket.subject}
+💬 ${ticket.description}`;
 }
 
 // API Route - Submit Ticket (Protected with API Key)
