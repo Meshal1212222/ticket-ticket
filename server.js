@@ -145,10 +145,10 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         const { name, email, phone, category, priority, subject, description } = req.body;
 
         // Validation
-        if (!name || !category || !subject || !description) {
+        if (!name || !email || !phone || !category || !subject || !description) {
             return res.status(400).json({
                 success: false,
-                message: 'الرجاء تعبئة جميع الحقول المطلوبة'
+                message: 'الرجاء تعبئة جميع الحقول المطلوبة (الاسم، البريد، الجوال، النوع، العنوان، التفاصيل)'
             });
         }
 
@@ -169,21 +169,17 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         // Save to database
         saveTicket(ticket);
 
-        // Check Ultra Msg configuration
-        if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN || !WHATSAPP_GROUP_ID) {
-            console.warn('Ultra Msg not configured. Ticket saved locally only.');
-            return res.json({
-                success: true,
-                message: 'تم إرسال البلاغ بنجاح',
-                ticketId: ticket.ticketId,
-                warning: 'لم يتم إعداد واتساب'
-            });
+        // Send to WhatsApp if configured
+        if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID) {
+            try {
+                const whatsappMessage = formatTicketMessage(ticket);
+                await sendToWhatsApp(whatsappMessage);
+            } catch (whatsappError) {
+                console.error('WhatsApp send failed:', whatsappError);
+            }
         }
 
-        // Format and send to WhatsApp
-        const whatsappMessage = formatTicketMessage(ticket);
-        await sendToWhatsApp(whatsappMessage);
-
+        // Return success
         res.json({
             success: true,
             message: 'تم إرسال البلاغ بنجاح',
