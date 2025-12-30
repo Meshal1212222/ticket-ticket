@@ -3,35 +3,25 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-const mongoose = require('mongoose');
+const admin = require('firebase-admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (MONGODB_URI) {
-    mongoose.connect(MONGODB_URI)
-        .then(() => console.log('✅ Connected to MongoDB'))
-        .catch(err => console.error('❌ MongoDB connection error:', err));
+// Firebase Configuration
+if (process.env.FIREBASE_CONFIG) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log('✅ Connected to Firebase');
+    } catch (error) {
+        console.error('❌ Firebase config error:', error);
+    }
 }
 
-// Ticket Schema
-const ticketSchema = new mongoose.Schema({
-    ticketId: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    email: { type: String, default: '' },
-    phone: { type: String, default: '' },
-    category: { type: String, required: true },
-    priority: { type: String, default: 'متوسط' },
-    subject: { type: String, required: true },
-    description: { type: String, required: true },
-    status: { type: String, default: 'جديد' },
-    createdAt: { type: Date, default: Date.now }
-});
-
-const Ticket = mongoose.model('Ticket', ticketSchema);
+const db = admin.apps.length ? admin.firestore() : null;
 
 // Middleware
 app.use(cors());
@@ -162,12 +152,13 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
             subject,
             description,
             status: 'جديد',
-            createdAt: new Date()
+            createdAt: new Date().toISOString()
         };
 
-        // Save to MongoDB
-        const ticket = new Ticket(ticketData);
-        await ticket.save();
+        // Save to Firebase
+        if (db) {
+            await db.collection('tickets').doc(ticketData.ticketId).set(ticketData);
+        }
 
         // Send to WhatsApp if configured
         if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID) {
@@ -198,7 +189,13 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
 // API Route - Get All Tickets (Admin only)
 app.get('/api/tickets', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = await Ticket.find().sort({ createdAt: -1 });
+        if (!db) {
+            return res.json({ success: true, count: 0, tickets: [] });
+        }
+
+        const snapshot = await db.collection('tickets').orderBy('createdAt', 'desc').get();
+        const tickets = snapshot.docs.map(doc => doc.data());
+
         res.json({
             success: true,
             count: tickets.length,
@@ -215,9 +212,13 @@ app.get('/api/tickets', authenticateAdmin, async (req, res) => {
 // API Route - Get Ticket by ID (Admin only)
 app.get('/api/tickets/:id', authenticateAdmin, async (req, res) => {
     try {
-        const ticket = await Ticket.findOne({ ticketId: req.params.id });
+        if (!db) {
+            return res.status(404).json({ success: false, message: 'التذكرة غير موجودة' });
+        }
 
-        if (!ticket) {
+        const doc = await db.collection('tickets').doc(req.params.id).get();
+
+        if (!doc.exists) {
             return res.status(404).json({
                 success: false,
                 message: 'التذكرة غير موجودة'
@@ -226,7 +227,7 @@ app.get('/api/tickets/:id', authenticateAdmin, async (req, res) => {
 
         res.json({
             success: true,
-            ticket
+            ticket: doc.data()
         });
     } catch (error) {
         res.status(500).json({
@@ -239,22 +240,26 @@ app.get('/api/tickets/:id', authenticateAdmin, async (req, res) => {
 // API Route - Update Ticket Status (Admin only)
 app.patch('/api/tickets/:id', authenticateAdmin, async (req, res) => {
     try {
-        const ticket = await Ticket.findOneAndUpdate(
-            { ticketId: req.params.id },
-            req.body,
-            { new: true }
-        );
+        if (!db) {
+            return res.status(404).json({ success: false, message: 'التذكرة غير موجودة' });
+        }
 
-        if (!ticket) {
+        const docRef = db.collection('tickets').doc(req.params.id);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
             return res.status(404).json({
                 success: false,
                 message: 'التذكرة غير موجودة'
             });
         }
 
+        await docRef.update(req.body);
+        const updated = await docRef.get();
+
         res.json({
             success: true,
-            ticket
+            ticket: updated.data()
         });
     } catch (error) {
         res.status(500).json({
@@ -267,7 +272,15 @@ app.patch('/api/tickets/:id', authenticateAdmin, async (req, res) => {
 // API Route - Get Statistics (Admin only)
 app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = await Ticket.find();
+        if (!db) {
+            return res.json({
+                success: true,
+                stats: { total: 0, new: 0, inProgress: 0, resolved: 0, byCategory: {}, byPriority: {} }
+            });
+        }
+
+        const snapshot = await db.collection('tickets').get();
+        const tickets = snapshot.docs.map(doc => doc.data());
 
         const stats = {
             total: tickets.length,
@@ -299,7 +312,7 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
-        mongodb: mongoose.connection.readyState === 1,
+        firebase: !!db,
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
     });
 });
@@ -320,5 +333,5 @@ app.listen(PORT, () => {
     console.log(`🔑 API Key: ${API_KEY}`);
     console.log(`👤 Admin Key: ${ADMIN_KEY}`);
     console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
-    console.log(`🗄️ MongoDB: ${MONGODB_URI ? 'Configured' : 'Not configured'}`);
+    console.log(`🔥 Firebase: ${db ? 'Connected' : 'Not configured'}`);
 });
