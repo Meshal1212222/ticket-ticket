@@ -221,8 +221,11 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         };
 
         // Analyze with OpenAI if configured
+        console.log('📥 Ticket received, OpenAI available:', !!openai);
         if (openai) {
+            console.log('🔄 Calling OpenAI...');
             ticketData = await analyzeTicketWithAI(ticketData);
+            console.log('📤 OpenAI done, aiProcessed:', ticketData.aiProcessed);
         }
 
         // Save to Firebase
