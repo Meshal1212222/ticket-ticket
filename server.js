@@ -169,6 +169,16 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         // Save to database
         saveTicket(ticket);
 
+        // Send to WhatsApp if configured
+        if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID) {
+            try {
+                const whatsappMessage = formatTicketMessage(ticket);
+                await sendToWhatsApp(whatsappMessage);
+            } catch (whatsappError) {
+                console.error('WhatsApp send failed:', whatsappError);
+            }
+        }
+
         // Return success
         res.json({
             success: true,
