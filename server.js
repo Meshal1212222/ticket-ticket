@@ -233,8 +233,9 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
             await db.collection('tickets').doc(ticketData.ticketId).set(ticketData);
         }
 
-        // Send to WhatsApp if configured
-        if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID) {
+        // Send to WhatsApp if configured (skip if test mode)
+        const skipWhatsapp = req.body.skipWhatsapp || req.query.skipWhatsapp;
+        if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID && !skipWhatsapp) {
             try {
                 const whatsappMessage = formatTicketMessage(ticketData);
                 await sendToWhatsApp(whatsappMessage);
@@ -247,7 +248,9 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         res.json({
             success: true,
             message: 'تم إرسال البلاغ بنجاح',
-            ticketId: ticketData.ticketId
+            ticketId: ticketData.ticketId,
+            aiProcessed: ticketData.aiProcessed || false,
+            ticket: ticketData
         });
 
     } catch (error) {
