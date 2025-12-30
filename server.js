@@ -95,37 +95,32 @@ async function sendToWhatsApp(message) {
     }
 }
 
-// Generate Ticket ID
-function generateTicketId() {
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `TKT-${timestamp}-${random}`;
+// Get next ticket number
+async function getNextTicketNumber() {
+    if (!db) return 1;
+
+    const counterRef = db.collection('settings').doc('counter');
+    const counter = await counterRef.get();
+
+    if (!counter.exists) {
+        await counterRef.set({ ticketNumber: 1 });
+        return 1;
+    }
+
+    const newNumber = (counter.data().ticketNumber || 0) + 1;
+    await counterRef.update({ ticketNumber: newNumber });
+    return newNumber;
 }
 
-// Format ticket message for WhatsApp
+// Format ticket message for WhatsApp (مختصرة)
 function formatTicketMessage(ticket) {
-    const now = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh' });
+    return `🎫 *بلاغ #${ticket.ticketNumber}*
 
-    return `🤖 *نظام البلاغات الآلي*
+👤 ${ticket.name}
+📱 ${ticket.phone}
+📂 ${ticket.category}
 
-━━━━━━━━━━━━━━━━━━━━━
-🎫 *بلاغ جديد وارد*
-━━━━━━━━━━━━━━━━━━━━━
-
-📋 *رقم التذكرة:* ${ticket.ticketId}
-
-👤 *العميل:* ${ticket.name}
-📱 *الجوال:* ${ticket.phone || 'غير محدد'}
-📧 *البريد:* ${ticket.email || 'غير محدد'}
-
-📂 *النوع:* ${ticket.category}
-⚡ *الأولوية:* ${ticket.priority}
-
-📝 *المشكلة:*
-${ticket.description}
-
-🕐 *الوقت:* ${now}
-━━━━━━━━━━━━━━━━━━━━━`;
+📝 ${ticket.description}`;
 }
 
 // API Route - Submit Ticket (Protected with API Key)
@@ -141,9 +136,13 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
             });
         }
 
+        // Get next ticket number
+        const ticketNumber = await getNextTicketNumber();
+
         // Create ticket object
         const ticketData = {
-            ticketId: generateTicketId(),
+            ticketId: `TKT-${ticketNumber}`,
+            ticketNumber,
             name,
             email: email || '',
             phone: phone || '',
