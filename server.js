@@ -131,15 +131,20 @@ async function analyzeTicketWithAI(ticketData) {
     console.log('🤖 Starting OpenAI analysis...');
 
     try {
-        const prompt = `أنت مساعد لتحسين بيانات البلاغات. حسّن النص التالي واجعله أوضح وأكثر احترافية.
-لا تضف معلومات جديدة، فقط حسّن الصياغة.
-إذا كان الحقل فارغاً اتركه فارغاً.
+        const prompt = `أنت موظف دعم فني. اقرأ بلاغ العميل واكتب ملخص مختصر يشرح المشكلة للموظفين.
 
-العنوان: ${ticketData.subject || ''}
-التفاصيل: ${ticketData.description || ''}
+بيانات البلاغ:
+- الاسم: ${ticketData.name || 'غير محدد'}
+- التصنيف: ${ticketData.category || 'غير محدد'}
+- العنوان: ${ticketData.subject || 'غير محدد'}
+- التفاصيل: ${ticketData.description || 'غير محدد'}
 
-أعد الرد بصيغة JSON فقط بدون أي نص إضافي:
-{"subject": "العنوان المحسن", "description": "التفاصيل المحسنة", "suggestedPriority": "عاجل/عالي/متوسط/منخفض"}`;
+المطلوب:
+1. اكتب ملخص قصير (جملة أو جملتين) يشرح المشكلة للموظفين
+2. حدد الأولوية (عاجل/عالي/متوسط/منخفض)
+
+أعد الرد بصيغة JSON فقط:
+{"summary": "ملخص المشكلة للموظفين", "priority": "الأولوية"}`;
 
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
@@ -162,9 +167,8 @@ async function analyzeTicketWithAI(ticketData) {
 
         return {
             ...ticketData,
-            subject: result.subject || ticketData.subject,
-            description: result.description || ticketData.description,
-            priority: ticketData.priority || result.suggestedPriority || 'متوسط',
+            summary: result.summary || '',
+            priority: ticketData.priority || result.priority || 'متوسط',
             aiProcessed: true
         };
     } catch (error) {
@@ -183,8 +187,11 @@ function formatTicketMessage(ticket) {
     if (ticket.email) message += `\n📧 ${ticket.email}`;
     if (ticket.category) message += `\n📂 ${ticket.category}`;
     if (ticket.priority) message += `\n⚡ ${ticket.priority}`;
-    if (ticket.subject) message += `\n📝 ${ticket.subject}`;
-    if (ticket.description) message += `\n💬 ${ticket.description}`;
+
+    // الملخص من OpenAI
+    if (ticket.summary) {
+        message += `\n\n📋 *الملخص:*\n${ticket.summary}`;
+    }
 
     return message;
 }
