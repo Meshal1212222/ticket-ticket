@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,14 @@ const ADMIN_KEY = process.env.ADMIN_KEY || 'admin123';
 const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID;
 const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN;
 const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
+
+// OpenAI Configuration
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+if (openai) {
+    console.log('✅ OpenAI configured');
+} else {
+    console.log('⚠️ OpenAI not configured - OPENAI_API_KEY missing');
+}
 
 // API Key Authentication Middleware
 function authenticateAPI(req, res, next) {
@@ -112,16 +121,89 @@ async function getNextTicketNumber() {
     return newNumber;
 }
 
-// Format ticket message for WhatsApp (مختصرة)
+// Analyze ticket with OpenAI
+async function analyzeTicketWithAI(ticketData) {
+    if (!openai) {
+        console.log('⚠️ OpenAI not available, skipping analysis');
+        return ticketData;
+    }
+
+    console.log('🤖 Starting OpenAI analysis...');
+
+    try {
+        const prompt = `أنت موظف في قولدن تيكت. حلل بلاغ العميل واكتب ملخص للموظفين.
+
+البلاغ: ${ticketData.subject || ''}
+
+【شراء تذكرة】
+• قبل الشراء,[فعالية] → يريد شراء تذكرة للفعالية المذكورة
+• بعد الشراء,فعالية إنتهت → اشترى تذكرة لفعالية انتهت ويحتاج مساعدة
+• بعد الشراء,فعالية قادمة → اشترى تذكرة لفعالية قادمة وعنده استفسار
+• بعد الشراء,فعالية خارج السعودية → اشترى تذكرة لفعالية خارج السعودية
+
+【بيع تذكرة - قبل البيع】
+• عرض تذاكري للبيع → يسأل كيف يعرض تذاكره (استلم رد آلي بالخطوات)
+• تذكرتي لم يتم قبولها → عرض تذكرته ولم تُقبل ويحتاج مساعدة
+• لا أرى تذكرتي معروضه → لا يجد تذكرته معروضة (استلم رد: إذا نشطة فهي معروضة)
+• متى يصلني المبلغ → يسأل متى يستلم المبلغ (استلم رد: 24-48 ساعة)
+• التراجع عن البيع → يريد التراجع (استلم رد: لايمكن إلا بوجود مشكلة)
+• ارسال التذكرة بعد البيع → يسأل كيف يرسل التذكرة للمشتري
+
+【بيع تذكرة - بعد البيع】
+• كيفية ارسال التذاكر → باع ويسأل كيف يرسلها
+• التراجع عن البيع → باع ويريد التراجع عن البيع
+• لم أستلم المبلغ → باع ولم يستلم المبلغ (استلم رد: 24-48 ساعة)
+• حالة التذكره لم يستلم → أرسل التذكرة لكن المشتري لم يستلمها
+• اخرى → استفسار آخر
+
+اكتب جملة واحدة مختصرة تشرح طلب العميل للموظف.
+الرد JSON فقط: {"summary": "..."}`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 500
+        });
+
+        const content = response.choices[0].message.content;
+        console.log('🤖 OpenAI response:', content);
+
+        // Extract JSON from response (in case there's extra text)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            console.error('❌ No JSON found in OpenAI response');
+            return ticketData;
+        }
+
+        const result = JSON.parse(jsonMatch[0]);
+        console.log('✅ OpenAI analysis complete');
+
+        return {
+            ...ticketData,
+            summary: result.summary || '',
+            priority: ticketData.priority || result.priority || 'متوسط',
+            aiProcessed: true
+        };
+    } catch (error) {
+        console.error('❌ OpenAI Error:', error.message);
+        console.error('Full error:', error);
+        return ticketData;
+    }
+}
+
+// Format ticket message for WhatsApp
 function formatTicketMessage(ticket) {
-    return `🎫 *بلاغ #${ticket.ticketNumber}*
-👤 ${ticket.name}
-📱 ${ticket.phone}
-📧 ${ticket.email}
-📂 ${ticket.category}
-⚡ ${ticket.priority}
-📝 ${ticket.subject}
-💬 ${ticket.description}`;
+    let message = `🎫 *بلاغ #${ticket.ticketNumber}*`;
+
+    if (ticket.name) message += `\n👤 ${ticket.name}`;
+    if (ticket.phone) message += `\n📱 ${ticket.phone}`;
+
+    // الملخص من OpenAI
+    if (ticket.summary) {
+        message += `\n\n📋 ${ticket.summary}`;
+    }
+
+    return message;
 }
 
 // API Route - Submit Ticket (Protected with API Key)
@@ -129,11 +211,11 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
     try {
         const { name, email, phone, category, priority, subject, description } = req.body;
 
-        // Validation
-        if (!name || !email || !phone || !category || !subject || !description) {
+        // Validation - فقط الاسم والوصف مطلوبين
+        if (!name || !description) {
             return res.status(400).json({
                 success: false,
-                message: 'الرجاء تعبئة جميع الحقول المطلوبة (الاسم، البريد، الجوال، النوع، العنوان، التفاصيل)'
+                message: 'الرجاء تعبئة الحقول المطلوبة (الاسم والتفاصيل على الأقل)'
             });
         }
 
@@ -141,27 +223,34 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         const ticketNumber = await getNextTicketNumber();
 
         // Create ticket object
-        const ticketData = {
+        let ticketData = {
             ticketId: `TKT-${ticketNumber}`,
             ticketNumber,
-            name,
+            name: name || '',
             email: email || '',
             phone: phone || '',
-            category,
-            priority: priority || 'متوسط',
-            subject,
-            description,
+            category: category || '',
+            priority: priority || '',
+            subject: subject || '',
+            description: description || '',
             status: 'جديد',
             createdAt: new Date().toISOString()
         };
+
+        // Analyze with OpenAI
+        console.log('📥 Ticket received:', ticketData.ticketId);
+        if (openai) {
+            ticketData = await analyzeTicketWithAI(ticketData);
+        }
 
         // Save to Firebase
         if (db) {
             await db.collection('tickets').doc(ticketData.ticketId).set(ticketData);
         }
 
-        // Send to WhatsApp if configured
-        if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID) {
+        // Send to WhatsApp if configured (skip if test mode)
+        const skipWhatsapp = req.body.skipWhatsapp || req.query.skipWhatsapp;
+        if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID && !skipWhatsapp) {
             try {
                 const whatsappMessage = formatTicketMessage(ticketData);
                 await sendToWhatsApp(whatsappMessage);
@@ -174,7 +263,9 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         res.json({
             success: true,
             message: 'تم إرسال البلاغ بنجاح',
-            ticketId: ticketData.ticketId
+            ticketId: ticketData.ticketId,
+            aiProcessed: ticketData.aiProcessed || false,
+            ticket: ticketData
         });
 
     } catch (error) {
@@ -313,7 +404,8 @@ app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         firebase: !!db,
-        whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
+        whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN),
+        openai: !!openai
     });
 });
 
@@ -334,4 +426,5 @@ app.listen(PORT, () => {
     console.log(`👤 Admin Key: ${ADMIN_KEY}`);
     console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
     console.log(`🔥 Firebase: ${db ? 'Connected' : 'Not configured'}`);
+    console.log(`🤖 OpenAI: ${openai ? 'Configured' : 'Not configured'}`);
 });
