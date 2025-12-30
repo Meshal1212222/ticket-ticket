@@ -41,6 +41,11 @@ const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
 
 // OpenAI Configuration
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+if (openai) {
+    console.log('✅ OpenAI configured');
+} else {
+    console.log('⚠️ OpenAI not configured - OPENAI_API_KEY missing');
+}
 
 // API Key Authentication Middleware
 function authenticateAPI(req, res, next) {
@@ -118,7 +123,12 @@ async function getNextTicketNumber() {
 
 // Analyze ticket with OpenAI
 async function analyzeTicketWithAI(ticketData) {
-    if (!openai) return ticketData;
+    if (!openai) {
+        console.log('⚠️ OpenAI not available, skipping analysis');
+        return ticketData;
+    }
+
+    console.log('🤖 Starting OpenAI analysis...');
 
     try {
         const prompt = `أنت مساعد لتحسين بيانات البلاغات. حسّن النص التالي واجعله أوضح وأكثر احترافية.
@@ -128,7 +138,7 @@ async function analyzeTicketWithAI(ticketData) {
 العنوان: ${ticketData.subject || ''}
 التفاصيل: ${ticketData.description || ''}
 
-أعد الرد بصيغة JSON فقط:
+أعد الرد بصيغة JSON فقط بدون أي نص إضافي:
 {"subject": "العنوان المحسن", "description": "التفاصيل المحسنة", "suggestedPriority": "عاجل/عالي/متوسط/منخفض"}`;
 
         const response = await openai.chat.completions.create({
@@ -137,7 +147,18 @@ async function analyzeTicketWithAI(ticketData) {
             max_tokens: 500
         });
 
-        const result = JSON.parse(response.choices[0].message.content);
+        const content = response.choices[0].message.content;
+        console.log('🤖 OpenAI response:', content);
+
+        // Extract JSON from response (in case there's extra text)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            console.error('❌ No JSON found in OpenAI response');
+            return ticketData;
+        }
+
+        const result = JSON.parse(jsonMatch[0]);
+        console.log('✅ OpenAI analysis complete');
 
         return {
             ...ticketData,
@@ -147,7 +168,8 @@ async function analyzeTicketWithAI(ticketData) {
             aiProcessed: true
         };
     } catch (error) {
-        console.error('OpenAI Error:', error.message);
+        console.error('❌ OpenAI Error:', error.message);
+        console.error('Full error:', error);
         return ticketData;
     }
 }
