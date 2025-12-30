@@ -1,0 +1,2342 @@
+{
+  "id": 116356,
+  "name": "New_workflow",
+  "description": "New_workflow",
+  "tree": {
+    "id": 1,
+    "pId": null,
+    "data": {
+      "tag": null,
+      "type": "conversation_opened",
+      "action": null,
+      "webhook": {
+        "identifierKey": "",
+        "identifierType": "",
+        "variablesMapping": []
+      },
+      "page_ids": [],
+      "shortcut": {
+        "form": [],
+        "name": null,
+        "description": null
+      },
+      "post_type": null,
+      "conditions": [
+        {
+          "values": "contact",
+          "variable": null,
+          "attribute_key": "source",
+          "query_operator": "or",
+          "filter_operator": "equal_to"
+        },
+        {
+          "values": "ad",
+          "variable": null,
+          "attribute_key": "source",
+          "query_operator": "and",
+          "filter_operator": "equal_to"
+        }
+      ],
+      "contactField": null,
+      "excluded_posts": [],
+      "oncePerContact": false,
+      "specific_posts": []
+    },
+    "name": "trigger",
+    "type": "Trigger",
+    "childs": [
+      {
+        "id": "677e56",
+        "pId": 1,
+        "data": {
+          "timeout": {
+            "unit": "minutes",
+            "value": 1,
+            "hasTimeout": false
+          },
+          "question": {
+            "text": "شكرا لتواصلك مع قولدن تيكت هل استفسارك يخص ؟✨",
+            "type": "multiple",
+            "regex": "",
+            "options": [
+              "شراء تذكرة",
+              "بيع تذكرة"
+            ],
+            "interactive": null
+          },
+          "saveResponse": {
+            "tag": false,
+            "field": "",
+            "hasField": false,
+            "variable": "mm",
+            "hasVariable": true
+          }
+        },
+        "name": "Ask Question #1",
+        "type": "QuestionStep",
+        "isNew": false,
+        "childs": [
+          {
+            "id": "94b23d",
+            "pId": "677e56",
+            "name": "Success",
+            "type": "ValidAnswer",
+            "childs": [
+              {
+                "id": "6a6187",
+                "pId": "94b23d",
+                "name": "Branch #1",
+                "type": "BranchStep",
+                "isNew": false,
+                "childs": [
+                  {
+                    "id": "47b97b",
+                    "pId": "6a6187",
+                    "data": {
+                      "conditions": [
+                        {
+                          "values": "شراء تذكرة",
+                          "variable": "mm",
+                          "hasVariable": true,
+                          "attribute_key": "variable",
+                          "query_operator": "and",
+                          "filter_operator": "equal_to",
+                          "custom_attribute_type": ""
+                        }
+                      ]
+                    },
+                    "name": "شراء تذكرة",
+                    "type": "IfCondition",
+                    "childs": [
+                      {
+                        "id": "e05c99",
+                        "pId": "47b97b",
+                        "data": {
+                          "timeout": {
+                            "unit": "minutes",
+                            "value": 1,
+                            "hasTimeout": false
+                          },
+                          "question": {
+                            "text": "أستاذي استفسارك الحالي قبل ام بعد شراء التذكره ؟",
+                            "type": "multiple",
+                            "regex": "",
+                            "options": [
+                              "قبل الشراء",
+                              "بعد الشراء"
+                            ],
+                            "interactive": null
+                          },
+                          "saveResponse": {
+                            "tag": false,
+                            "field": "",
+                            "hasField": false,
+                            "variable": "op1",
+                            "hasVariable": true
+                          }
+                        },
+                        "name": "Ask Question #2",
+                        "type": "QuestionStep",
+                        "isNew": false,
+                        "childs": [
+                          {
+                            "id": "1ef2e2",
+                            "pId": "e05c99",
+                            "name": "Success",
+                            "type": "ValidAnswer",
+                            "childs": [
+                              {
+                                "id": "07324a",
+                                "pId": "1ef2e2",
+                                "name": "Branch #2",
+                                "type": "BranchStep",
+                                "isNew": false,
+                                "childs": [
+                                  {
+                                    "id": "76157d",
+                                    "pId": "07324a",
+                                    "data": {
+                                      "conditions": [
+                                        {
+                                          "values": "قبل الشراء",
+                                          "variable": "op1",
+                                          "hasVariable": true,
+                                          "attribute_key": "variable",
+                                          "query_operator": "and",
+                                          "filter_operator": "equal_to",
+                                          "custom_attribute_type": ""
+                                        }
+                                      ]
+                                    },
+                                    "name": "قبل الشراء",
+                                    "type": "IfCondition",
+                                    "childs": [
+                                      {
+                                        "id": "d26074",
+                                        "pId": "76157d",
+                                        "data": {
+                                          "timeout": {
+                                            "unit": "minutes",
+                                            "value": 1,
+                                            "hasTimeout": false
+                                          },
+                                          "question": {
+                                            "text": "ابشر بسعدك لو ماعليك امر تزودنا بأسم الفعاليه\n\nالي ترغب بشراء تذكره لها?",
+                                            "type": "text",
+                                            "regex": "",
+                                            "options": [],
+                                            "interactive": null
+                                          },
+                                          "saveResponse": {
+                                            "tag": false,
+                                            "field": "",
+                                            "hasField": false,
+                                            "variable": "before_buy",
+                                            "hasVariable": true
+                                          }
+                                        },
+                                        "name": "Ask Question #3",
+                                        "type": "QuestionStep",
+                                        "isNew": false,
+                                        "childs": [
+                                          {
+                                            "id": "3929eb",
+                                            "pId": "d26074",
+                                            "name": "Success",
+                                            "type": "ValidAnswer",
+                                            "childs": [
+                                              {
+                                                "id": "26c660",
+                                                "pId": "3929eb",
+                                                "data": {
+                                                  "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                  "body": "{\n\n\"name\": \"{{contact.name}}\",\n\n\"email\": \"البريد الإلكتروني\",\n\n\"phone\": \"{{contact.phone_number}}\",\n\n\"category\": \"نوع الطلب\",\n\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\n\"description\": \"تفاصيل المشكلة\"\n\n}",
+                                                  "method": "post",
+                                                  "headers": [
+                                                    {
+                                                      "key": "Content-Type",
+                                                      "value": "application/json"
+                                                    },
+                                                    {
+                                                      "key": "X-API-Key",
+                                                      "value": "bevatel_ticket_2024_secure_key_x7k9m2"
+                                                    }
+                                                  ],
+                                                  "responseMap": [
+                                                    {
+                                                      "key": "ticketId",
+                                                      "variable": "response"
+                                                    },
+                                                    {
+                                                      "key": "message",
+                                                      "variable": "message"
+                                                    }
+                                                  ],
+                                                  "saveResponse": {
+                                                    "variable": "test",
+                                                    "hasVariable": true
+                                                  },
+                                                  "contentTypeHeader": "application/json"
+                                                },
+                                                "name": "HTTP Request  #1",
+                                                "type": "HttpRequestStep",
+                                                "isNew": false,
+                                                "childs": [
+                                                  {
+                                                    "id": "5586fb",
+                                                    "pId": "26c660",
+                                                    "name": "Success",
+                                                    "type": "ValidAnswer",
+                                                    "childs": [
+                                                      {
+                                                        "id": "932be7",
+                                                        "pId": "5586fb",
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "تم رفع ابلاغ وسيتم التواصل معكم",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #16",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "e71cc4",
+                                                            "pId": "e71cc4",
+                                                            "data": {
+                                                              "type": "add_comment",
+                                                              "comment": "success\\\n{{test}}  \\\n{{response}}  \\\n{{message}}"
+                                                            },
+                                                            "name": "Add Comment #1",
+                                                            "type": "ActionStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "AddComment"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "customType": "HTTPRequestAnswerStep"
+                                                  },
+                                                  {
+                                                    "id": "047577",
+                                                    "pId": "26c660",
+                                                    "name": "Failure: Invalid",
+                                                    "type": "InvalidAnswer",
+                                                    "childs": [
+                                                      {
+                                                        "id": "eaf5f1",
+                                                        "pId": "047577",
+                                                        "data": {
+                                                          "type": "add_comment",
+                                                          "comment": "FAILURE"
+                                                        },
+                                                        "name": "Add Comment #2",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "AddComment"
+                                                      }
+                                                    ],
+                                                    "customType": "HTTPRequestAnswerStep"
+                                                  }
+                                                ],
+                                                "selected": false,
+                                                "validate": false,
+                                                "customType": "HTTPRequest"
+                                              }
+                                            ],
+                                            "customType": "AnswerStep"
+                                          },
+                                          {
+                                            "id": "615ff6",
+                                            "pId": "d26074",
+                                            "name": "Failure: Invalid",
+                                            "type": "InvalidAnswer",
+                                            "childs": [],
+                                            "customType": "AnswerStep"
+                                          }
+                                        ],
+                                        "selected": false,
+                                        "validate": false,
+                                        "customType": "QuestionStep"
+                                      }
+                                    ],
+                                    "validate": false,
+                                    "customType": "ConditionStep"
+                                  },
+                                  {
+                                    "id": 1742283397129,
+                                    "pId": "07324a",
+                                    "data": {
+                                      "conditions": [
+                                        {
+                                          "values": "بعد الشراء",
+                                          "variable": "op1",
+                                          "hasVariable": true,
+                                          "attribute_key": "variable",
+                                          "query_operator": "and",
+                                          "filter_operator": "equal_to"
+                                        }
+                                      ]
+                                    },
+                                    "name": "بعد الشراء",
+                                    "type": "IfCondition",
+                                    "childs": [
+                                      {
+                                        "id": "850167",
+                                        "pId": 1742283397129,
+                                        "data": {
+                                          "timeout": {
+                                            "unit": "minutes",
+                                            "value": 1,
+                                            "hasTimeout": false
+                                          },
+                                          "question": {
+                                            "text": "لمساعدتك بشكل سريع طال عمرك هل استسفارك تابع الى؟",
+                                            "type": "multiple",
+                                            "regex": "",
+                                            "options": [
+                                              "فعالية إنتهت؟",
+                                              "فعالية قادمة ؟",
+                                              "فعالية خارج السعودية"
+                                            ],
+                                            "interactive": null
+                                          },
+                                          "saveResponse": {
+                                            "tag": false,
+                                            "field": "",
+                                            "hasField": false,
+                                            "variable": "post",
+                                            "hasVariable": true
+                                          }
+                                        },
+                                        "name": "Ask Question #4",
+                                        "type": "QuestionStep",
+                                        "isNew": false,
+                                        "childs": [
+                                          {
+                                            "id": "d0fc05",
+                                            "pId": "850167",
+                                            "name": "Success",
+                                            "type": "ValidAnswer",
+                                            "childs": [
+                                              {
+                                                "id": "dbbe29",
+                                                "pId": "d0fc05",
+                                                "data": {
+                                                  "timeout": {
+                                                    "unit": "minutes",
+                                                    "value": 1,
+                                                    "hasTimeout": false
+                                                  },
+                                                  "question": {
+                                                    "text": "لا تشيل هم يرجاء تزويدنا بأيميلك المسجل بالمنصه لنقوم بخدمتك بشكل مناسب ✨",
+                                                    "type": "text",
+                                                    "regex": "",
+                                                    "options": [],
+                                                    "interactive": null
+                                                  },
+                                                  "saveResponse": {
+                                                    "tag": false,
+                                                    "field": "email",
+                                                    "hasField": true,
+                                                    "variable": "",
+                                                    "hasVariable": false
+                                                  }
+                                                },
+                                                "name": "Ask Question #5",
+                                                "type": "QuestionStep",
+                                                "isNew": false,
+                                                "childs": [
+                                                  {
+                                                    "id": "11e0f8",
+                                                    "pId": "dbbe29",
+                                                    "name": "Success",
+                                                    "type": "ValidAnswer",
+                                                    "childs": [
+                                                      {
+                                                        "id": "febebb",
+                                                        "pId": "11e0f8",
+                                                        "data": {
+                                                          "type": "business_hours",
+                                                          "times": [
+                                                            {
+                                                              "open_hour": 10,
+                                                              "close_hour": 22,
+                                                              "day_of_week": 0,
+                                                              "open_minutes": 0,
+                                                              "close_minutes": 0,
+                                                              "closed_all_day": false
+                                                            },
+                                                            {
+                                                              "open_hour": 10,
+                                                              "close_hour": 22,
+                                                              "day_of_week": 1,
+                                                              "open_minutes": 0,
+                                                              "close_minutes": 0,
+                                                              "closed_all_day": false
+                                                            },
+                                                            {
+                                                              "open_hour": 10,
+                                                              "close_hour": 22,
+                                                              "day_of_week": 2,
+                                                              "open_minutes": 0,
+                                                              "close_minutes": 0,
+                                                              "closed_all_day": false
+                                                            },
+                                                            {
+                                                              "open_hour": 10,
+                                                              "close_hour": 22,
+                                                              "day_of_week": 3,
+                                                              "open_minutes": 0,
+                                                              "close_minutes": 0,
+                                                              "closed_all_day": false
+                                                            },
+                                                            {
+                                                              "open_hour": 10,
+                                                              "close_hour": 22,
+                                                              "day_of_week": 4,
+                                                              "open_minutes": 0,
+                                                              "close_minutes": 0,
+                                                              "closed_all_day": false
+                                                            },
+                                                            {
+                                                              "open_hour": 10,
+                                                              "close_hour": 22,
+                                                              "day_of_week": 5,
+                                                              "open_minutes": 0,
+                                                              "close_minutes": 0,
+                                                              "closed_all_day": false
+                                                            },
+                                                            {
+                                                              "open_hour": 10,
+                                                              "close_hour": 22,
+                                                              "day_of_week": 6,
+                                                              "open_minutes": 0,
+                                                              "close_minutes": 0,
+                                                              "closed_all_day": false
+                                                            }
+                                                          ],
+                                                          "timezone": "Asia/Riyadh",
+                                                          "condition": "is_within",
+                                                          "endDateTime": "",
+                                                          "startDateTime": ""
+                                                        },
+                                                        "name": "Date Time #1",
+                                                        "type": "DateTimeStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "52c332",
+                                                            "pId": "febebb",
+                                                            "name": "Success",
+                                                            "type": "ValidDateTime",
+                                                            "childs": [
+                                                              {
+                                                                "id": "bf582a",
+                                                                "pId": "52c332",
+                                                                "data": {
+                                                                  "type": "assign_to",
+                                                                  "teamId": null,
+                                                                  "userId": null,
+                                                                  "timeout": {
+                                                                    "unit": "minutes",
+                                                                    "value": 20,
+                                                                    "hasTimeout": false
+                                                                  },
+                                                                  "assignTo": "workspace",
+                                                                  "assignmentLogic": "RoundRobin",
+                                                                  "onlyOnlineUsers": true,
+                                                                  "hasUsersContactsLess": false,
+                                                                  "onlyUsersContactsLess": 20
+                                                                },
+                                                                "name": "Assign To  #1",
+                                                                "type": "AssignToStep",
+                                                                "isNew": false,
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "5c256f",
+                                                                    "pId": "bf582a",
+                                                                    "name": "Success",
+                                                                    "type": "ValidAssignTo",
+                                                                    "childs": [
+                                                                      {
+                                                                        "id": "d823dc",
+                                                                        "pId": "5c256f",
+                                                                        "data": {
+                                                                          "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                                          "body": "{\n\n\"name\": \"{{contact.name}}\",\n\n\"email\": \"{{contact.email}}\",\n\n\"phone\": \"{{contact.phone_number}}\",\n\n\"category\": \"نوع الطلب\",\n\n\"subject\": \"{{mm}},{{op1}},{{post}},{{contact.email}}\",\n\n\"description\": \"تفاصيل المشكلة\"\n\n}",
+                                                                          "method": "post",
+                                                                          "headers": [
+                                                                            {
+                                                                              "key": "Content-Type",
+                                                                              "value": "application/json"
+                                                                            },
+                                                                            {
+                                                                              "key": "X-API-Key",
+                                                                              "value": "bevatel_ticket_2024_secure_key_x7k9m2"
+                                                                            }
+                                                                          ],
+                                                                          "responseMap": [
+                                                                            {
+                                                                              "key": "ticketId",
+                                                                              "variable": "response"
+                                                                            },
+                                                                            {
+                                                                              "key": "message",
+                                                                              "variable": "message"
+                                                                            }
+                                                                          ],
+                                                                          "saveResponse": {
+                                                                            "variable": "test",
+                                                                            "hasVariable": true
+                                                                          },
+                                                                          "contentTypeHeader": "application/json"
+                                                                        },
+                                                                        "name": "clone - HTTP Request  #1",
+                                                                        "type": "HttpRequestStep",
+                                                                        "isNew": false,
+                                                                        "childs": [
+                                                                          {
+                                                                            "id": "03c75c",
+                                                                            "pId": "d823dc",
+                                                                            "name": "Success",
+                                                                            "type": "ValidAnswer",
+                                                                            "childs": [
+                                                                              {
+                                                                                "id": "808e5d",
+                                                                                "pId": "03c75c",
+                                                                                "data": {
+                                                                                  "type": "send_message",
+                                                                                  "payload": [
+                                                                                    {
+                                                                                      "message": {
+                                                                                        "text": "تم رفع ابلاغ وسيتم التواصل معكم",
+                                                                                        "type": "text"
+                                                                                      }
+                                                                                    }
+                                                                                  ]
+                                                                                },
+                                                                                "name": "Send Message #17",
+                                                                                "type": "ActionStep",
+                                                                                "isNew": false,
+                                                                                "childs": [
+                                                                                  {
+                                                                                    "id": "fd0486",
+                                                                                    "pId": "fd0486",
+                                                                                    "data": {
+                                                                                      "type": "add_comment",
+                                                                                      "comment": "success\\\n{{test}}  \\\n{{response}}  \\\n{{message}}"
+                                                                                    },
+                                                                                    "name": "clone - Add Comment #1",
+                                                                                    "type": "ActionStep",
+                                                                                    "isNew": false,
+                                                                                    "childs": [],
+                                                                                    "selected": false,
+                                                                                    "validate": false,
+                                                                                    "customType": "AddComment"
+                                                                                  }
+                                                                                ],
+                                                                                "selected": false,
+                                                                                "validate": false,
+                                                                                "customType": "SendMessage"
+                                                                              }
+                                                                            ],
+                                                                            "customType": "HTTPRequestAnswerStep"
+                                                                          },
+                                                                          {
+                                                                            "id": "9fe0f1",
+                                                                            "pId": "d823dc",
+                                                                            "name": "Failure: Invalid",
+                                                                            "type": "InvalidAnswer",
+                                                                            "childs": [
+                                                                              {
+                                                                                "id": "be1515",
+                                                                                "pId": "9fe0f1",
+                                                                                "data": {
+                                                                                  "type": "add_comment",
+                                                                                  "comment": "FAILURE"
+                                                                                },
+                                                                                "name": "clone - Add Comment #2",
+                                                                                "type": "ActionStep",
+                                                                                "isNew": false,
+                                                                                "childs": [],
+                                                                                "selected": false,
+                                                                                "validate": false,
+                                                                                "customType": "AddComment"
+                                                                              }
+                                                                            ],
+                                                                            "customType": "HTTPRequestAnswerStep"
+                                                                          }
+                                                                        ],
+                                                                        "selected": false,
+                                                                        "validate": false,
+                                                                        "customType": "HTTPRequest"
+                                                                      }
+                                                                    ],
+                                                                    "customType": "AssignToBranch"
+                                                                  }
+                                                                ],
+                                                                "selected": false,
+                                                                "validate": false,
+                                                                "customType": "AssignTo"
+                                                              }
+                                                            ],
+                                                            "customType": "DateTimeBranch"
+                                                          },
+                                                          {
+                                                            "id": "ac3337",
+                                                            "pId": "febebb",
+                                                            "name": "Failure",
+                                                            "type": "InvalidDateTime",
+                                                            "childs": [
+                                                              {
+                                                                "id": "55fba2",
+                                                                "pId": "ac3337",
+                                                                "data": {
+                                                                  "type": "send_message",
+                                                                  "payload": [
+                                                                    {
+                                                                      "message": {
+                                                                        "text": "عزيزي العميل وصلنا طلبك خارج اوقات العمل الرسميه وهي من 10:00AM الى 10:00PM 🙏🏻✨",
+                                                                        "type": "text"
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                },
+                                                                "name": "Send Message #12",
+                                                                "type": "ActionStep",
+                                                                "isNew": false,
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "0c6c0c",
+                                                                    "pId": "55fba2",
+                                                                    "data": {
+                                                                      "type": "send_message",
+                                                                      "payload": [
+                                                                        {
+                                                                          "message": {
+                                                                            "text": "ولا تشيل هم راح نرد عليك خلالها ونعتذر على التأخير ومالك إلا الي يرضيك 🤍",
+                                                                            "type": "text"
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    "name": "Send Message #13",
+                                                                    "type": "ActionStep",
+                                                                    "isNew": false,
+                                                                    "childs": [
+                                                                      {
+                                                                        "id": "4deb7f",
+                                                                        "pId": "0c6c0c",
+                                                                        "data": {
+                                                                          "type": "assign_to",
+                                                                          "teamId": null,
+                                                                          "userId": null,
+                                                                          "timeout": {
+                                                                            "unit": "minutes",
+                                                                            "value": 20,
+                                                                            "hasTimeout": false
+                                                                          },
+                                                                          "assignTo": "workspace",
+                                                                          "assignmentLogic": "RoundRobin",
+                                                                          "onlyOnlineUsers": true,
+                                                                          "hasUsersContactsLess": false,
+                                                                          "onlyUsersContactsLess": 20
+                                                                        },
+                                                                        "name": "Assign To  #7",
+                                                                        "type": "AssignToStep",
+                                                                        "isNew": false,
+                                                                        "childs": [
+                                                                          {
+                                                                            "id": "1ec5d6",
+                                                                            "pId": "4deb7f",
+                                                                            "name": "Success",
+                                                                            "type": "ValidAssignTo",
+                                                                            "childs": [],
+                                                                            "customType": "AssignToBranch"
+                                                                          }
+                                                                        ],
+                                                                        "selected": false,
+                                                                        "validate": false,
+                                                                        "customType": "AssignTo"
+                                                                      }
+                                                                    ],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "SendMessage"
+                                                                  }
+                                                                ],
+                                                                "selected": false,
+                                                                "validate": false,
+                                                                "customType": "SendMessage"
+                                                              }
+                                                            ],
+                                                            "customType": "DateTimeBranch"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "DateTime"
+                                                      }
+                                                    ],
+                                                    "customType": "AnswerStep"
+                                                  },
+                                                  {
+                                                    "id": "919eed",
+                                                    "pId": "dbbe29",
+                                                    "name": "Failure: Invalid",
+                                                    "type": "InvalidAnswer",
+                                                    "childs": [],
+                                                    "customType": "AnswerStep"
+                                                  }
+                                                ],
+                                                "selected": false,
+                                                "validate": false,
+                                                "customType": "QuestionStep"
+                                              }
+                                            ],
+                                            "customType": "AnswerStep"
+                                          },
+                                          {
+                                            "id": "5f0f98",
+                                            "pId": "850167",
+                                            "name": "Failure: Invalid",
+                                            "type": "InvalidAnswer",
+                                            "childs": [],
+                                            "customType": "AnswerStep"
+                                          }
+                                        ],
+                                        "selected": false,
+                                        "validate": false,
+                                        "customType": "QuestionStep"
+                                      }
+                                    ],
+                                    "validate": false,
+                                    "customType": "ConditionStep"
+                                  },
+                                  {
+                                    "id": "76a308",
+                                    "pId": "07324a",
+                                    "name": "Else",
+                                    "type": "ElseCondition",
+                                    "childs": [],
+                                    "customType": "ConditionStep"
+                                  }
+                                ],
+                                "selected": false,
+                                "validate": false,
+                                "customType": "BranchStep"
+                              }
+                            ],
+                            "customType": "AnswerStep"
+                          },
+                          {
+                            "id": "0f73c8",
+                            "pId": "e05c99",
+                            "name": "Failure: Invalid",
+                            "type": "InvalidAnswer",
+                            "childs": [],
+                            "customType": "AnswerStep"
+                          }
+                        ],
+                        "selected": false,
+                        "validate": false,
+                        "customType": "QuestionStep"
+                      }
+                    ],
+                    "validate": false,
+                    "customType": "ConditionStep"
+                  },
+                  {
+                    "id": 1742283013826,
+                    "pId": "6a6187",
+                    "data": {
+                      "conditions": [
+                        {
+                          "values": "بيع تذكرة",
+                          "variable": "mm",
+                          "hasVariable": true,
+                          "attribute_key": "variable",
+                          "query_operator": "and",
+                          "filter_operator": "equal_to"
+                        }
+                      ]
+                    },
+                    "name": "بيع تذكرة",
+                    "type": "IfCondition",
+                    "childs": [
+                      {
+                        "id": "1ec62a",
+                        "pId": 1742283013826,
+                        "data": {
+                          "timeout": {
+                            "unit": "minutes",
+                            "value": 1,
+                            "hasTimeout": false
+                          },
+                          "question": {
+                            "text": "أستفسارك الحالي قبل بيع تذكرتك او بعد بيعها ؟",
+                            "type": "multiple",
+                            "regex": "",
+                            "options": [
+                              "قبل البيع",
+                              "بعد البيع"
+                            ],
+                            "interactive": null
+                          },
+                          "saveResponse": {
+                            "tag": false,
+                            "field": "",
+                            "hasField": false,
+                            "variable": "pre",
+                            "hasVariable": true
+                          }
+                        },
+                        "name": "Ask Question #6",
+                        "type": "QuestionStep",
+                        "isNew": false,
+                        "childs": [
+                          {
+                            "id": "0c8a0b",
+                            "pId": "1ec62a",
+                            "name": "Success",
+                            "type": "ValidAnswer",
+                            "childs": [
+                              {
+                                "id": "94782f",
+                                "pId": "0c8a0b",
+                                "name": "Branch #3",
+                                "type": "BranchStep",
+                                "isNew": false,
+                                "childs": [
+                                  {
+                                    "id": "3d231b",
+                                    "pId": "94782f",
+                                    "data": {
+                                      "conditions": [
+                                        {
+                                          "values": "قبل البيع",
+                                          "variable": "pre",
+                                          "hasVariable": true,
+                                          "attribute_key": "variable",
+                                          "query_operator": "and",
+                                          "filter_operator": "equal_to",
+                                          "custom_attribute_type": ""
+                                        }
+                                      ]
+                                    },
+                                    "name": "قبل البيع",
+                                    "type": "IfCondition",
+                                    "childs": [
+                                      {
+                                        "id": "4723e6",
+                                        "pId": "3d231b",
+                                        "data": {
+                                          "timeout": {
+                                            "unit": "minutes",
+                                            "value": 1,
+                                            "hasTimeout": false
+                                          },
+                                          "question": {
+                                            "text": "",
+                                            "type": "whatsapp_list",
+                                            "regex": "",
+                                            "options": [],
+                                            "interactive": {
+                                              "body": {
+                                                "text": "لمسساعدتك بشكل افضل يرجاء اختيار احد الاختيارات"
+                                              },
+                                              "type": "list",
+                                              "action": {
+                                                "button": "الخيارات",
+                                                "sections": [
+                                                  {
+                                                    "rows": [
+                                                      {
+                                                        "id": "14f24b",
+                                                        "title": "عرض تذاكري للبيع",
+                                                        "description": "كيف يمكنني عرض تذاكري للبيع ؟"
+                                                      },
+                                                      {
+                                                        "id": "a853b6",
+                                                        "title": "تذكرتي لم يتم قبولها",
+                                                        "description": "عرضت تذاكري للبيع ولم يتم قبولها "
+                                                      },
+                                                      {
+                                                        "id": "0d3f2b",
+                                                        "title": "لا أرى تذكرتي معروضه",
+                                                        "description": "لايمكنني إيجاد تذكرتي "
+                                                      },
+                                                      {
+                                                        "id": "eb9347",
+                                                        "title": "متى يصلني المبلغ ؟",
+                                                        "description": "وكم يستغرق من وقت "
+                                                      },
+                                                      {
+                                                        "id": "feb664",
+                                                        "title": "التراجع عن البيع",
+                                                        "description": "هل أستطيع التراجع عن بيع التذكره ؟"
+                                                      },
+                                                      {
+                                                        "id": "9a334c",
+                                                        "title": "ارسال التذكرة بعد البيع",
+                                                        "description": "كيف يمكنني أرسال تذكرتي بعد البيع"
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "footer": {
+                                                "text": ""
+                                              },
+                                              "header": {
+                                                "text": "",
+                                                "type": "text"
+                                              }
+                                            }
+                                          },
+                                          "saveResponse": {
+                                            "tag": false,
+                                            "field": "",
+                                            "hasField": false,
+                                            "variable": "sale",
+                                            "hasVariable": true
+                                          }
+                                        },
+                                        "name": "Ask Question #7",
+                                        "type": "QuestionStep",
+                                        "isNew": false,
+                                        "childs": [
+                                          {
+                                            "id": "9ba645",
+                                            "pId": "4723e6",
+                                            "name": "Success",
+                                            "type": "ValidAnswer",
+                                            "childs": [
+                                              {
+                                                "id": "204a3f",
+                                                "pId": "9ba645",
+                                                "name": "Branch #4",
+                                                "type": "BranchStep",
+                                                "isNew": false,
+                                                "childs": [
+                                                  {
+                                                    "id": "13ca56",
+                                                    "pId": "204a3f",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "عرض تذاكري للبيع",
+                                                          "variable": "sale",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to",
+                                                          "custom_attribute_type": ""
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "عرض تذاكري للبيع",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "25dcbb",
+                                                        "pId": "13ca56",
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "تقدر تعرض تذكرتك عزيزي من خلال الخطوات التاليه -المزيد - اختار الفعاليه التباعة للتذكره المطلوب بيعها واكمل البيانات 🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #1",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "d7ddda",
+                                                            "pId": "25dcbb",
+                                                            "data": {
+                                                              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                              "body": "{\n\n\"name\": \"{{contact.name}}\",\n\n\"email\": \"البريد الإلكتروني\",\n\n\"phone\": \"{{contact.phone_number}}\",\n\n\"category\": \"نوع الطلب\",\n\n\"subject\": \"{{mm}},{{pre}},{{sale}}\",\n\n\"description\": \"تفاصيل المشكلة\"\n\n}",
+                                                              "method": "post",
+                                                              "headers": [
+                                                                {
+                                                                  "key": "Content-Type",
+                                                                  "value": "application/json"
+                                                                },
+                                                                {
+                                                                  "key": "X-API-Key",
+                                                                  "value": "bevatel_ticket_2024_secure_key_x7k9m2"
+                                                                }
+                                                              ],
+                                                              "responseMap": [
+                                                                {
+                                                                  "key": "ticketId",
+                                                                  "variable": "response"
+                                                                },
+                                                                {
+                                                                  "key": "message",
+                                                                  "variable": "message"
+                                                                }
+                                                              ],
+                                                              "saveResponse": {
+                                                                "variable": "test",
+                                                                "hasVariable": true
+                                                              },
+                                                              "contentTypeHeader": "application/json"
+                                                            },
+                                                            "name": "clone - HTTP Request  #2",
+                                                            "type": "HttpRequestStep",
+                                                            "isNew": false,
+                                                            "childs": [
+                                                              {
+                                                                "id": "a1b768",
+                                                                "pId": "d7ddda",
+                                                                "name": "Success",
+                                                                "type": "ValidAnswer",
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "de36d3",
+                                                                    "pId": "a1b768",
+                                                                    "data": {
+                                                                      "type": "send_message",
+                                                                      "payload": [
+                                                                        {
+                                                                          "message": {
+                                                                            "text": "تم رفع ابلاغ وسيتم التواصل معكم",
+                                                                            "type": "text"
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    "name": "Send Message #18",
+                                                                    "type": "ActionStep",
+                                                                    "isNew": false,
+                                                                    "childs": [
+                                                                      {
+                                                                        "id": "b9f947",
+                                                                        "pId": "b9f947",
+                                                                        "data": {
+                                                                          "type": "add_comment",
+                                                                          "comment": "success\\\n{{test}}  \\\n{{response}}  \\\n{{message}}"
+                                                                        },
+                                                                        "name": "clone - Add Comment #1",
+                                                                        "type": "ActionStep",
+                                                                        "isNew": false,
+                                                                        "childs": [],
+                                                                        "selected": false,
+                                                                        "validate": false,
+                                                                        "customType": "AddComment"
+                                                                      }
+                                                                    ],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "SendMessage"
+                                                                  }
+                                                                ],
+                                                                "customType": "HTTPRequestAnswerStep"
+                                                              },
+                                                              {
+                                                                "id": "900590",
+                                                                "pId": "d7ddda",
+                                                                "name": "Failure: Invalid",
+                                                                "type": "InvalidAnswer",
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "dbfe03",
+                                                                    "pId": "900590",
+                                                                    "data": {
+                                                                      "type": "add_comment",
+                                                                      "comment": "FAILURE"
+                                                                    },
+                                                                    "name": "clone - Add Comment #2",
+                                                                    "type": "ActionStep",
+                                                                    "isNew": false,
+                                                                    "childs": [],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "AddComment"
+                                                                  }
+                                                                ],
+                                                                "customType": "HTTPRequestAnswerStep"
+                                                              }
+                                                            ],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "HTTPRequest"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285178529,
+                                                    "pId": "204a3f",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "تذكرتي لم يتم قبولها",
+                                                          "variable": "sale",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "تذكرتي لم يتم قبولها",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "db6874",
+                                                        "pId": 1742285178529,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "ابشر بسعدك طال عمرك زودني بإيميلك يالغالي ومالك الا الي يرضيك 🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #2",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "a36b0a",
+                                                            "pId": "db6874",
+                                                            "data": {
+                                                              "stepId": "d7ddda",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #8",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285178728,
+                                                    "pId": "204a3f",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "لا أرى تذكرتي معروضه",
+                                                          "variable": "sale",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "لا أرى تذكرتي معروضه",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "4067ce",
+                                                        "pId": 1742285178728,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "عزيزي العميل اذا حالة التذكره نشطة لا تشيل همها لأنها معروضه للعملاء🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #3",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "458f3c",
+                                                            "pId": "4067ce",
+                                                            "data": {
+                                                              "stepId": "d7ddda",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #9",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285178968,
+                                                    "pId": "204a3f",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "متى يصلني المبلغ ؟",
+                                                          "variable": "sale",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "متى يصلني المبلغ ؟",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "1355b2",
+                                                        "pId": 1742285178968,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "عزيزي العميل لا تشيل هم يتم تحويل المبلغ خلال 24 الى 48 ساعه🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #4",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "73ae4d",
+                                                            "pId": "1355b2",
+                                                            "data": {
+                                                              "stepId": "d7ddda",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #10",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285260562,
+                                                    "pId": "204a3f",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "التراجع عن البيع",
+                                                          "variable": "sale",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "التراجع عن البيع",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "085c56",
+                                                        "pId": 1742285260562,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "افا ! عزيزي العميل اعتذر منك لكن لايمكن التراجع عن بيع التذكره الا في حالة وجود مشكله متعلقه بالتذكره 🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #5",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "279cb2",
+                                                            "pId": "085c56",
+                                                            "data": {
+                                                              "stepId": "d26074",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #11",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285260755,
+                                                    "pId": "204a3f",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "ارسال التذكرة بعد البيع",
+                                                          "variable": "sale",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "ارسال التذكرة البيع",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "8fddbe",
+                                                        "pId": 1742285260755,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "يتم ارسال التذاكر المباعه عن طريق تطبيق webook في حالة كان هو منظم الفعالية \\\nبعد الاطلاع على تفاصيل المشتري \\\nاذا كانت منصة أخرى يمكنك فقط ارفاق تفاصيل التذكره وسوف نقوم بإرسالها للمشتري 🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #6",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "2f9a04",
+                                                            "pId": "8fddbe",
+                                                            "data": {
+                                                              "stepId": "d7ddda",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #12",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": "188c74",
+                                                    "pId": "204a3f",
+                                                    "name": "Else",
+                                                    "type": "ElseCondition",
+                                                    "childs": [],
+                                                    "customType": "ConditionStep"
+                                                  }
+                                                ],
+                                                "selected": false,
+                                                "validate": false,
+                                                "customType": "BranchStep"
+                                              }
+                                            ],
+                                            "customType": "AnswerStep"
+                                          },
+                                          {
+                                            "id": "9f6f1a",
+                                            "pId": "4723e6",
+                                            "name": "Failure: Invalid",
+                                            "type": "InvalidAnswer",
+                                            "childs": [],
+                                            "customType": "AnswerStep"
+                                          }
+                                        ],
+                                        "selected": false,
+                                        "validate": false,
+                                        "customType": "QuestionStep"
+                                      }
+                                    ],
+                                    "validate": false,
+                                    "customType": "ConditionStep"
+                                  },
+                                  {
+                                    "id": 1742283863605,
+                                    "pId": "94782f",
+                                    "data": {
+                                      "conditions": [
+                                        {
+                                          "values": "بعد البيع",
+                                          "variable": "pre",
+                                          "hasVariable": true,
+                                          "attribute_key": "variable",
+                                          "query_operator": "and",
+                                          "filter_operator": "equal_to"
+                                        }
+                                      ]
+                                    },
+                                    "name": "بعد البيع",
+                                    "type": "IfCondition",
+                                    "childs": [
+                                      {
+                                        "id": "97c1e7",
+                                        "pId": 1742283863605,
+                                        "data": {
+                                          "timeout": {
+                                            "unit": "minutes",
+                                            "value": 1,
+                                            "hasTimeout": false
+                                          },
+                                          "question": {
+                                            "text": "",
+                                            "type": "whatsapp_list",
+                                            "regex": "",
+                                            "options": [],
+                                            "interactive": {
+                                              "body": {
+                                                "text": "لمساعدتك بشكل افضل يرجاء اختيار احد الاختيارات"
+                                              },
+                                              "type": "list",
+                                              "action": {
+                                                "button": "الخيارات",
+                                                "sections": [
+                                                  {
+                                                    "rows": [
+                                                      {
+                                                        "id": "aaf674",
+                                                        "title": "كيفية ارسال التذاكر ؟",
+                                                        "description": "كيف ارسل التذكره بعد ما ابيعها ؟"
+                                                      },
+                                                      {
+                                                        "id": "27023b",
+                                                        "title": "التراجع عن البيع !",
+                                                        "description": "بعت تذكره وابي أتراجع عن البيع"
+                                                      },
+                                                      {
+                                                        "id": "9b9f7a",
+                                                        "title": "لم أستلم المبلغ حتى الأن",
+                                                        "description": "قمت ببيع تذاكري ولم أستلم المبلغ الى الان "
+                                                      },
+                                                      {
+                                                        "id": "11cc57",
+                                                        "title": "حالة التذكره لم يستلم !",
+                                                        "description": "ارسلت التذكره ولكن الحالة لم يستلم !"
+                                                      },
+                                                      {
+                                                        "id": "500b78",
+                                                        "title": "اخرى ؟",
+                                                        "description": "لديك استفسار ليس موجود في الخيارات "
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              "footer": {
+                                                "text": ""
+                                              },
+                                              "header": {
+                                                "text": "",
+                                                "type": "text"
+                                              }
+                                            }
+                                          },
+                                          "saveResponse": {
+                                            "tag": false,
+                                            "field": "",
+                                            "hasField": false,
+                                            "variable": "ps",
+                                            "hasVariable": true
+                                          }
+                                        },
+                                        "name": "Ask Question #8",
+                                        "type": "QuestionStep",
+                                        "isNew": false,
+                                        "childs": [
+                                          {
+                                            "id": "37dbb1",
+                                            "pId": "97c1e7",
+                                            "name": "Success",
+                                            "type": "ValidAnswer",
+                                            "childs": [
+                                              {
+                                                "id": "84e582",
+                                                "pId": "37dbb1",
+                                                "name": "Branch #5",
+                                                "type": "BranchStep",
+                                                "isNew": false,
+                                                "childs": [
+                                                  {
+                                                    "id": "4eb002",
+                                                    "pId": "84e582",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "كيفية ارسال التذاكر ؟",
+                                                          "variable": "ps",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to",
+                                                          "custom_attribute_type": ""
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "كيفية ارسال التذاكر",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "d309cc",
+                                                        "pId": "4eb002",
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "يتم ارسال التذاكر المباعه عن طريق تطبيق webook في حالة كان هو منظم الفعالية\n\nبعد الاطلاع على تفاصيل المشتري\n\nاذا كانت منصة أخرى يمكنك فقط ارفاق تفاصيل التذكره وسوف نقوم بإرسالها للمشتري 🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #7",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "cd0d43",
+                                                            "pId": "d309cc",
+                                                            "data": {
+                                                              "type": "business_hours",
+                                                              "times": [
+                                                                {
+                                                                  "open_hour": 10,
+                                                                  "close_hour": 22,
+                                                                  "day_of_week": 0,
+                                                                  "open_minutes": 0,
+                                                                  "close_minutes": 0,
+                                                                  "closed_all_day": false
+                                                                },
+                                                                {
+                                                                  "open_hour": 10,
+                                                                  "close_hour": 22,
+                                                                  "day_of_week": 1,
+                                                                  "open_minutes": 0,
+                                                                  "close_minutes": 0,
+                                                                  "closed_all_day": false
+                                                                },
+                                                                {
+                                                                  "open_hour": 10,
+                                                                  "close_hour": 22,
+                                                                  "day_of_week": 2,
+                                                                  "open_minutes": 0,
+                                                                  "close_minutes": 0,
+                                                                  "closed_all_day": false
+                                                                },
+                                                                {
+                                                                  "open_hour": 10,
+                                                                  "close_hour": 22,
+                                                                  "day_of_week": 3,
+                                                                  "open_minutes": 0,
+                                                                  "close_minutes": 0,
+                                                                  "closed_all_day": false
+                                                                },
+                                                                {
+                                                                  "open_hour": 10,
+                                                                  "close_hour": 22,
+                                                                  "day_of_week": 4,
+                                                                  "open_minutes": 0,
+                                                                  "close_minutes": 0,
+                                                                  "closed_all_day": false
+                                                                },
+                                                                {
+                                                                  "open_hour": 10,
+                                                                  "close_hour": 22,
+                                                                  "day_of_week": 5,
+                                                                  "open_minutes": 0,
+                                                                  "close_minutes": 0,
+                                                                  "closed_all_day": false
+                                                                },
+                                                                {
+                                                                  "open_hour": 10,
+                                                                  "close_hour": 22,
+                                                                  "day_of_week": 6,
+                                                                  "open_minutes": 0,
+                                                                  "close_minutes": 0,
+                                                                  "closed_all_day": false
+                                                                }
+                                                              ],
+                                                              "timezone": "Asia/Riyadh",
+                                                              "condition": "is_within",
+                                                              "endDateTime": "",
+                                                              "startDateTime": ""
+                                                            },
+                                                            "name": "2- Date Time #1",
+                                                            "type": "DateTimeStep",
+                                                            "isNew": false,
+                                                            "childs": [
+                                                              {
+                                                                "id": "733f2d",
+                                                                "pId": "cd0d43",
+                                                                "name": "Success",
+                                                                "type": "ValidDateTime",
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "4775c6",
+                                                                    "pId": "733f2d",
+                                                                    "data": {
+                                                                      "type": "assign_to",
+                                                                      "teamId": null,
+                                                                      "userId": null,
+                                                                      "timeout": {
+                                                                        "unit": "minutes",
+                                                                        "value": 20,
+                                                                        "hasTimeout": false
+                                                                      },
+                                                                      "assignTo": "workspace",
+                                                                      "assignmentLogic": "RoundRobin",
+                                                                      "onlyOnlineUsers": true,
+                                                                      "hasUsersContactsLess": false,
+                                                                      "onlyUsersContactsLess": 20
+                                                                    },
+                                                                    "name": "clone - Assign To  #1",
+                                                                    "type": "AssignToStep",
+                                                                    "isNew": false,
+                                                                    "childs": [
+                                                                      {
+                                                                        "id": "c399d6",
+                                                                        "pId": "4775c6",
+                                                                        "name": "Success",
+                                                                        "type": "ValidAssignTo",
+                                                                        "childs": [
+                                                                          {
+                                                                            "id": "4ace96",
+                                                                            "pId": "c399d6",
+                                                                            "data": {
+                                                                              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                                              "body": "{\n\n\"name\": \"{{contact.name}}\",\n\n\"email\": \"{{contact.email}}\",\n\n\"phone\": \"{{contact.phone_number}}\",\n\n\"category\": \"نوع الطلب\",\n\n\"subject\": \"{{mm}},{{pre}},{{ps}}\",\n\n\"description\": \"تفاصيل المشكلة\"\n\n}",
+                                                                              "method": "post",
+                                                                              "headers": [
+                                                                                {
+                                                                                  "key": "Content-Type",
+                                                                                  "value": "application/json"
+                                                                                },
+                                                                                {
+                                                                                  "key": "X-API-Key",
+                                                                                  "value": "bevatel_ticket_2024_secure_key_x7k9m2"
+                                                                                }
+                                                                              ],
+                                                                              "responseMap": [
+                                                                                {
+                                                                                  "key": "ticketId",
+                                                                                  "variable": "response"
+                                                                                },
+                                                                                {
+                                                                                  "key": "message",
+                                                                                  "variable": "message"
+                                                                                }
+                                                                              ],
+                                                                              "saveResponse": {
+                                                                                "variable": "test",
+                                                                                "hasVariable": true
+                                                                              },
+                                                                              "contentTypeHeader": "application/json"
+                                                                            },
+                                                                            "name": "clone - clone - HTTP Request  #1",
+                                                                            "type": "HttpRequestStep",
+                                                                            "isNew": false,
+                                                                            "childs": [
+                                                                              {
+                                                                                "id": "0fc0be",
+                                                                                "pId": "4ace96",
+                                                                                "name": "Success",
+                                                                                "type": "ValidAnswer",
+                                                                                "childs": [
+                                                                                  {
+                                                                                    "id": "553510",
+                                                                                    "pId": "0fc0be",
+                                                                                    "data": {
+                                                                                      "type": "send_message",
+                                                                                      "payload": [
+                                                                                        {
+                                                                                          "message": {
+                                                                                            "text": "تم رفع ابلاغ وسيتم التواصل معكم",
+                                                                                            "type": "text"
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    },
+                                                                                    "name": "Send Message #19",
+                                                                                    "type": "ActionStep",
+                                                                                    "isNew": false,
+                                                                                    "childs": [
+                                                                                      {
+                                                                                        "id": "c75b1f",
+                                                                                        "pId": "c75b1f",
+                                                                                        "data": {
+                                                                                          "type": "add_comment",
+                                                                                          "comment": "success\\\n{{test}}  \\\n{{response}}  \\\n{{message}}"
+                                                                                        },
+                                                                                        "name": "clone - clone - Add Comment #1",
+                                                                                        "type": "ActionStep",
+                                                                                        "isNew": false,
+                                                                                        "childs": [],
+                                                                                        "selected": false,
+                                                                                        "validate": false,
+                                                                                        "customType": "AddComment"
+                                                                                      }
+                                                                                    ],
+                                                                                    "selected": false,
+                                                                                    "validate": false,
+                                                                                    "customType": "SendMessage"
+                                                                                  }
+                                                                                ],
+                                                                                "customType": "HTTPRequestAnswerStep"
+                                                                              },
+                                                                              {
+                                                                                "id": "3e0cd0",
+                                                                                "pId": "4ace96",
+                                                                                "name": "Failure: Invalid",
+                                                                                "type": "InvalidAnswer",
+                                                                                "childs": [
+                                                                                  {
+                                                                                    "id": "0bfd95",
+                                                                                    "pId": "3e0cd0",
+                                                                                    "data": {
+                                                                                      "type": "add_comment",
+                                                                                      "comment": "FAILURE"
+                                                                                    },
+                                                                                    "name": "clone - clone - Add Comment #2",
+                                                                                    "type": "ActionStep",
+                                                                                    "isNew": false,
+                                                                                    "childs": [],
+                                                                                    "selected": false,
+                                                                                    "validate": false,
+                                                                                    "customType": "AddComment"
+                                                                                  }
+                                                                                ],
+                                                                                "customType": "HTTPRequestAnswerStep"
+                                                                              }
+                                                                            ],
+                                                                            "selected": false,
+                                                                            "validate": false,
+                                                                            "customType": "HTTPRequest"
+                                                                          }
+                                                                        ],
+                                                                        "customType": "AssignToBranch"
+                                                                      }
+                                                                    ],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "AssignTo"
+                                                                  }
+                                                                ],
+                                                                "customType": "DateTimeBranch"
+                                                              },
+                                                              {
+                                                                "id": "a462ee",
+                                                                "pId": "cd0d43",
+                                                                "name": "Failure",
+                                                                "type": "InvalidDateTime",
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "b6dc14",
+                                                                    "pId": "a462ee",
+                                                                    "data": {
+                                                                      "type": "send_message",
+                                                                      "payload": [
+                                                                        {
+                                                                          "message": {
+                                                                            "text": "عزيزي العميل وصلنا طلبك خارج اوقات العمل الرسميه وهي من 10:00AM الى 10:00PM 🙏🏻✨",
+                                                                            "type": "text"
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    "name": "clone - Send Message #12",
+                                                                    "type": "ActionStep",
+                                                                    "isNew": false,
+                                                                    "childs": [
+                                                                      {
+                                                                        "id": "4af091",
+                                                                        "pId": "b6dc14",
+                                                                        "data": {
+                                                                          "type": "send_message",
+                                                                          "payload": [
+                                                                            {
+                                                                              "message": {
+                                                                                "text": "ولا تشيل هم راح نرد عليك خلالها ونعتذر على التأخير ومالك إلا الي يرضيك 🤍",
+                                                                                "type": "text"
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        },
+                                                                        "name": "clone - Send Message #13",
+                                                                        "type": "ActionStep",
+                                                                        "isNew": false,
+                                                                        "childs": [
+                                                                          {
+                                                                            "id": "a4b044",
+                                                                            "pId": "4af091",
+                                                                            "data": {
+                                                                              "type": "assign_to",
+                                                                              "teamId": null,
+                                                                              "userId": null,
+                                                                              "timeout": {
+                                                                                "unit": "minutes",
+                                                                                "value": 20,
+                                                                                "hasTimeout": false
+                                                                              },
+                                                                              "assignTo": "workspace",
+                                                                              "assignmentLogic": "RoundRobin",
+                                                                              "onlyOnlineUsers": true,
+                                                                              "hasUsersContactsLess": false,
+                                                                              "onlyUsersContactsLess": 20
+                                                                            },
+                                                                            "name": "clone - Assign To  #7",
+                                                                            "type": "AssignToStep",
+                                                                            "isNew": false,
+                                                                            "childs": [
+                                                                              {
+                                                                                "id": "c2f2e9",
+                                                                                "pId": "a4b044",
+                                                                                "name": "Success",
+                                                                                "type": "ValidAssignTo",
+                                                                                "childs": [],
+                                                                                "customType": "AssignToBranch"
+                                                                              }
+                                                                            ],
+                                                                            "selected": false,
+                                                                            "validate": false,
+                                                                            "customType": "AssignTo"
+                                                                          }
+                                                                        ],
+                                                                        "selected": false,
+                                                                        "validate": false,
+                                                                        "customType": "SendMessage"
+                                                                      }
+                                                                    ],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "SendMessage"
+                                                                  }
+                                                                ],
+                                                                "customType": "DateTimeBranch"
+                                                              }
+                                                            ],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "DateTime"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285957410,
+                                                    "pId": "84e582",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "التراجع عن البيع !",
+                                                          "variable": "ps",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "التراجع عن البيع !",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "ba940c",
+                                                        "pId": 1742285957410,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "افا ! عزيزي العميل اعتذر منك لكن لايمكن التراجع عن بيع التذكره الا في حالة وجود مشكله متعلقه بالتذكره 🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #8",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "b255fe",
+                                                            "pId": "ba940c",
+                                                            "data": {
+                                                              "stepId": "cd0d43",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #4",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285957586,
+                                                    "pId": "84e582",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "لم أستلم المبلغ حتى الأن",
+                                                          "variable": "ps",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "لم أستلم المبلغ الأن",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "578bd5",
+                                                        "pId": 1742285957586,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "عزيزي العميل لا تشيل هم يتم تحويل المبلغ خلال 24 الى 48 ساعه🙏✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #9",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "a5bf07",
+                                                            "pId": "578bd5",
+                                                            "data": {
+                                                              "stepId": "cd0d43",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #5",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285957746,
+                                                    "pId": "84e582",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "حالة التذكره لم يستلم !",
+                                                          "variable": "ps",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "حالة التذكره لم",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "5e7078",
+                                                        "pId": 1742285957746,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "لا تشيل هم يرجاء تزويدنا بأيميلك المسجل بالمنصه لنقوم بخدمتك بشكل مناسب ✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #10",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "2e5d67",
+                                                            "pId": "5e7078",
+                                                            "data": {
+                                                              "stepId": "cd0d43",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #6",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": 1742285957907,
+                                                    "pId": "84e582",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "اخرى ؟",
+                                                          "variable": "ps",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "equal_to"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "اخرى ؟",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "3799c6",
+                                                        "pId": 1742285957907,
+                                                        "data": {
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "لا تشيل هم يرجاء تزويدنا بأيميلك المسجل بالمنصه لنقوم بخدمتك بشكل مناسب ✨",
+                                                                "type": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "name": "Send Message #11",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "20f902",
+                                                            "pId": "3799c6",
+                                                            "data": {
+                                                              "stepId": "cd0d43",
+                                                              "maxJumps": 10
+                                                            },
+                                                            "name": "Jump #7",
+                                                            "type": "JumpStep",
+                                                            "isNew": false,
+                                                            "childs": [],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "Jump"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": "81b9ee",
+                                                    "pId": "84e582",
+                                                    "name": "Else",
+                                                    "type": "ElseCondition",
+                                                    "childs": [],
+                                                    "customType": "ConditionStep"
+                                                  }
+                                                ],
+                                                "selected": false,
+                                                "validate": false,
+                                                "customType": "BranchStep"
+                                              }
+                                            ],
+                                            "customType": "AnswerStep"
+                                          },
+                                          {
+                                            "id": "72d7ac",
+                                            "pId": "97c1e7",
+                                            "name": "Failure: Invalid",
+                                            "type": "InvalidAnswer",
+                                            "childs": [
+                                              {
+                                                "id": "14d635",
+                                                "pId": "72d7ac",
+                                                "data": {
+                                                  "stepId": "97c1e7",
+                                                  "maxJumps": 3
+                                                },
+                                                "name": "Jump #1",
+                                                "type": "JumpStep",
+                                                "isNew": false,
+                                                "childs": [],
+                                                "selected": false,
+                                                "validate": false,
+                                                "customType": "Jump"
+                                              }
+                                            ],
+                                            "customType": "AnswerStep"
+                                          }
+                                        ],
+                                        "selected": false,
+                                        "validate": false,
+                                        "customType": "QuestionStep"
+                                      }
+                                    ],
+                                    "validate": false,
+                                    "customType": "ConditionStep"
+                                  },
+                                  {
+                                    "id": "895b1e",
+                                    "pId": "94782f",
+                                    "name": "Else",
+                                    "type": "ElseCondition",
+                                    "childs": [],
+                                    "customType": "ConditionStep"
+                                  }
+                                ],
+                                "selected": false,
+                                "validate": false,
+                                "customType": "BranchStep"
+                              }
+                            ],
+                            "customType": "AnswerStep"
+                          },
+                          {
+                            "id": "cea581",
+                            "pId": "1ec62a",
+                            "name": "Failure: Invalid",
+                            "type": "InvalidAnswer",
+                            "childs": [
+                              {
+                                "id": "9b3faa",
+                                "pId": "cea581",
+                                "data": {
+                                  "stepId": "1ec62a",
+                                  "maxJumps": 3
+                                },
+                                "name": "Jump #2",
+                                "type": "JumpStep",
+                                "isNew": false,
+                                "childs": [],
+                                "selected": false,
+                                "validate": false,
+                                "customType": "Jump"
+                              }
+                            ],
+                            "customType": "AnswerStep"
+                          }
+                        ],
+                        "selected": false,
+                        "validate": false,
+                        "customType": "QuestionStep"
+                      }
+                    ],
+                    "validate": false,
+                    "customType": "ConditionStep"
+                  },
+                  {
+                    "id": "f4371f",
+                    "pId": "6a6187",
+                    "name": "Else",
+                    "type": "ElseCondition",
+                    "childs": [],
+                    "customType": "ConditionStep"
+                  }
+                ],
+                "selected": false,
+                "validate": false,
+                "customType": "BranchStep"
+              }
+            ],
+            "customType": "AnswerStep"
+          },
+          {
+            "id": "69e92d",
+            "pId": "677e56",
+            "name": "Failure: Invalid",
+            "type": "InvalidAnswer",
+            "childs": [],
+            "customType": "AnswerStep"
+          }
+        ],
+        "selected": false,
+        "validate": false,
+        "customType": "QuestionStep"
+      }
+    ],
+    "selected": false,
+    "validate": false,
+    "customType": "Trigger"
+  },
+  "active": false,
+  "inbox_id": 53124,
+  "created_at": "2025-03-18T07:29:31.118Z",
+  "updated_at": "2025-12-30T10:59:11.209Z"
+}
