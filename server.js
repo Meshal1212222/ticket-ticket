@@ -187,11 +187,8 @@ function formatTicketMessage(ticket) {
     if (ticket.email) message += `\n📧 ${ticket.email}`;
     if (ticket.category) message += `\n📂 ${ticket.category}`;
     if (ticket.priority) message += `\n⚡ ${ticket.priority}`;
-
-    // الملخص من OpenAI
-    if (ticket.summary) {
-        message += `\n\n📋 *الملخص:*\n${ticket.summary}`;
-    }
+    if (ticket.subject) message += `\n📝 ${ticket.subject}`;
+    if (ticket.description) message += `\n💬 ${ticket.description}`;
 
     return message;
 }
@@ -227,13 +224,8 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
             createdAt: new Date().toISOString()
         };
 
-        // Analyze with OpenAI if configured
-        console.log('📥 Ticket received, OpenAI available:', !!openai);
-        if (openai) {
-            console.log('🔄 Calling OpenAI...');
-            ticketData = await analyzeTicketWithAI(ticketData);
-            console.log('📤 OpenAI done, aiProcessed:', ticketData.aiProcessed);
-        }
+        // OpenAI disabled - just pass ticket data as-is
+        console.log('📥 Ticket received:', ticketData.ticketId);
 
         // Save to Firebase
         if (db) {
