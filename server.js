@@ -131,20 +131,18 @@ async function analyzeTicketWithAI(ticketData) {
     console.log('🤖 Starting OpenAI analysis...');
 
     try {
-        const prompt = `أنت موظف دعم فني. اقرأ بلاغ العميل واكتب ملخص مختصر يشرح المشكلة للموظفين.
+        const prompt = `اقرأ بلاغ العميل وافهم ماذا يريد، ثم اكتب جملة واحدة واضحة تشرح طلبه.
 
-بيانات البلاغ:
-- الاسم: ${ticketData.name || 'غير محدد'}
-- التصنيف: ${ticketData.category || 'غير محدد'}
-- العنوان: ${ticketData.subject || 'غير محدد'}
-- التفاصيل: ${ticketData.description || 'غير محدد'}
+العنوان: ${ticketData.subject || ''}
+التفاصيل: ${ticketData.description || ''}
 
-المطلوب:
-1. اكتب ملخص قصير (جملة أو جملتين) يشرح المشكلة للموظفين
-2. حدد الأولوية (عاجل/عالي/متوسط/منخفض)
+تعليمات:
+- اكتب جملة واحدة فقط تشرح ماذا يحتاج العميل
+- إذا النص غير واضح أو متقطع، حاول فهم المقصود
+- تجاهل النصوص الافتراضية مثل "تفاصيل المشكلة" أو "نوع الطلب"
 
-أعد الرد بصيغة JSON فقط:
-{"summary": "ملخص المشكلة للموظفين", "priority": "الأولوية"}`;
+الرد بصيغة JSON فقط:
+{"summary": "جملة تشرح طلب العميل"}`;
 
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
@@ -178,17 +176,17 @@ async function analyzeTicketWithAI(ticketData) {
     }
 }
 
-// Format ticket message for WhatsApp (تخطي الحقول الفارغة)
+// Format ticket message for WhatsApp
 function formatTicketMessage(ticket) {
     let message = `🎫 *بلاغ #${ticket.ticketNumber}*`;
 
     if (ticket.name) message += `\n👤 ${ticket.name}`;
     if (ticket.phone) message += `\n📱 ${ticket.phone}`;
-    if (ticket.email) message += `\n📧 ${ticket.email}`;
-    if (ticket.category) message += `\n📂 ${ticket.category}`;
-    if (ticket.priority) message += `\n⚡ ${ticket.priority}`;
-    if (ticket.subject) message += `\n📝 ${ticket.subject}`;
-    if (ticket.description) message += `\n💬 ${ticket.description}`;
+
+    // الملخص من OpenAI
+    if (ticket.summary) {
+        message += `\n\n📋 ${ticket.summary}`;
+    }
 
     return message;
 }
@@ -224,8 +222,11 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
             createdAt: new Date().toISOString()
         };
 
-        // OpenAI disabled - just pass ticket data as-is
+        // Analyze with OpenAI
         console.log('📥 Ticket received:', ticketData.ticketId);
+        if (openai) {
+            ticketData = await analyzeTicketWithAI(ticketData);
+        }
 
         // Save to Firebase
         if (db) {
