@@ -131,14 +131,12 @@ async function analyzeTicketWithAI(ticketData) {
 أعد الرد بصيغة JSON فقط:
 {"subject": "العنوان المحسن", "description": "التفاصيل المحسنة", "suggestedPriority": "عاجل/عالي/متوسط/منخفض"}`;
 
-        const response = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: 500,
-            temperature: 0.3
+        const response = await openai.responses.create({
+            model: 'gpt-4o-mini',
+            input: prompt
         });
 
-        const result = JSON.parse(response.choices[0].message.content);
+        const result = JSON.parse(response.output_text);
 
         return {
             ...ticketData,
