@@ -3,39 +3,25 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-const fs = require('fs');
+const admin = require('firebase-admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Database file
-const DB_FILE = path.join(__dirname, 'data', 'tickets.json');
-
-// Ensure data directory exists
-if (!fs.existsSync(path.join(__dirname, 'data'))) {
-    fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
-}
-
-// Initialize database
-function initDB() {
-    if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ tickets: [] }, null, 2));
+// Firebase Configuration
+if (process.env.FIREBASE_CONFIG) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log('✅ Connected to Firebase');
+    } catch (error) {
+        console.error('❌ Firebase config error:', error);
     }
 }
-initDB();
 
-// Read tickets from database
-function getTickets() {
-    const data = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(data).tickets;
-}
-
-// Save ticket to database
-function saveTicket(ticket) {
-    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    data.tickets.unshift(ticket);
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
+const db = admin.apps.length ? admin.firestore() : null;
 
 // Middleware
 app.use(cors());
@@ -120,22 +106,25 @@ function generateTicketId() {
 function formatTicketMessage(ticket) {
     const now = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh' });
 
-    return `🎫 *بلاغ جديد*
+    return `🤖 *نظام البلاغات الآلي*
+
+━━━━━━━━━━━━━━━━━━━━━
+🎫 *بلاغ جديد وارد*
+━━━━━━━━━━━━━━━━━━━━━
 
 📋 *رقم التذكرة:* ${ticket.ticketId}
-👤 *الاسم:* ${ticket.name}
-📧 *البريد:* ${ticket.email || 'غير محدد'}
+
+👤 *العميل:* ${ticket.name}
 📱 *الجوال:* ${ticket.phone || 'غير محدد'}
-📂 *نوع البلاغ:* ${ticket.category}
+📧 *البريد:* ${ticket.email || 'غير محدد'}
+
+📂 *النوع:* ${ticket.category}
 ⚡ *الأولوية:* ${ticket.priority}
 
-📝 *العنوان:*
-${ticket.subject}
-
-📄 *التفاصيل:*
+📝 *المشكلة:*
 ${ticket.description}
 
-🕐 *التاريخ:* ${now}
+🕐 *الوقت:* ${now}
 ━━━━━━━━━━━━━━━━━━━━━`;
 }
 
@@ -153,7 +142,7 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         }
 
         // Create ticket object
-        const ticket = {
+        const ticketData = {
             ticketId: generateTicketId(),
             name,
             email: email || '',
@@ -166,13 +155,15 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
             createdAt: new Date().toISOString()
         };
 
-        // Save to database
-        saveTicket(ticket);
+        // Save to Firebase
+        if (db) {
+            await db.collection('tickets').doc(ticketData.ticketId).set(ticketData);
+        }
 
         // Send to WhatsApp if configured
         if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID) {
             try {
-                const whatsappMessage = formatTicketMessage(ticket);
+                const whatsappMessage = formatTicketMessage(ticketData);
                 await sendToWhatsApp(whatsappMessage);
             } catch (whatsappError) {
                 console.error('WhatsApp send failed:', whatsappError);
@@ -183,7 +174,7 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         res.json({
             success: true,
             message: 'تم إرسال البلاغ بنجاح',
-            ticketId: ticket.ticketId
+            ticketId: ticketData.ticketId
         });
 
     } catch (error) {
@@ -196,9 +187,15 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
 });
 
 // API Route - Get All Tickets (Admin only)
-app.get('/api/tickets', authenticateAdmin, (req, res) => {
+app.get('/api/tickets', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = getTickets();
+        if (!db) {
+            return res.json({ success: true, count: 0, tickets: [] });
+        }
+
+        const snapshot = await db.collection('tickets').orderBy('createdAt', 'desc').get();
+        const tickets = snapshot.docs.map(doc => doc.data());
+
         res.json({
             success: true,
             count: tickets.length,
@@ -213,12 +210,15 @@ app.get('/api/tickets', authenticateAdmin, (req, res) => {
 });
 
 // API Route - Get Ticket by ID (Admin only)
-app.get('/api/tickets/:id', authenticateAdmin, (req, res) => {
+app.get('/api/tickets/:id', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = getTickets();
-        const ticket = tickets.find(t => t.ticketId === req.params.id);
+        if (!db) {
+            return res.status(404).json({ success: false, message: 'التذكرة غير موجودة' });
+        }
 
-        if (!ticket) {
+        const doc = await db.collection('tickets').doc(req.params.id).get();
+
+        if (!doc.exists) {
             return res.status(404).json({
                 success: false,
                 message: 'التذكرة غير موجودة'
@@ -227,7 +227,7 @@ app.get('/api/tickets/:id', authenticateAdmin, (req, res) => {
 
         res.json({
             success: true,
-            ticket
+            ticket: doc.data()
         });
     } catch (error) {
         res.status(500).json({
@@ -238,24 +238,28 @@ app.get('/api/tickets/:id', authenticateAdmin, (req, res) => {
 });
 
 // API Route - Update Ticket Status (Admin only)
-app.patch('/api/tickets/:id', authenticateAdmin, (req, res) => {
+app.patch('/api/tickets/:id', authenticateAdmin, async (req, res) => {
     try {
-        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        const index = data.tickets.findIndex(t => t.ticketId === req.params.id);
+        if (!db) {
+            return res.status(404).json({ success: false, message: 'التذكرة غير موجودة' });
+        }
 
-        if (index === -1) {
+        const docRef = db.collection('tickets').doc(req.params.id);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
             return res.status(404).json({
                 success: false,
                 message: 'التذكرة غير موجودة'
             });
         }
 
-        data.tickets[index] = { ...data.tickets[index], ...req.body };
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+        await docRef.update(req.body);
+        const updated = await docRef.get();
 
         res.json({
             success: true,
-            ticket: data.tickets[index]
+            ticket: updated.data()
         });
     } catch (error) {
         res.status(500).json({
@@ -266,9 +270,17 @@ app.patch('/api/tickets/:id', authenticateAdmin, (req, res) => {
 });
 
 // API Route - Get Statistics (Admin only)
-app.get('/api/stats', authenticateAdmin, (req, res) => {
+app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = getTickets();
+        if (!db) {
+            return res.json({
+                success: true,
+                stats: { total: 0, new: 0, inProgress: 0, resolved: 0, byCategory: {}, byPriority: {} }
+            });
+        }
+
+        const snapshot = await db.collection('tickets').get();
+        const tickets = snapshot.docs.map(doc => doc.data());
 
         const stats = {
             total: tickets.length,
@@ -300,6 +312,7 @@ app.get('/api/stats', authenticateAdmin, (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
+        firebase: !!db,
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
     });
 });
@@ -320,4 +333,5 @@ app.listen(PORT, () => {
     console.log(`🔑 API Key: ${API_KEY}`);
     console.log(`👤 Admin Key: ${ADMIN_KEY}`);
     console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
+    console.log(`🔥 Firebase: ${db ? 'Connected' : 'Not configured'}`);
 });
