@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,9 @@ const ADMIN_KEY = process.env.ADMIN_KEY || 'admin123';
 const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID;
 const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN;
 const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
+
+// OpenAI Configuration
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 // API Key Authentication Middleware
 function authenticateAPI(req, res, next) {
@@ -112,16 +116,56 @@ async function getNextTicketNumber() {
     return newNumber;
 }
 
-// Format ticket message for WhatsApp (مختصرة)
+// Analyze ticket with OpenAI
+async function analyzeTicketWithAI(ticketData) {
+    if (!openai) return ticketData;
+
+    try {
+        const prompt = `أنت مساعد لتحسين بيانات البلاغات. حسّن النص التالي واجعله أوضح وأكثر احترافية.
+لا تضف معلومات جديدة، فقط حسّن الصياغة.
+إذا كان الحقل فارغاً اتركه فارغاً.
+
+العنوان: ${ticketData.subject || ''}
+التفاصيل: ${ticketData.description || ''}
+
+أعد الرد بصيغة JSON فقط:
+{"subject": "العنوان المحسن", "description": "التفاصيل المحسنة", "suggestedPriority": "عاجل/عالي/متوسط/منخفض"}`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 500,
+            temperature: 0.3
+        });
+
+        const result = JSON.parse(response.choices[0].message.content);
+
+        return {
+            ...ticketData,
+            subject: result.subject || ticketData.subject,
+            description: result.description || ticketData.description,
+            priority: ticketData.priority || result.suggestedPriority || 'متوسط',
+            aiProcessed: true
+        };
+    } catch (error) {
+        console.error('OpenAI Error:', error.message);
+        return ticketData;
+    }
+}
+
+// Format ticket message for WhatsApp (تخطي الحقول الفارغة)
 function formatTicketMessage(ticket) {
-    return `🎫 *بلاغ #${ticket.ticketNumber}*
-👤 ${ticket.name}
-📱 ${ticket.phone}
-📧 ${ticket.email}
-📂 ${ticket.category}
-⚡ ${ticket.priority}
-📝 ${ticket.subject}
-💬 ${ticket.description}`;
+    let message = `🎫 *بلاغ #${ticket.ticketNumber}*`;
+
+    if (ticket.name) message += `\n👤 ${ticket.name}`;
+    if (ticket.phone) message += `\n📱 ${ticket.phone}`;
+    if (ticket.email) message += `\n📧 ${ticket.email}`;
+    if (ticket.category) message += `\n📂 ${ticket.category}`;
+    if (ticket.priority) message += `\n⚡ ${ticket.priority}`;
+    if (ticket.subject) message += `\n📝 ${ticket.subject}`;
+    if (ticket.description) message += `\n💬 ${ticket.description}`;
+
+    return message;
 }
 
 // API Route - Submit Ticket (Protected with API Key)
@@ -129,11 +173,11 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
     try {
         const { name, email, phone, category, priority, subject, description } = req.body;
 
-        // Validation
-        if (!name || !email || !phone || !category || !subject || !description) {
+        // Validation - فقط الاسم والوصف مطلوبين
+        if (!name || !description) {
             return res.status(400).json({
                 success: false,
-                message: 'الرجاء تعبئة جميع الحقول المطلوبة (الاسم، البريد، الجوال، النوع، العنوان، التفاصيل)'
+                message: 'الرجاء تعبئة الحقول المطلوبة (الاسم والتفاصيل على الأقل)'
             });
         }
 
@@ -141,19 +185,24 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         const ticketNumber = await getNextTicketNumber();
 
         // Create ticket object
-        const ticketData = {
+        let ticketData = {
             ticketId: `TKT-${ticketNumber}`,
             ticketNumber,
-            name,
+            name: name || '',
             email: email || '',
             phone: phone || '',
-            category,
-            priority: priority || 'متوسط',
-            subject,
-            description,
+            category: category || '',
+            priority: priority || '',
+            subject: subject || '',
+            description: description || '',
             status: 'جديد',
             createdAt: new Date().toISOString()
         };
+
+        // Analyze with OpenAI if configured
+        if (openai) {
+            ticketData = await analyzeTicketWithAI(ticketData);
+        }
 
         // Save to Firebase
         if (db) {
@@ -313,7 +362,8 @@ app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         firebase: !!db,
-        whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
+        whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN),
+        openai: !!openai
     });
 });
 
@@ -334,4 +384,5 @@ app.listen(PORT, () => {
     console.log(`👤 Admin Key: ${ADMIN_KEY}`);
     console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
     console.log(`🔥 Firebase: ${db ? 'Connected' : 'Not configured'}`);
+    console.log(`🤖 OpenAI: ${openai ? 'Configured' : 'Not configured'}`);
 });
