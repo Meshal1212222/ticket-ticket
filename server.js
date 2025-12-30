@@ -3,39 +3,35 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-const fs = require('fs');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Database file
-const DB_FILE = path.join(__dirname, 'data', 'tickets.json');
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// Ensure data directory exists
-if (!fs.existsSync(path.join(__dirname, 'data'))) {
-    fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+if (MONGODB_URI) {
+    mongoose.connect(MONGODB_URI)
+        .then(() => console.log('✅ Connected to MongoDB'))
+        .catch(err => console.error('❌ MongoDB connection error:', err));
 }
 
-// Initialize database
-function initDB() {
-    if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ tickets: [] }, null, 2));
-    }
-}
-initDB();
+// Ticket Schema
+const ticketSchema = new mongoose.Schema({
+    ticketId: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    email: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    category: { type: String, required: true },
+    priority: { type: String, default: 'متوسط' },
+    subject: { type: String, required: true },
+    description: { type: String, required: true },
+    status: { type: String, default: 'جديد' },
+    createdAt: { type: Date, default: Date.now }
+});
 
-// Read tickets from database
-function getTickets() {
-    const data = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(data).tickets;
-}
-
-// Save ticket to database
-function saveTicket(ticket) {
-    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    data.tickets.unshift(ticket);
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
+const Ticket = mongoose.model('Ticket', ticketSchema);
 
 // Middleware
 app.use(cors());
@@ -120,22 +116,25 @@ function generateTicketId() {
 function formatTicketMessage(ticket) {
     const now = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh' });
 
-    return `🎫 *بلاغ جديد*
+    return `🤖 *نظام البلاغات الآلي*
+
+━━━━━━━━━━━━━━━━━━━━━
+🎫 *بلاغ جديد وارد*
+━━━━━━━━━━━━━━━━━━━━━
 
 📋 *رقم التذكرة:* ${ticket.ticketId}
-👤 *الاسم:* ${ticket.name}
-📧 *البريد:* ${ticket.email || 'غير محدد'}
+
+👤 *العميل:* ${ticket.name}
 📱 *الجوال:* ${ticket.phone || 'غير محدد'}
-📂 *نوع البلاغ:* ${ticket.category}
+📧 *البريد:* ${ticket.email || 'غير محدد'}
+
+📂 *النوع:* ${ticket.category}
 ⚡ *الأولوية:* ${ticket.priority}
 
-📝 *العنوان:*
-${ticket.subject}
-
-📄 *التفاصيل:*
+📝 *المشكلة:*
 ${ticket.description}
 
-🕐 *التاريخ:* ${now}
+🕐 *الوقت:* ${now}
 ━━━━━━━━━━━━━━━━━━━━━`;
 }
 
@@ -153,7 +152,7 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         }
 
         // Create ticket object
-        const ticket = {
+        const ticketData = {
             ticketId: generateTicketId(),
             name,
             email: email || '',
@@ -163,16 +162,17 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
             subject,
             description,
             status: 'جديد',
-            createdAt: new Date().toISOString()
+            createdAt: new Date()
         };
 
-        // Save to database
-        saveTicket(ticket);
+        // Save to MongoDB
+        const ticket = new Ticket(ticketData);
+        await ticket.save();
 
         // Send to WhatsApp if configured
         if (ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN && WHATSAPP_GROUP_ID) {
             try {
-                const whatsappMessage = formatTicketMessage(ticket);
+                const whatsappMessage = formatTicketMessage(ticketData);
                 await sendToWhatsApp(whatsappMessage);
             } catch (whatsappError) {
                 console.error('WhatsApp send failed:', whatsappError);
@@ -183,7 +183,7 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
         res.json({
             success: true,
             message: 'تم إرسال البلاغ بنجاح',
-            ticketId: ticket.ticketId
+            ticketId: ticketData.ticketId
         });
 
     } catch (error) {
@@ -196,9 +196,9 @@ app.post('/api/ticket', authenticateAPI, async (req, res) => {
 });
 
 // API Route - Get All Tickets (Admin only)
-app.get('/api/tickets', authenticateAdmin, (req, res) => {
+app.get('/api/tickets', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = getTickets();
+        const tickets = await Ticket.find().sort({ createdAt: -1 });
         res.json({
             success: true,
             count: tickets.length,
@@ -213,10 +213,9 @@ app.get('/api/tickets', authenticateAdmin, (req, res) => {
 });
 
 // API Route - Get Ticket by ID (Admin only)
-app.get('/api/tickets/:id', authenticateAdmin, (req, res) => {
+app.get('/api/tickets/:id', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = getTickets();
-        const ticket = tickets.find(t => t.ticketId === req.params.id);
+        const ticket = await Ticket.findOne({ ticketId: req.params.id });
 
         if (!ticket) {
             return res.status(404).json({
@@ -238,24 +237,24 @@ app.get('/api/tickets/:id', authenticateAdmin, (req, res) => {
 });
 
 // API Route - Update Ticket Status (Admin only)
-app.patch('/api/tickets/:id', authenticateAdmin, (req, res) => {
+app.patch('/api/tickets/:id', authenticateAdmin, async (req, res) => {
     try {
-        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        const index = data.tickets.findIndex(t => t.ticketId === req.params.id);
+        const ticket = await Ticket.findOneAndUpdate(
+            { ticketId: req.params.id },
+            req.body,
+            { new: true }
+        );
 
-        if (index === -1) {
+        if (!ticket) {
             return res.status(404).json({
                 success: false,
                 message: 'التذكرة غير موجودة'
             });
         }
 
-        data.tickets[index] = { ...data.tickets[index], ...req.body };
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-
         res.json({
             success: true,
-            ticket: data.tickets[index]
+            ticket
         });
     } catch (error) {
         res.status(500).json({
@@ -266,9 +265,9 @@ app.patch('/api/tickets/:id', authenticateAdmin, (req, res) => {
 });
 
 // API Route - Get Statistics (Admin only)
-app.get('/api/stats', authenticateAdmin, (req, res) => {
+app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
-        const tickets = getTickets();
+        const tickets = await Ticket.find();
 
         const stats = {
             total: tickets.length,
@@ -300,6 +299,7 @@ app.get('/api/stats', authenticateAdmin, (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
+        mongodb: mongoose.connection.readyState === 1,
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
     });
 });
@@ -320,4 +320,5 @@ app.listen(PORT, () => {
     console.log(`🔑 API Key: ${API_KEY}`);
     console.log(`👤 Admin Key: ${ADMIN_KEY}`);
     console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
+    console.log(`🗄️ MongoDB: ${MONGODB_URI ? 'Configured' : 'Not configured'}`);
 });
