@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الواتساب - قولدن تيكت</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 20px; font-size: 2em; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .stat-card h3 { color: #075e54; font-size: 2.5em; margin-bottom: 5px; }
+        .stat-card p { color: #666; font-size: 0.9em; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 250px);
+        }
+        .chats-list {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .chats-header {
+            background: #075e54;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+        .chats-container { height: calc(100% - 50px); overflow-y: auto; }
+        .chat-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .chat-item:hover, .chat-item.active { background: #dcf8c6; }
+        .chat-item h4 { color: #333; margin-bottom: 5px; }
+        .chat-item p { color: #666; font-size: 0.85em; }
+        .chat-item .badge {
+            background: #25d366;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            float: left;
+        }
+
+        .messages-panel {
+            background: #e5ddd5;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        .messages-header {
+            background: #075e54;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .message {
+            max-width: 70%;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            clear: both;
+        }
+        .message.sent {
+            background: #dcf8c6;
+            float: right;
+            border-bottom-right-radius: 0;
+        }
+        .message.received {
+            background: white;
+            float: left;
+            border-bottom-left-radius: 0;
+        }
+        .message .time { font-size: 0.7em; color: #999; margin-top: 5px; }
+        .message .text { white-space: pre-wrap; word-break: break-word; }
+
+        .loading { text-align: center; padding: 50px; color: #666; }
+        .clearfix::after { content: ''; display: table; clear: both; }
+
+        .employee-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .employee-card h4 { color: #075e54; margin-bottom: 15px; font-size: 1.3em; }
+        .response-item {
+            background: #f5f5f5;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-right: 4px solid #25d366;
+        }
+        .response-item .time { color: #999; font-size: 0.8em; }
+        .response-item .text { margin-top: 8px; line-height: 1.6; }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .tab-btn.active, .tab-btn:hover { background: white; color: #075e54; }
+
+        .no-responses {
+            color: #e74c3c;
+            padding: 20px;
+            text-align: center;
+            background: #ffeaea;
+            border-radius: 8px;
+        }
+
+        .send-box {
+            display: flex;
+            padding: 10px;
+            background: #f0f0f0;
+            gap: 10px;
+        }
+        .send-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+        }
+        .send-box button {
+            background: #25d366;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        .send-box button:hover { background: #128c7e; }
+        .send-box button:disabled { background: #ccc; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; height: auto; }
+            .chats-list { max-height: 300px; }
+            .messages-panel { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 لوحة تحكم الواتساب - قولدن تيكت</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('stats')">📊 الإحصائيات</button>
+            <button class="tab-btn" onclick="showTab('chats')">💬 المحادثات</button>
+            <button class="tab-btn" onclick="showTab('employees')">👥 ردود الموظفين</button>
+        </div>
+
+        <div id="stats-tab">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="total-msgs">-</h3>
+                    <p>إجمالي الرسائل</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="total-chats">-</h3>
+                    <p>المحادثات</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="today-msgs">-</h3>
+                    <p>رسائل اليوم</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="conn-status">-</h3>
+                    <p>حالة الاتصال</p>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="emp-stats"></div>
+        </div>
+
+        <div id="chats-tab" style="display:none;">
+            <div class="main-grid">
+                <div class="chats-list">
+                    <div class="chats-header">💬 المحادثات</div>
+                    <div class="chats-container" id="chats-list"></div>
+                </div>
+                <div class="messages-panel">
+                    <div class="messages-header" id="msg-header">اختر محادثة</div>
+                    <div class="messages-container clearfix" id="msg-container">
+                        <p class="loading">اختر محادثة من القائمة</p>
+                    </div>
+                    <div class="send-box" id="send-box" style="display:none;">
+                        <input type="text" id="msg-input" placeholder="اكتب رسالتك..." onkeypress="if(event.key==='Enter')sendMessage()">
+                        <button onclick="sendMessage()">إرسال 📤</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="employees-tab" style="display:none;" id="emp-details"></div>
+    </div>
+
+    <script>
+        const API = 'https://api.ultramsg.com/instance100568';
+        const TOKEN = 'e4e2cwhdsmxmjycg';
+
+        const EMPLOYEES = {
+            '966556092622@c.us': 'Khaled Abdullah',
+            '966550132910@c.us': 'امل الزهراني',
+            '966532263391@c.us': 'ماجد المطيري'
+        };
+
+        let currentChatId = null;
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('stats-tab').style.display = tab === 'stats' ? 'block' : 'none';
+            document.getElementById('chats-tab').style.display = tab === 'chats' ? 'block' : 'none';
+            document.getElementById('employees-tab').style.display = tab === 'employees' ? 'block' : 'none';
+            if (tab === 'employees') loadEmployeeDetails();
+        }
+
+        async function api(endpoint) {
+            const r = await fetch(`${API}/${endpoint}${endpoint.includes('?') ? '&' : '?'}token=${TOKEN}`);
+            return r.json();
+        }
+
+        async function loadStats() {
+            try {
+                const status = await api('instance/status');
+                document.getElementById('conn-status').textContent =
+                    status.status?.accountStatus?.status === 'authenticated' ? '✅ متصل' : '❌ غير متصل';
+
+                const msgs = await api('messages?limit=1');
+                document.getElementById('total-msgs').textContent = msgs.total?.toLocaleString() || '0';
+
+                const chats = await api('chats');
+                document.getElementById('total-chats').textContent = chats.length || '0';
+
+                const recent = await api('messages?limit=100');
+                const today = new Date().toDateString();
+                const todayCount = recent.messages?.filter(m =>
+                    new Date(m.created_at * 1000).toDateString() === today
+                ).length || 0;
+                document.getElementById('today-msgs').textContent = todayCount;
+
+                // Employee stats
+                let empHtml = '';
+                for (const [id, name] of Object.entries(EMPLOYEES)) {
+                    const chatMsgs = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${id}&limit=100`).then(r => r.json());
+                    const sent = chatMsgs.filter(m => m.fromMe).length;
+                    const received = chatMsgs.filter(m => !m.fromMe).length;
+
+                    empHtml += `
+                        <div class="stat-card">
+                            <h3 style="font-size:1.5em">${name}</h3>
+                            <p>📤 مُرسلة: ${sent} | 📥 ردود: <span style="color:${received > 0 ? '#25d366' : '#e74c3c'}">${received}</span></p>
+                            <p>نسبة التفاعل: ${sent > 0 ? Math.round(received/sent*100) : 0}%</p>
+                        </div>
+                    `;
+                }
+                document.getElementById('emp-stats').innerHTML = empHtml;
+
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadChats() {
+            try {
+                const chats = await api('chats');
+                let html = '';
+                chats.forEach(c => {
+                    const name = EMPLOYEES[c.id] || c.name || c.id.replace(/@.+/, '');
+                    const isEmp = EMPLOYEES[c.id];
+                    html += `
+                        <div class="chat-item" onclick="loadMessages('${c.id}', '${name}')">
+                            <h4>${name}</h4>
+                            <p>${c.id.replace(/@.+/, '')}</p>
+                            ${isEmp ? '<span class="badge">موظف</span>' : ''}
+                        </div>
+                    `;
+                });
+                document.getElementById('chats-list').innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadMessages(chatId, name) {
+            currentChatId = chatId;
+            document.getElementById('msg-header').textContent = name;
+            document.getElementById('msg-container').innerHTML = '<p class="loading">جاري التحميل...</p>';
+            document.getElementById('send-box').style.display = 'flex';
+
+            try {
+                const msgs = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${chatId}&limit=100`).then(r => r.json());
+                let html = '';
+                msgs.reverse().forEach(m => {
+                    const time = new Date(m.timestamp * 1000).toLocaleString('ar-SA');
+                    html += `
+                        <div class="message ${m.fromMe ? 'sent' : 'received'}">
+                            <div class="text">${m.body || '[وسائط]'}</div>
+                            <div class="time">${time}</div>
+                        </div>
+                    `;
+                });
+                document.getElementById('msg-container').innerHTML = html || '<p class="loading">لا توجد رسائل</p>';
+                document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
+            } catch(e) { console.error(e); }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const message = input.value.trim();
+            if (!message || !currentChatId) return;
+
+            const btn = document.querySelector('.send-box button');
+            btn.disabled = true;
+            btn.textContent = 'جاري الإرسال...';
+
+            try {
+                const response = await fetch(`${API}/messages/chat?token=${TOKEN}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: currentChatId.replace('@c.us', '').replace('@g.us', ''),
+                        body: message
+                    })
+                });
+                const result = await response.json();
+
+                if (result.sent) {
+                    input.value = '';
+                    // Add message to UI immediately
+                    const container = document.getElementById('msg-container');
+                    const time = new Date().toLocaleString('ar-SA');
+                    container.innerHTML += `
+                        <div class="message sent">
+                            <div class="text">${message}</div>
+                            <div class="time">${time} ✓</div>
+                        </div>
+                    `;
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    alert('فشل الإرسال: ' + (result.error || 'خطأ غير معروف'));
+                }
+            } catch(e) {
+                alert('خطأ في الإرسال');
+                console.error(e);
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'إرسال 📤';
+        }
+
+        async function loadEmployeeDetails() {
+            const container = document.getElementById('employees-tab');
+            let html = '';
+
+            for (const [id, name] of Object.entries(EMPLOYEES)) {
+                const msgs = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${id}&limit=50`).then(r => r.json());
+                const responses = msgs.filter(m => !m.fromMe);
+
+                html += `<div class="employee-card"><h4>👤 ${name} (${id.replace('@c.us', '')})</h4>`;
+
+                if (responses.length > 0) {
+                    html += `<p style="color:#25d366;margin-bottom:10px;">✅ ${responses.length} رد</p>`;
+                    responses.slice(0, 10).forEach(m => {
+                        const time = new Date(m.timestamp * 1000).toLocaleString('ar-SA');
+                        html += `
+                            <div class="response-item">
+                                <div class="time">${time}</div>
+                                <div class="text">${m.body?.substring(0, 300) || '[وسائط]'}${m.body?.length > 300 ? '...' : ''}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<div class="no-responses">❌ لا توجد ردود من هذا الموظف</div>';
+                }
+
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        loadStats();
+        loadChats();
+    </script>
+</body>
+</html>
