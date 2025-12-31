@@ -399,13 +399,129 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
     }
 });
 
+// ==================== WEBHOOK للرسائل الواردة ====================
+
+// Ultra Msg Webhook - استقبال الرسائل لحظياً
+app.post('/webhook/ultramsg', async (req, res) => {
+    try {
+        const data = req.body;
+        console.log('📨 Webhook received:', JSON.stringify(data).substring(0, 200));
+
+        // التحقق من نوع الـ webhook
+        if (data.event_type === 'message_received' || data.data) {
+            const message = data.data || data;
+
+            // حفظ الرسالة في Firebase
+            if (db) {
+                const messageDoc = {
+                    messageId: message.id || `msg_${Date.now()}`,
+                    from: message.from || message.sender,
+                    to: message.to,
+                    body: message.body || '',
+                    type: message.type || 'chat',
+                    timestamp: message.timestamp ? new Date(message.timestamp * 1000) : new Date(),
+                    fromMe: message.fromMe || false,
+                    chatId: message.from || message.chatId,
+                    // معلومات الوسائط
+                    hasMedia: ['image', 'video', 'audio', 'ptt', 'document', 'sticker'].includes(message.type),
+                    media: message.media || null,
+                    mimetype: message.mimetype || null,
+                    filename: message.filename || null,
+                    // معلومات إضافية
+                    pushName: message.pushName || message.notifyName || '',
+                    isGroup: message.isGroup || (message.from && message.from.includes('@g.us')),
+                    receivedAt: new Date().toISOString()
+                };
+
+                await db.collection('whatsapp_messages').add(messageDoc);
+                console.log('✅ Message saved to Firebase');
+            }
+        }
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('❌ Webhook error:', error);
+        res.status(200).json({ success: false, error: error.message });
+    }
+});
+
+// API لجلب الرسائل المحفوظة من Firebase
+app.get('/api/messages', authenticateAdmin, async (req, res) => {
+    try {
+        if (!db) {
+            return res.json({ success: true, messages: [] });
+        }
+
+        const chatId = req.query.chatId;
+        const limit = parseInt(req.query.limit) || 100;
+
+        let query = db.collection('whatsapp_messages')
+            .orderBy('timestamp', 'desc')
+            .limit(limit);
+
+        if (chatId) {
+            query = db.collection('whatsapp_messages')
+                .where('chatId', '==', chatId)
+                .orderBy('timestamp', 'desc')
+                .limit(limit);
+        }
+
+        const snapshot = await query.get();
+        const messages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp
+        }));
+
+        res.json({ success: true, count: messages.length, messages });
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// API لجلب المحادثات الفريدة
+app.get('/api/chats', authenticateAdmin, async (req, res) => {
+    try {
+        if (!db) {
+            return res.json({ success: true, chats: [] });
+        }
+
+        const snapshot = await db.collection('whatsapp_messages')
+            .orderBy('timestamp', 'desc')
+            .limit(1000)
+            .get();
+
+        // تجميع المحادثات الفريدة
+        const chatsMap = new Map();
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const chatId = data.chatId;
+            if (chatId && !chatsMap.has(chatId)) {
+                chatsMap.set(chatId, {
+                    id: chatId,
+                    name: data.pushName || chatId.replace('@c.us', '').replace('@g.us', ''),
+                    lastMessage: data.body,
+                    lastTime: data.timestamp,
+                    isGroup: data.isGroup
+                });
+            }
+        });
+
+        res.json({ success: true, chats: Array.from(chatsMap.values()) });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         firebase: !!db,
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN),
-        openai: !!openai
+        openai: !!openai,
+        webhook: 'https://ticket-ticket-production.up.railway.app/webhook/ultramsg'
     });
 });
 
