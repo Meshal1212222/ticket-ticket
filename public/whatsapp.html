@@ -379,12 +379,14 @@
             scroll-behavior: auto;
             will-change: scroll-position;
             touch-action: pan-y;
+            display: flex;
+            flex-direction: column;
         }
 
         .message {
             max-width: 80%;
             margin-bottom: 3px;
-            clear: both;
+            display: flex;
         }
 
         .message-content {
@@ -396,7 +398,7 @@
         }
 
         .message.sent {
-            float: left;
+            align-self: flex-start;
         }
 
         .message.sent .message-content {
@@ -406,7 +408,7 @@
         }
 
         .message.received {
-            float: right;
+            align-self: flex-end;
         }
 
         .message.received .message-content {
@@ -439,7 +441,7 @@
         .date-divider {
             text-align: center;
             margin: 15px 0;
-            clear: both;
+            align-self: center;
         }
 
         .date-divider span {
@@ -740,7 +742,7 @@
                     <span>⋮</span>
                 </div>
             </div>
-            <div class="messages-area clearfix" id="messages-area">
+            <div class="messages-area" id="messages-area">
                 <div class="empty-state">
                     <h3 style="font-size:3em;margin-bottom:20px;">💬</h3>
                     <p>اختر محادثة للبدء</p>
@@ -954,7 +956,10 @@
             let html = '';
             let lastDate = '';
 
-            messages.reverse().forEach(msg => {
+            // ترتيب الرسائل من الأقدم للأحدث (الأقدم في الأعلى)
+            const sortedMessages = [...messages].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+            sortedMessages.forEach(msg => {
                 const date = new Date(msg.timestamp * 1000);
                 const dateStr = date.toLocaleDateString('ar-SA');
                 const timeStr = date.toLocaleTimeString('ar-SA', {hour: '2-digit', minute: '2-digit'});
