@@ -419,6 +419,11 @@ app.get('/archive', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'archive.html'));
 });
 
+// Serve WhatsApp dashboard
+app.get('/whatsapp', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'whatsapp.html'));
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
