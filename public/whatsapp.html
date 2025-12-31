@@ -447,9 +447,10 @@
             </div>
 
             <div class="filter-tabs">
-                <button class="filter-tab active">الكل</button>
-                <button class="filter-tab">غير مقروء</button>
-                <button class="filter-tab">المجموعات</button>
+                <button class="filter-tab active" onclick="setFilter('all')">الكل</button>
+                <button class="filter-tab" onclick="setFilter('groups')">المجموعات</button>
+                <button class="filter-tab" onclick="showAllMessages('received')">📥 الوارد</button>
+                <button class="filter-tab" onclick="showAllMessages('sent')">📤 الصادر</button>
             </div>
 
             <div class="chats-list" id="chats-list">
@@ -521,6 +522,80 @@
                 return name.includes(query);
             });
             renderChats(filtered);
+        }
+
+        function setFilter(type) {
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (type === 'all') {
+                renderChats(allChats);
+            } else if (type === 'groups') {
+                const groups = allChats.filter(c => c.id.includes('@g.us'));
+                renderChats(groups);
+            }
+        }
+
+        async function showAllMessages(type) {
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const chatArea = document.getElementById('chat-area');
+            chatArea.innerHTML = `
+                <div class="chat-header">
+                    <div class="chat-avatar">${type === 'sent' ? '📤' : '📥'}</div>
+                    <div class="chat-header-info">
+                        <div class="chat-header-name">${type === 'sent' ? 'الرسائل الصادرة' : 'الرسائل الواردة'}</div>
+                        <div class="chat-header-status">جاري التحميل...</div>
+                    </div>
+                </div>
+                <div class="messages-area clearfix" id="messages-area">
+                    <div class="loading">جاري جلب ${type === 'sent' ? 'الصادر' : 'الوارد'}...</div>
+                </div>
+            `;
+
+            try {
+                // جلب آخر 500 رسالة
+                const response = await fetch(`${API}/messages?token=${TOKEN}&limit=500`);
+                const data = await response.json();
+                const messages = data.messages || [];
+
+                // فلترة حسب النوع
+                const filtered = messages.filter(m => type === 'sent' ? m.fromMe : !m.fromMe);
+
+                document.querySelector('.chat-header-status').textContent = `${filtered.length} رسالة`;
+
+                let html = '';
+                let lastDate = '';
+
+                filtered.forEach(msg => {
+                    const date = new Date(msg.timestamp * 1000);
+                    const dateStr = date.toLocaleDateString('ar-SA');
+                    const timeStr = date.toLocaleTimeString('ar-SA', {hour: '2-digit', minute: '2-digit'});
+
+                    if (dateStr !== lastDate) {
+                        html += `<div class="date-divider"><span>${dateStr}</span></div>`;
+                        lastDate = dateStr;
+                    }
+
+                    const chatName = msg.chatName || msg.from?.replace('@c.us', '').replace('@g.us', '') || 'غير معروف';
+
+                    html += `
+                        <div class="message ${type === 'sent' ? 'sent' : 'received'}" style="max-width:90%;">
+                            <div class="message-content">
+                                <div style="font-size:0.75em;color:#00a884;margin-bottom:4px;">${chatName}</div>
+                                <div class="message-text">${escapeHtml(msg.body || '[وسائط]')}</div>
+                                <div class="message-time">${timeStr}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('messages-area').innerHTML = html || '<div class="loading">لا توجد رسائل</div>';
+            } catch(e) {
+                console.error(e);
+                document.getElementById('messages-area').innerHTML = '<div class="loading">خطأ في التحميل</div>';
+            }
         }
 
         async function openChat(chatId, name) {
