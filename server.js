@@ -405,40 +405,40 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
 app.post('/webhook/ultramsg', async (req, res) => {
     try {
         const data = req.body;
-        console.log('📨 Webhook received:', JSON.stringify(data).substring(0, 200));
+        console.log('📨 Webhook received:', JSON.stringify(data).substring(0, 500));
 
         // التحقق من نوع الـ webhook
-        if (data.event_type === 'message_received' || data.data) {
+        if (data.event_type === 'message_received' || data.data || data.from || data.body !== undefined) {
             const message = data.data || data;
 
             // حفظ الرسالة في Firebase
             if (db) {
                 const messageDoc = {
                     messageId: message.id || `msg_${Date.now()}`,
-                    from: message.from || message.sender,
-                    to: message.to,
+                    from: message.from || message.sender || '',
+                    to: message.to || '',
                     body: message.body || '',
                     type: message.type || 'chat',
                     timestamp: message.timestamp ? new Date(message.timestamp * 1000) : new Date(),
-                    fromMe: message.fromMe || false,
-                    chatId: message.from || message.chatId,
+                    fromMe: message.fromMe === true,
+                    chatId: message.from || message.chatId || message.sender || '',
                     // معلومات الوسائط
                     hasMedia: ['image', 'video', 'audio', 'ptt', 'document', 'sticker'].includes(message.type),
-                    media: message.media || null,
-                    mimetype: message.mimetype || null,
-                    filename: message.filename || null,
+                    media: message.media || '',
+                    mimetype: message.mimetype || '',
+                    filename: message.filename || '',
                     // معلومات إضافية
                     pushName: message.pushName || message.notifyName || '',
-                    isGroup: message.isGroup || (message.from && message.from.includes('@g.us')),
+                    isGroup: message.isGroup === true || (message.from && message.from.includes('@g.us')),
                     receivedAt: new Date().toISOString()
                 };
 
                 await db.collection('whatsapp_messages').add(messageDoc);
-                console.log('✅ Message saved to Firebase');
+                console.log('✅ Message saved to Firebase:', messageDoc.from, messageDoc.body.substring(0, 50));
             }
         }
 
-        res.status(200).json({ success: true });
+        res.status(200).json({ success: true, message: 'Webhook received' });
     } catch (error) {
         console.error('❌ Webhook error:', error);
         res.status(200).json({ success: false, error: error.message });
