@@ -525,6 +525,75 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Public endpoint للوسائط من Firebase (بدون authentication)
+app.get('/api/public/media', async (req, res) => {
+    try {
+        if (!db) {
+            return res.json({ success: true, messages: [] });
+        }
+
+        const chatId = req.query.chatId;
+        const limit = parseInt(req.query.limit) || 50;
+
+        let query = db.collection('whatsapp_messages')
+            .where('hasMedia', '==', true)
+            .orderBy('timestamp', 'desc')
+            .limit(limit);
+
+        if (chatId) {
+            query = db.collection('whatsapp_messages')
+                .where('chatId', '==', chatId)
+                .where('hasMedia', '==', true)
+                .orderBy('timestamp', 'desc')
+                .limit(limit);
+        }
+
+        const snapshot = await query.get();
+        const messages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            messageId: doc.data().messageId,
+            type: doc.data().type,
+            media: doc.data().media,
+            mimetype: doc.data().mimetype,
+            filename: doc.data().filename,
+            timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
+            from: doc.data().from,
+            body: doc.data().body
+        }));
+
+        res.json({ success: true, count: messages.length, messages });
+    } catch (error) {
+        console.error('Error fetching media:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Webhook logs - آخر الرسائل المستلمة
+app.get('/api/public/recent', async (req, res) => {
+    try {
+        if (!db) {
+            return res.json({ success: true, messages: [] });
+        }
+
+        const limit = parseInt(req.query.limit) || 20;
+
+        const snapshot = await db.collection('whatsapp_messages')
+            .orderBy('timestamp', 'desc')
+            .limit(limit)
+            .get();
+
+        const messages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp
+        }));
+
+        res.json({ success: true, count: messages.length, messages });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Serve frontend
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
