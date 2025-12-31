@@ -435,11 +435,11 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="icons">
+                    <span onclick="loadChats()" title="تحديث">🔄</span>
                     <span>📊</span>
-                    <span>➕</span>
                     <span>⋮</span>
                 </div>
-                <h2>الدردشات</h2>
+                <h2>الدردشات <span id="chat-count" style="font-size:0.6em;color:#00a884;"></span></h2>
             </div>
 
             <div class="search-box">
@@ -467,8 +467,14 @@
 
         async function loadChats() {
             try {
-                const response = await fetch(`${API}/chats?token=${TOKEN}`);
+                document.getElementById('chats-list').innerHTML = '<div class="loading">جاري تحميل المحادثات...</div>';
+
+                // جلب كل المحادثات بدون حد
+                const response = await fetch(`${API}/chats?token=${TOKEN}&limit=10000`);
                 allChats = await response.json();
+
+                console.log('Total chats loaded:', allChats.length);
+
                 renderChats(allChats);
             } catch(e) {
                 console.error('Error loading chats:', e);
@@ -478,6 +484,7 @@
 
         function renderChats(chats) {
             const container = document.getElementById('chats-list');
+            document.getElementById('chat-count').textContent = `(${allChats.length})`;
             let html = '';
 
             chats.forEach(chat => {
@@ -610,13 +617,14 @@
             btn.textContent = '⏳';
 
             try {
+                // للقروبات نستخدم الـ ID كامل، للأفراد نستخدم الرقم فقط
+                const isGroup = currentChat.includes('@g.us');
+                const to = isGroup ? currentChat : currentChat.replace('@c.us', '');
+
                 const response = await fetch(`${API}/messages/chat?token=${TOKEN}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        to: currentChat.replace('@c.us', '').replace('@g.us', ''),
-                        body: message
-                    })
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `to=${encodeURIComponent(to)}&body=${encodeURIComponent(message)}`
                 });
 
                 const result = await response.json();
