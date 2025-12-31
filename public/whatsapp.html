@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الواتساب - قولدن تيكت</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            color: #075e54;
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .chats-list {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .chats-header {
+            background: #075e54;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+
+        .chats-container {
+            height: calc(100% - 50px);
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-item:hover, .chat-item.active {
+            background: #dcf8c6;
+        }
+
+        .chat-item h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .chat-item p {
+            color: #666;
+            font-size: 0.85em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-item .badge {
+            background: #25d366;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            float: left;
+        }
+
+        .messages-panel {
+            background: #e5ddd5;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-header {
+            background: #075e54;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAG1BMVEXMzMzl5eXo6Oju7u7v7+/x8fHy8vL09PT29vYKLGzpAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAQklEQVQ4jWNgGAWjYBSMglFADGBiYGBiYGT4/x8mAGJBBJAFQBRYACaALACiYAIwAWQBqACKAIoAigCKAMkAIQEALhAH+n3N7sEAAAAASUVORK5CYII=');
+        }
+
+        .message {
+            max-width: 70%;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            position: relative;
+            clear: both;
+        }
+
+        .message.sent {
+            background: #dcf8c6;
+            float: right;
+            border-bottom-right-radius: 0;
+        }
+
+        .message.received {
+            background: white;
+            float: left;
+            border-bottom-left-radius: 0;
+        }
+
+        .message .time {
+            font-size: 0.7em;
+            color: #999;
+            margin-top: 5px;
+            text-align: left;
+        }
+
+        .message .text {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .employee-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .employee-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .employee-card h4 {
+            color: #075e54;
+            margin-bottom: 10px;
+        }
+
+        .employee-card .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .clearfix::after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background: white;
+            color: #075e54;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-row select, .filter-row input {
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: none;
+            font-size: 1em;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .chats-list {
+                max-height: 300px;
+            }
+
+            .messages-panel {
+                height: 500px;
+            }
+
+            .employee-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 لوحة تحكم الواتساب - قولدن تيكت</h1>
+
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="showTab('dashboard')">📊 الإحصائيات</button>
+            <button class="tab-btn" onclick="showTab('chats')">💬 المحادثات</button>
+            <button class="tab-btn" onclick="showTab('employees')">👥 الموظفين</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="total-messages">-</h3>
+                    <p>إجمالي الرسائل</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="total-chats">-</h3>
+                    <p>المحادثات</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="today-messages">-</h3>
+                    <p>رسائل اليوم</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="status">-</h3>
+                    <p>حالة الاتصال</p>
+                </div>
+            </div>
+
+            <div class="employee-stats" id="employee-stats">
+                <div class="loading">جاري تحميل إحصائيات الموظفين...</div>
+            </div>
+        </div>
+
+        <!-- Chats Tab -->
+        <div id="chats-tab" style="display: none;">
+            <div class="main-grid">
+                <div class="chats-list">
+                    <div class="chats-header">💬 المحادثات</div>
+                    <div class="chats-container" id="chats-container">
+                        <div class="loading">جاري التحميل...</div>
+                    </div>
+                </div>
+
+                <div class="messages-panel">
+                    <div class="messages-header" id="messages-header">اختر محادثة</div>
+                    <div class="messages-container clearfix" id="messages-container">
+                        <p style="text-align: center; color: #666; margin-top: 50px;">اختر محادثة من القائمة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="employees-tab" style="display: none;">
+            <div id="employees-details">
+                <div class="loading">جاري تحميل بيانات الموظفين...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const INSTANCE_ID = 'instance100568';
+        const TOKEN = 'e4e2cwhdsmxmjycg';
+        const API_BASE = `https://api.ultramsg.com/${INSTANCE_ID}`;
+
+        const EMPLOYEES = {
+            '966556092622@c.us': 'Khaled Abdullah',
+            '966550132910@c.us': 'امل الزهراني',
+            '966532263391@c.us': 'ماجد المطيري'
+        };
+
+        let allChats = [];
+        let currentChat = null;
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('dashboard-tab').style.display = tab === 'dashboard' ? 'block' : 'none';
+            document.getElementById('chats-tab').style.display = tab === 'chats' ? 'block' : 'none';
+            document.getElementById('employees-tab').style.display = tab === 'employees' ? 'block' : 'none';
+
+            if (tab === 'employees') loadEmployeesDetails();
+        }
+
+        async function fetchAPI(endpoint) {
+            const response = await fetch(`${API_BASE}/${endpoint}?token=${TOKEN}`);
+            return response.json();
+        }
+
+        async function loadDashboard() {
+            try {
+                // Status
+                const status = await fetchAPI('instance/status');
+                document.getElementById('status').textContent =
+                    status.status?.accountStatus?.status === 'authenticated' ? '✅ متصل' : '❌ غير متصل';
+
+                // Messages
+                const messages = await fetchAPI('messages&limit=1');
+                document.getElementById('total-messages').textContent = messages.total?.toLocaleString() || '0';
+
+                // Chats
+                const chats = await fetchAPI('chats');
+                allChats = chats;
+                document.getElementById('total-chats').textContent = chats.length || '0';
+
+                // Today messages
+                const todayMsgs = await fetchAPI('messages&limit=100');
+                const today = new Date().toDateString();
+                const todayCount = todayMsgs.messages?.filter(m =>
+                    new Date(m.created_at * 1000).toDateString() === today
+                ).length || 0;
+                document.getElementById('today-messages').textContent = todayCount;
+
+                // Load employee stats
+                await loadEmployeeStats();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function loadEmployeeStats() {
+            const container = document.getElementById('employee-stats');
+            let html = '';
+
+            for (const [chatId, name] of Object.entries(EMPLOYEES)) {
+                try {
+                    const messages = await fetch(`${API_BASE}/chats/messages?token=${TOKEN}&chatId=${chatId}&limit=100`)
+                        .then(r => r.json());
+
+                    const today = new Date();
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+
+                    let sent = 0, received = 0, todayCount = 0;
+
+                    messages.forEach(msg => {
+                        const msgDate = new Date(msg.timestamp * 1000);
+                        if (msg.fromMe) sent++;
+                        else received++;
+                        if (msgDate.toDateString() === today.toDateString()) todayCount++;
+                    });
+
+                    html += `
+                        <div class="employee-card">
+                            <h4>👤 ${name}</h4>
+                            <div class="stats-row">
+                                <span>الرسائل المستلمة:</span>
+                                <strong>${sent}</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>الردود:</span>
+                                <strong style="color: ${received > 0 ? '#25d366' : '#e74c3c'}">${received}</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>نسبة التفاعل:</span>
+                                <strong>${sent > 0 ? Math.round(received/sent*100) : 0}%</strong>
+                            </div>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.error('Error loading employee:', name, e);
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function loadChats() {
+            const container = document.getElementById('chats-container');
+
+            try {
+                const chats = await fetchAPI('chats');
+                allChats = chats;
+
+                let html = '';
+                chats.forEach(chat => {
+                    const name = EMPLOYEES[chat.id] || chat.name || chat.id.replace('@c.us', '').replace('@g.us', ' (قروب)');
+                    const isEmployee = EMPLOYEES[chat.id];
+
+                    html += `
+                        <div class="chat-item" onclick="loadMessages('${chat.id}', '${name}')">
+                            <h4>${name}</h4>
+                            <p>${chat.id}</p>
+                            ${isEmployee ? '<span class="badge">موظف</span>' : ''}
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<p style="padding: 20px; color: red;">خطأ في التحميل</p>';
+            }
+        }
+
+        async function loadMessages(chatId, name) {
+            currentChat = chatId;
+            document.getElementById('messages-header').textContent = name;
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '<div class="loading">جاري تحميل الرسائل...</div>';
+
+            // Update active state
+            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.chat-item').classList.add('active');
+
+            try {
+                const messages = await fetch(`${API_BASE}/chats/messages?token=${TOKEN}&chatId=${chatId}&limit=100`)
+                    .then(r => r.json());
+
+                let html = '';
+                messages.reverse().forEach(msg => {
+                    const time = new Date(msg.timestamp * 1000).toLocaleString('ar-SA');
+                    const type = msg.fromMe ? 'sent' : 'received';
+
+                    html += `
+                        <div class="message ${type}">
+                            <div class="text">${msg.body || '[وسائط]'}</div>
+                            <div class="time">${time}</div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html || '<p style="text-align: center; color: #666;">لا توجد رسائل</p>';
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                container.innerHTML = '<p style="text-align: center; color: red;">خطأ في تحميل الرسائل</p>';
+            }
+        }
+
+        async function loadEmployeesDetails() {
+            const container = document.getElementById('employees-details');
+            let html = '';
+
+            for (const [chatId, name] of Object.entries(EMPLOYEES)) {
+                try {
+                    const messages = await fetch(`${API_BASE}/chats/messages?token=${TOKEN}&chatId=${chatId}&limit=50`)
+                        .then(r => r.json());
+
+                    const received = messages.filter(m => !m.fromMe);
+
+                    html += `
+                        <div class="employee-card" style="margin-bottom: 20px;">
+                            <h4>👤 ${name} - ${chatId.replace('@c.us', '')}</h4>
+                            <h5 style="margin: 15px 0; color: #075e54;">آخر الردود (${received.length}):</h5>
+                    `;
+
+                    received.slice(0, 10).forEach(msg => {
+                        const time = new Date(msg.timestamp * 1000).toLocaleString('ar-SA');
+                        html += `
+                            <div style="background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 8px; border-right: 3px solid #25d366;">
+                                <small style="color: #999;">${time}</small>
+                                <p style="margin-top: 5px; white-space: pre-wrap;">${msg.body?.substring(0, 200) || '[وسائط]'}${msg.body?.length > 200 ? '...' : ''}</p>
+                            </div>
+                        `;
+                    });
+
+                    if (received.length === 0) {
+                        html += '<p style="color: #e74c3c; padding: 20px;">❌ لا توجد ردود</p>';
+                    }
+
+                    html += '</div>';
+                } catch (e) {
+                    console.error('Error:', e);
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Initialize
+        loadDashboard();
+        loadChats();
+    </script>
+</body>
+</html>
