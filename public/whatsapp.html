@@ -2,72 +2,85 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>واتساب - قولدن تيكت</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#075e54">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #111b21;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
         }
 
+        /* ==================== MOBILE FIRST DESIGN ==================== */
+
         .app-container {
             display: flex;
-            height: 100vh;
-            max-width: 1600px;
-            margin: 0 auto;
-            background: #111b21;
-        }
-
-        /* Right Sidebar - Chat List */
-        .sidebar {
-            width: 400px;
-            background: #111b21;
-            border-left: 1px solid #2a3942;
-            display: flex;
             flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #111b21;
         }
 
-        .sidebar-header {
-            padding: 10px 16px;
-            background: #202c33;
+        /* Main Header - WhatsApp Style */
+        .main-header {
+            background: #075e54;
+            color: white;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 60px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .sidebar-header h2 {
-            color: #e9edef;
+        .main-header h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 20px;
             font-size: 1.3em;
         }
 
-        .sidebar-header .icons {
-            display: flex;
-            gap: 20px;
-            color: #aebac1;
-        }
-
-        .sidebar-header .icons span {
+        .header-icons a, .header-icons span {
+            color: white;
+            text-decoration: none;
             cursor: pointer;
-            font-size: 1.2em;
+            opacity: 0.9;
         }
 
-        .search-box {
+        /* Search Box */
+        .search-container {
             padding: 8px 12px;
             background: #111b21;
         }
 
-        .search-box input {
-            width: 100%;
-            padding: 8px 32px 8px 12px;
+        .search-box {
+            display: flex;
+            align-items: center;
             background: #202c33;
-            border: none;
             border-radius: 8px;
+            padding: 10px 16px;
+            gap: 12px;
+        }
+
+        .search-box input {
+            flex: 1;
+            background: none;
+            border: none;
             color: #e9edef;
-            font-size: 0.95em;
+            font-size: 1em;
             outline: none;
         }
 
@@ -75,22 +88,36 @@
             color: #8696a0;
         }
 
+        .search-icon {
+            color: #8696a0;
+            font-size: 1.1em;
+        }
+
+        /* Filter Tabs - WhatsApp Style */
         .filter-tabs {
             display: flex;
             padding: 8px 12px;
             gap: 8px;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .filter-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .filter-tab {
-            padding: 6px 12px;
+            padding: 8px 16px;
             background: #202c33;
             color: #00a884;
             border: none;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 0.85em;
+            font-size: 0.9em;
             white-space: nowrap;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
         .filter-tab.active {
@@ -98,20 +125,23 @@
             color: #111b21;
         }
 
+        /* Chat List */
         .chats-list {
             flex: 1;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .chat-item {
             display: flex;
             padding: 12px 16px;
             cursor: pointer;
-            border-bottom: 1px solid #2a3942;
-            transition: background 0.2s;
+            border-bottom: 1px solid rgba(134, 150, 160, 0.15);
+            transition: background 0.15s;
+            align-items: center;
         }
 
-        .chat-item:hover {
+        .chat-item:active {
             background: #202c33;
         }
 
@@ -120,17 +150,22 @@
         }
 
         .chat-avatar {
-            width: 50px;
-            height: 50px;
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
-            background: #00a884;
+            background: linear-gradient(135deg, #00a884, #075e54);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.3em;
-            margin-left: 12px;
+            font-size: 1.4em;
+            font-weight: 500;
+            margin-left: 15px;
             flex-shrink: 0;
+        }
+
+        .chat-avatar.group-avatar {
+            background: linear-gradient(135deg, #53bdeb, #00a884);
         }
 
         .chat-avatar img {
@@ -143,104 +178,200 @@
         .chat-info {
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .chat-info-top {
+        .chat-top-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 4px;
         }
 
         .chat-name {
             color: #e9edef;
-            font-size: 1em;
+            font-size: 1.05em;
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
 
         .chat-time {
             color: #8696a0;
-            font-size: 0.75em;
+            font-size: 0.8em;
+            flex-shrink: 0;
+        }
+
+        .chat-time.unread {
+            color: #00a884;
+        }
+
+        .chat-bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .chat-preview {
             color: #8696a0;
-            font-size: 0.85em;
+            font-size: 0.9em;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            display: flex;
-            align-items: center;
+            flex: 1;
+            margin-left: 10px;
         }
 
         .unread-badge {
             background: #00a884;
             color: #111b21;
             border-radius: 50%;
-            min-width: 20px;
-            height: 20px;
+            min-width: 22px;
+            height: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.75em;
-            font-weight: bold;
-            margin-right: auto;
+            font-weight: 600;
+            flex-shrink: 0;
         }
 
-        /* Main Chat Area */
-        .chat-area {
+        /* Bottom Navigation - WhatsApp Style */
+        .bottom-nav {
+            display: flex;
+            background: #202c33;
+            border-top: 1px solid #2a3942;
+            padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+
+        .nav-item {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: #0b141a;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            color: #8696a0;
+            text-decoration: none;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: #00a884;
+        }
+
+        .nav-item .nav-icon {
+            font-size: 1.6em;
+        }
+
+        .nav-item .nav-badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background: #00a884;
+            color: #111b21;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .nav-icon-container {
             position: relative;
         }
 
+        /* ==================== CHAT VIEW ==================== */
+
+        .chat-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0b141a;
+            display: none;
+            flex-direction: column;
+            z-index: 200;
+        }
+
+        .chat-view.active {
+            display: flex;
+        }
+
         .chat-header {
-            padding: 10px 16px;
-            background: #202c33;
+            background: #075e54;
+            padding: 10px 12px;
             display: flex;
             align-items: center;
-            height: 60px;
-            border-bottom: 1px solid #2a3942;
+            gap: 12px;
+            padding-top: calc(10px + env(safe-area-inset-top));
+        }
+
+        .back-btn {
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .chat-header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00a884, #075e54);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1em;
         }
 
         .chat-header-info {
             flex: 1;
-            margin-right: 12px;
         }
 
         .chat-header-name {
-            color: #e9edef;
-            font-size: 1em;
+            color: white;
+            font-size: 1.1em;
             font-weight: 500;
         }
 
         .chat-header-status {
-            color: #8696a0;
+            color: rgba(255,255,255,0.7);
             font-size: 0.8em;
         }
 
         .chat-header-icons {
             display: flex;
             gap: 20px;
-            color: #aebac1;
+            color: white;
+            font-size: 1.3em;
         }
 
         .chat-header-icons span {
             cursor: pointer;
-            font-size: 1.2em;
         }
 
+        /* Messages Area */
         .messages-area {
             flex: 1;
             overflow-y: auto;
-            padding: 20px 60px;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQBAMAAAB8P++eAAAAMFBMVEUAAAAOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBkOFBlpKec/AAAAEHRSTlMAECAwQFBgcICQoLDA0ODwVOCGxQAAAMRJREFUSMft1LEJwzAQBdBvkrwBbSANKe0maJMswA4ewDvEG7h0ly6dG4/gMVTYCIxk4ZwQ5Pz6goPjI5cTlpaWlpaWln9Sv6HPy/X4+pjPXqDj/h0E7r4TuIdO4Bn6hOdJdAq9w8PwNIi+wAvDiyD6Ae+Nb4PoF3xkvALRL/jI+BBED+C98R2IfoD3xjMgegAfjBdA9AA+GC+D6AF8MJ4D0RnwwXgRRCfgvfEKiE7Ae+NVEJ2AN8arIDoC1xkvg+gAXDdeBdEBuG68DKIjcJ3xMogOwHXjJRAdgOvGqyA6AO+N10B0AN4b3wDREXhvfAtER+C98R0QHYE3xvdAdADujR+A6AC8M34Aon/lH/0w/N/6L++PAAAAAElFTkSuQmCC');
+            padding: 10px 12px;
+            background: #0b141a;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAG1BMVEUNExgNExgNExgNExgNExgNExgNExgNExgNExgPSv+nAAAACHRSTlMIEBggKDA4QH+9qYkAAABfSURBVDjLY2AYBfQABqJUKDMwOBClAqSbgUGBKBXK6AwMTESpUGZkYBAgSoWyPAMDPVEqkFWKMBADGBiJcsIIVUGCCuRIkCZSBUTIkiog0RUQISvJARyhKshxhRAAAPl3ECe0WhLUAAAAAElFTkSuQmCC');
+            -webkit-overflow-scrolling: touch;
         }
 
         .message {
-            max-width: 65%;
-            margin-bottom: 2px;
+            max-width: 80%;
+            margin-bottom: 3px;
             clear: both;
         }
 
@@ -249,6 +380,7 @@
             border-radius: 8px;
             position: relative;
             word-wrap: break-word;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
         }
 
         .message.sent {
@@ -285,6 +417,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
+            justify-content: flex-end;
         }
 
         .message-time .check {
@@ -299,38 +432,48 @@
 
         .date-divider span {
             background: #182229;
-            color: #8696a0;
-            padding: 5px 12px;
+            color: rgba(255,255,255,0.65);
+            padding: 6px 14px;
             border-radius: 8px;
             font-size: 0.8em;
         }
 
         /* Input Area */
         .input-area {
-            padding: 10px 16px;
+            padding: 8px 10px;
             background: #202c33;
             display: flex;
-            align-items: center;
-            gap: 12px;
+            align-items: flex-end;
+            gap: 8px;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
         }
 
         .input-icons {
             color: #8696a0;
             font-size: 1.4em;
             cursor: pointer;
+            padding: 8px;
+        }
+
+        .message-input-container {
+            flex: 1;
+            background: #2a3942;
+            border-radius: 24px;
+            display: flex;
+            align-items: flex-end;
+            padding: 8px 12px;
         }
 
         .message-input {
             flex: 1;
-            background: #2a3942;
+            background: none;
             border: none;
-            border-radius: 8px;
-            padding: 12px 16px;
             color: #e9edef;
-            font-size: 0.95em;
+            font-size: 1em;
             outline: none;
             resize: none;
             max-height: 100px;
+            line-height: 1.4;
         }
 
         .message-input::placeholder {
@@ -338,19 +481,27 @@
         }
 
         .send-btn {
-            background: none;
+            width: 48px;
+            height: 48px;
+            background: #00a884;
             border: none;
-            color: #8696a0;
-            font-size: 1.4em;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.3em;
             cursor: pointer;
-            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
-        .send-btn:hover {
-            color: #00a884;
+        /* Empty/Loading States */
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8696a0;
         }
 
-        /* Empty State */
         .empty-state {
             flex: 1;
             display: flex;
@@ -358,12 +509,73 @@
             align-items: center;
             justify-content: center;
             color: #8696a0;
+            padding: 20px;
         }
 
-        .empty-state h3 {
-            font-size: 2em;
-            margin-bottom: 10px;
-            color: #e9edef;
+        .clearfix::after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+
+        /* Archived Section */
+        .archived-section {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid rgba(134, 150, 160, 0.15);
+            color: #00a884;
+            font-size: 0.95em;
+            gap: 20px;
+        }
+
+        .archived-section .icon {
+            font-size: 1.2em;
+        }
+
+        /* ==================== DESKTOP STYLES ==================== */
+
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+
+            .main-section {
+                width: 400px;
+                display: flex;
+                flex-direction: column;
+                border-left: 1px solid #2a3942;
+            }
+
+            .bottom-nav {
+                display: none;
+            }
+
+            .chat-view {
+                position: relative;
+                flex: 1;
+                display: flex;
+            }
+
+            .chat-view .back-btn {
+                display: none;
+            }
+
+            .chat-header {
+                padding-top: 10px;
+            }
+
+            .input-area {
+                padding-bottom: 8px;
+            }
+
+            .messages-area {
+                padding: 20px 60px;
+            }
+
+            .message {
+                max-width: 65%;
+            }
         }
 
         /* Scrollbar */
@@ -380,82 +592,135 @@
             border-radius: 3px;
         }
 
-        .clearfix::after {
-            content: '';
-            display: table;
-            clear: both;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #8696a0;
-        }
-
-        .voice-msg {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .voice-msg .play-btn {
-            width: 35px;
-            height: 35px;
-            background: #00a884;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Media in messages */
+        .message img {
+            max-width: 100%;
+            border-radius: 8px;
             cursor: pointer;
         }
 
-        .voice-wave {
-            flex: 1;
-            height: 25px;
-            background: linear-gradient(90deg, #00a884 0%, #00a884 30%, #4a5c64 30%);
-            border-radius: 3px;
+        .message video {
+            max-width: 100%;
+            border-radius: 8px;
         }
 
-        .group-icon {
-            background: #2a3942 !important;
+        .message audio {
+            max-width: 100%;
+        }
+
+        .media-placeholder {
+            background: #2a3942;
+            padding: 20px 30px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5em;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Main Chat Area -->
-        <div class="chat-area" id="chat-area">
-            <div class="empty-state" id="empty-state">
-                <h3>💬 قولدن تيكت</h3>
-                <p>اختر محادثة للبدء</p>
-            </div>
-        </div>
-
-        <!-- Right Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="icons">
+        <!-- Main Section (Chat List) -->
+        <div class="main-section" id="main-section">
+            <!-- Header -->
+            <div class="main-header">
+                <h1>الدردشات</h1>
+                <div class="header-icons">
                     <span onclick="loadChats()" title="تحديث">🔄</span>
-                    <a href="/export" title="تصدير البيانات" style="color:#aebac1;text-decoration:none;">📦</a>
+                    <a href="/export" title="تصدير">📦</a>
                     <span>⋮</span>
                 </div>
-                <h2>الدردشات <span id="chat-count" style="font-size:0.6em;color:#00a884;"></span> <span style="font-size:0.5em;color:#25d366;animation:pulse 2s infinite;">🟢 LIVE</span></h2>
-                <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}</style>
             </div>
 
-            <div class="search-box">
-                <input type="text" placeholder="ابحث أو ابدأ محادثة جديدة" id="search-input" oninput="filterChats()">
+            <!-- Search -->
+            <div class="search-container">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="ابحث أو ابدأ محادثة جديدة" id="search-input" oninput="filterChats()">
+                </div>
             </div>
 
+            <!-- Filter Tabs -->
             <div class="filter-tabs">
-                <button class="filter-tab active" onclick="setFilter('all')">الكل</button>
-                <button class="filter-tab" onclick="setFilter('groups')">المجموعات</button>
+                <button class="filter-tab active" onclick="setFilter('all', this)">الكل</button>
+                <button class="filter-tab" onclick="setFilter('unread', this)">غير مقروءة <span id="unread-count"></span></button>
+                <button class="filter-tab" onclick="setFilter('groups', this)">المجموعات</button>
                 <button class="filter-tab" onclick="showAllMessages('received')">📥 الوارد</button>
                 <button class="filter-tab" onclick="showAllMessages('sent')">📤 الصادر</button>
             </div>
 
+            <!-- Archived (optional) -->
+            <div class="archived-section" style="display:none;">
+                <span class="icon">📁</span>
+                <span>دردشات مؤرشفة</span>
+            </div>
+
+            <!-- Chat List -->
             <div class="chats-list" id="chats-list">
                 <div class="loading">جاري التحميل...</div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="window.location.href='/export'">
+                    <div class="nav-icon-container">
+                        <span class="nav-icon">⚙️</span>
+                    </div>
+                    <span>الإعدادات</span>
+                </div>
+                <div class="nav-item active">
+                    <div class="nav-icon-container">
+                        <span class="nav-icon">💬</span>
+                        <span class="nav-badge" id="nav-unread"></span>
+                    </div>
+                    <span>الدردشات</span>
+                </div>
+                <div class="nav-item" onclick="setFilter('groups')">
+                    <div class="nav-icon-container">
+                        <span class="nav-icon">👥</span>
+                    </div>
+                    <span>المجموعات</span>
+                </div>
+                <div class="nav-item" onclick="showAllMessages('received')">
+                    <div class="nav-icon-container">
+                        <span class="nav-icon">📥</span>
+                    </div>
+                    <span>الوارد</span>
+                </div>
+                <div class="nav-item" onclick="showAllMessages('sent')">
+                    <div class="nav-icon-container">
+                        <span class="nav-icon">📤</span>
+                    </div>
+                    <span>الصادر</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat View -->
+        <div class="chat-view" id="chat-view">
+            <div class="chat-header">
+                <span class="back-btn" onclick="closeChat()">←</span>
+                <div class="chat-header-avatar" id="chat-avatar">G</div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name" id="chat-name">اختر محادثة</div>
+                    <div class="chat-header-status" id="chat-status">اضغط للمزيد</div>
+                </div>
+                <div class="chat-header-icons">
+                    <span>📞</span>
+                    <span>⋮</span>
+                </div>
+            </div>
+            <div class="messages-area clearfix" id="messages-area">
+                <div class="empty-state">
+                    <h3 style="font-size:3em;margin-bottom:20px;">💬</h3>
+                    <p>اختر محادثة للبدء</p>
+                </div>
+            </div>
+            <div class="input-area" id="input-area" style="display:none;">
+                <span class="input-icons">😊</span>
+                <div class="message-input-container">
+                    <input type="text" class="message-input" id="message-input" placeholder="اكتب رسالة" onkeypress="if(event.key==='Enter')sendMessage()">
+                </div>
+                <button class="send-btn" onclick="sendMessage()">📤</button>
             </div>
         </div>
     </div>
@@ -466,28 +731,43 @@
 
         let allChats = [];
         let currentChat = null;
+        let isMobile = window.innerWidth < 768;
+
+        // Check if mobile
+        function checkMobile() {
+            isMobile = window.innerWidth < 768;
+            if (!isMobile) {
+                document.getElementById('chat-view').classList.add('active');
+            }
+        }
+        window.addEventListener('resize', checkMobile);
+        checkMobile();
 
         async function loadChats() {
             try {
                 document.getElementById('chats-list').innerHTML = '<div class="loading">جاري تحميل المحادثات...</div>';
 
-                // جلب كل المحادثات بدون حد
                 const response = await fetch(`${API}/chats?token=${TOKEN}&limit=10000`);
                 allChats = await response.json();
 
-                // ترتيب المحادثات من الأحدث للأقدم حسب last_time
+                // Sort by last_time
                 allChats.sort((a, b) => (b.last_time || 0) - (a.last_time || 0));
 
                 console.log('Total chats loaded:', allChats.length);
 
+                // Count unread
+                const unreadTotal = allChats.reduce((sum, c) => sum + (c.unread || 0), 0);
+                document.getElementById('unread-count').textContent = unreadTotal > 0 ? `(${unreadTotal})` : '';
+                const navUnread = document.getElementById('nav-unread');
+                if (navUnread) navUnread.textContent = unreadTotal > 0 ? unreadTotal : '';
+
                 renderChats(allChats);
             } catch(e) {
                 console.error('Error loading chats:', e);
-                document.getElementById('chats-list').innerHTML = '<div class="loading">خطأ في التحميل</div>';
+                document.getElementById('chats-list').innerHTML = '<div class="loading">خطأ في التحميل - اضغط للتحديث</div>';
             }
         }
 
-        // دالة لتحويل الوقت لصيغة مقروءة
         function formatTime(timestamp) {
             if (!timestamp) return '';
             const date = new Date(timestamp * 1000);
@@ -496,7 +776,6 @@
             const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
 
             if (diffDays === 0) {
-                // اليوم - نعرض الساعة
                 return date.toLocaleTimeString('ar-SA', {hour: '2-digit', minute: '2-digit'});
             } else if (diffDays === 1) {
                 return 'أمس';
@@ -504,13 +783,12 @@
                 const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
                 return days[date.getDay()];
             } else {
-                return date.toLocaleDateString('ar-SA');
+                return date.toLocaleDateString('ar-SA', {month: 'numeric', day: 'numeric'});
             }
         }
 
         function renderChats(chats) {
             const container = document.getElementById('chats-list');
-            document.getElementById('chat-count').textContent = `(${allChats.length})`;
             let html = '';
 
             chats.forEach(chat => {
@@ -521,18 +799,29 @@
                 const unread = chat.unread || 0;
                 const pinned = chat.pinned ? '📌 ' : '';
 
+                // Get preview from last message if available
+                let preview = '';
+                if (chat.last_message) {
+                    if (chat.last_message.type === 'image') preview = '🖼️ صورة';
+                    else if (chat.last_message.type === 'video') preview = '🎬 فيديو';
+                    else if (chat.last_message.type === 'audio' || chat.last_message.type === 'ptt') preview = '🎤 رسالة صوتية';
+                    else if (chat.last_message.type === 'document') preview = '📄 مستند';
+                    else preview = chat.last_message.body || '';
+                }
+
                 html += `
-                    <div class="chat-item ${unread > 0 ? 'has-unread' : ''}" onclick="openChat('${chat.id}', '${name.replace(/'/g, "\\'")}')">
-                        <div class="chat-avatar ${isGroup ? 'group-icon' : ''}">
+                    <div class="chat-item ${currentChat === chat.id ? 'active' : ''}" onclick="openChat('${chat.id}', '${name.replace(/'/g, "\\'")}')">
+                        <div class="chat-avatar ${isGroup ? 'group-avatar' : ''}">
                             ${initial}
                         </div>
                         <div class="chat-info">
-                            <div class="chat-info-top">
+                            <div class="chat-top-row">
                                 <span class="chat-name">${pinned}${isGroup ? '👥 ' : ''}${name}</span>
-                                <span class="chat-time" style="${unread > 0 ? 'color:#25d366;' : ''}">${time}</span>
+                                <span class="chat-time ${unread > 0 ? 'unread' : ''}">${time}</span>
                             </div>
-                            <div class="chat-preview">
-                                ${unread > 0 ? `<span style="background:#25d366;color:white;padding:2px 8px;border-radius:10px;font-size:0.8em;">${unread}</span>` : 'اضغط لعرض المحادثة'}
+                            <div class="chat-bottom-row">
+                                <span class="chat-preview">${preview || 'اضغط لعرض المحادثة'}</span>
+                                ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
                             </div>
                         </div>
                     </div>
@@ -551,175 +840,82 @@
             renderChats(filtered);
         }
 
-        function setFilter(type) {
+        function setFilter(type, btn) {
             document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+            if (btn) btn.classList.add('active');
 
             if (type === 'all') {
                 renderChats(allChats);
             } else if (type === 'groups') {
                 const groups = allChats.filter(c => c.id.includes('@g.us'));
                 renderChats(groups);
-            }
-        }
-
-        async function showAllMessages(type) {
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-
-            const chatArea = document.getElementById('chat-area');
-            chatArea.innerHTML = `
-                <div class="chat-header">
-                    <div class="chat-avatar">${type === 'sent' ? '📤' : '📥'}</div>
-                    <div class="chat-header-info">
-                        <div class="chat-header-name">${type === 'sent' ? 'الرسائل الصادرة' : 'الرسائل الواردة'}</div>
-                        <div class="chat-header-status">جاري التحميل...</div>
-                    </div>
-                </div>
-                <div class="messages-area clearfix" id="messages-area">
-                    <div class="loading">جاري جلب ${type === 'sent' ? 'الصادر' : 'الوارد'}...</div>
-                </div>
-            `;
-
-            try {
-                // جلب آخر 500 رسالة
-                const response = await fetch(`${API}/messages?token=${TOKEN}&limit=500`);
-                const data = await response.json();
-                const messages = data.messages || [];
-
-                // فلترة حسب النوع
-                const filtered = messages.filter(m => type === 'sent' ? m.fromMe : !m.fromMe);
-
-                document.querySelector('.chat-header-status').textContent = `${filtered.length} رسالة`;
-
-                let html = '';
-                let lastDate = '';
-
-                filtered.forEach(msg => {
-                    const date = new Date(msg.timestamp * 1000);
-                    const dateStr = date.toLocaleDateString('ar-SA');
-                    const timeStr = date.toLocaleTimeString('ar-SA', {hour: '2-digit', minute: '2-digit'});
-
-                    if (dateStr !== lastDate) {
-                        html += `<div class="date-divider"><span>${dateStr}</span></div>`;
-                        lastDate = dateStr;
-                    }
-
-                    const chatName = msg.chatName || msg.from?.replace('@c.us', '').replace('@g.us', '') || 'غير معروف';
-
-                    // عرض الوسائط
-                    let content = '';
-                    const mediaLabels = {
-                        'image': '🖼️ صورة',
-                        'video': '🎬 فيديو',
-                        'audio': '🎵 صوت',
-                        'ptt': '🎤 رسالة صوتية',
-                        'document': '📎 ملف',
-                        'sticker': '😊 ملصق'
-                    };
-
-                    if (msg.media) {
-                        if (msg.type === 'image') {
-                            content = `<img src="${msg.media}" style="max-width:200px;border-radius:8px;" onerror="this.outerHTML='<span>🖼️ صورة</span>'">`;
-                        } else if (msg.type === 'video') {
-                            content = `<video src="${msg.media}" controls style="max-width:200px;"></video>`;
-                        } else if (msg.type === 'audio' || msg.type === 'ptt') {
-                            content = `<audio src="${msg.media}" controls style="max-width:200px;"></audio>`;
-                        } else if (msg.type === 'document') {
-                            content = `<a href="${msg.media}" target="_blank" style="color:#00a884;">📎 ${msg.filename || 'ملف'}</a>`;
-                        }
-                    } else if (mediaLabels[msg.type]) {
-                        content = `<div style="background:#2a3942;padding:10px 20px;border-radius:8px;">${mediaLabels[msg.type]}</div>`;
-                    } else if (msg.type === 'e2e_notification' || msg.type === 'gp2') {
-                        return; // تخطي إشعارات النظام
-                    } else {
-                        content = `<div class="message-text">${escapeHtml(msg.body || '[رسالة]')}</div>`;
-                    }
-
-                    html += `
-                        <div class="message ${type === 'sent' ? 'sent' : 'received'}" style="max-width:90%;">
-                            <div class="message-content">
-                                <div style="font-size:0.75em;color:#00a884;margin-bottom:4px;">${chatName}</div>
-                                ${content}
-                                <div class="message-time">${timeStr}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                document.getElementById('messages-area').innerHTML = html || '<div class="loading">لا توجد رسائل</div>';
-            } catch(e) {
-                console.error(e);
-                document.getElementById('messages-area').innerHTML = '<div class="loading">خطأ في التحميل</div>';
+            } else if (type === 'unread') {
+                const unread = allChats.filter(c => c.unread > 0);
+                renderChats(unread);
             }
         }
 
         async function openChat(chatId, name) {
             currentChat = chatId;
 
-            // Mark active
+            // Update UI
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-            event.currentTarget.classList.add('active');
 
-            // Show chat area
-            const chatArea = document.getElementById('chat-area');
-            chatArea.innerHTML = `
-                <div class="chat-header">
-                    <div class="chat-avatar">${name.charAt(0).toUpperCase()}</div>
-                    <div class="chat-header-info">
-                        <div class="chat-header-name">${name}</div>
-                        <div class="chat-header-status">اضغط للمزيد</div>
-                    </div>
-                    <div class="chat-header-icons">
-                        <span>🔍</span>
-                        <span>📞</span>
-                        <span>⋮</span>
-                    </div>
-                </div>
-                <div class="messages-area clearfix" id="messages-area">
-                    <div class="loading">جاري تحميل الرسائل...</div>
-                </div>
-                <div class="input-area">
-                    <span class="input-icons">😊</span>
-                    <span class="input-icons">📎</span>
-                    <input type="text" class="message-input" id="message-input" placeholder="اكتب رسالة" onkeypress="if(event.key==='Enter')sendMessage()">
-                    <button class="send-btn" onclick="sendMessage()">📤</button>
-                </div>
-            `;
+            // Show chat view on mobile
+            if (isMobile) {
+                document.getElementById('chat-view').classList.add('active');
+            }
 
-            // Load messages from Ultra Msg + Firebase media
+            // Update header
+            document.getElementById('chat-name').textContent = name;
+            document.getElementById('chat-avatar').textContent = name.charAt(0).toUpperCase();
+            document.getElementById('chat-status').textContent = 'جاري التحميل...';
+            document.getElementById('input-area').style.display = 'flex';
+            document.getElementById('messages-area').innerHTML = '<div class="loading">جاري تحميل الرسائل...</div>';
+
             try {
-                // جلب الرسائل من Ultra Msg
+                // Fetch messages
                 const response = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${chatId}&limit=100`);
                 const messages = await response.json();
 
-                // جلب الوسائط من Firebase
-                const mediaResponse = await fetch(`/api/public/media?chatId=${chatId}&limit=100`);
-                const mediaData = await mediaResponse.json();
+                // Try to get media from Firebase
+                try {
+                    const mediaResponse = await fetch(`/api/public/media?chatId=${chatId}&limit=100`);
+                    const mediaData = await mediaResponse.json();
 
-                // دمج الوسائط مع الرسائل
-                if (mediaData.success && mediaData.messages.length > 0) {
-                    const mediaMap = new Map();
-                    mediaData.messages.forEach(m => {
-                        if (m.media && m.messageId) {
-                            mediaMap.set(m.messageId, m.media);
-                        }
-                    });
+                    if (mediaData.success && mediaData.messages.length > 0) {
+                        const mediaMap = new Map();
+                        mediaData.messages.forEach(m => {
+                            if (m.media && m.messageId) {
+                                mediaMap.set(m.messageId, m.media);
+                            }
+                        });
 
-                    // إضافة روابط الوسائط للرسائل
-                    messages.forEach(msg => {
-                        if (!msg.media && mediaMap.has(msg.id)) {
-                            msg.media = mediaMap.get(msg.id);
-                        }
-                    });
+                        messages.forEach(msg => {
+                            if (!msg.media && mediaMap.has(msg.id)) {
+                                msg.media = mediaMap.get(msg.id);
+                            }
+                        });
+                    }
+                } catch(e) {}
 
-                    console.log('📷 Media URLs merged:', mediaMap.size);
-                }
-
+                document.getElementById('chat-status').textContent = `${messages.length} رسالة`;
                 renderMessages(messages);
             } catch(e) {
                 console.error('Error loading messages:', e);
+                document.getElementById('messages-area').innerHTML = '<div class="loading">خطأ في التحميل</div>';
             }
+
+            // Start auto-refresh
+            startAutoRefresh();
+        }
+
+        function closeChat() {
+            if (isMobile) {
+                document.getElementById('chat-view').classList.remove('active');
+            }
+            currentChat = null;
+            if (refreshInterval) clearInterval(refreshInterval);
         }
 
         function renderMessages(messages) {
@@ -732,7 +928,6 @@
                 const dateStr = date.toLocaleDateString('ar-SA');
                 const timeStr = date.toLocaleTimeString('ar-SA', {hour: '2-digit', minute: '2-digit'});
 
-                // Date divider
                 if (dateStr !== lastDate) {
                     html += `<div class="date-divider"><span>${dateStr}</span></div>`;
                     lastDate = dateStr;
@@ -740,7 +935,6 @@
 
                 const direction = msg.fromMe ? 'sent' : 'received';
 
-                // عرض الوسائط حسب النوع
                 let content = '';
                 const mediaTypes = {
                     'image': '🖼️ صورة',
@@ -752,13 +946,12 @@
                 };
 
                 if (msg.media) {
-                    // إذا فيه رابط وسائط
                     if (msg.type === 'image') {
-                        content = `<img src="${msg.media}" style="max-width:300px;border-radius:8px;cursor:pointer;" onclick="window.open('${msg.media}')" onerror="this.outerHTML='<div style=\\'background:#2a3942;padding:20px;border-radius:8px;text-align:center;\\'>🖼️ صورة</div>'">`;
+                        content = `<img src="${msg.media}" onclick="window.open('${msg.media}')" onerror="this.outerHTML='<div class=\\'media-placeholder\\'>🖼️</div>'">`;
                     } else if (msg.type === 'video') {
-                        content = `<video src="${msg.media}" controls style="max-width:300px;border-radius:8px;"></video>`;
+                        content = `<video src="${msg.media}" controls></video>`;
                     } else if (msg.type === 'audio' || msg.type === 'ptt') {
-                        content = `<audio src="${msg.media}" controls style="max-width:250px;"></audio>`;
+                        content = `<audio src="${msg.media}" controls></audio>`;
                     } else if (msg.type === 'document') {
                         content = `<a href="${msg.media}" target="_blank" style="color:#00a884;">📎 ${msg.filename || 'ملف'}</a>`;
                     } else if (msg.type === 'sticker') {
@@ -766,13 +959,12 @@
                     }
                     if (msg.body) content += `<div class="message-text" style="margin-top:8px;">${escapeHtml(msg.body)}</div>`;
                 } else if (mediaTypes[msg.type]) {
-                    // وسائط بدون رابط - نعرض placeholder
-                    content = `<div style="background:#2a3942;padding:15px 25px;border-radius:8px;text-align:center;">${mediaTypes[msg.type]}</div>`;
+                    content = `<div class="media-placeholder">${mediaTypes[msg.type]}</div>`;
                     if (msg.body) content += `<div class="message-text" style="margin-top:8px;">${escapeHtml(msg.body)}</div>`;
                 } else if (msg.body) {
                     content = `<div class="message-text">${escapeHtml(msg.body)}</div>`;
                 } else if (msg.type === 'e2e_notification' || msg.type === 'gp2') {
-                    return; // تجاهل إشعارات النظام
+                    return;
                 } else {
                     content = `<div class="message-text" style="color:#8696a0;">[${msg.type || 'رسالة'}]</div>`;
                 }
@@ -809,7 +1001,6 @@
             btn.textContent = '⏳';
 
             try {
-                // للقروبات نستخدم الـ ID كامل، للأفراد نستخدم الرقم فقط
                 const isGroup = currentChat.includes('@g.us');
                 const to = isGroup ? currentChat : currentChat.replace('@c.us', '');
 
@@ -823,7 +1014,6 @@
 
                 if (result.sent) {
                     input.value = '';
-                    // Add to UI
                     const container = document.getElementById('messages-area');
                     const time = new Date().toLocaleTimeString('ar-SA', {hour: '2-digit', minute: '2-digit'});
                     container.innerHTML += `
@@ -845,13 +1035,92 @@
             btn.textContent = '📤';
         }
 
-        // Auto-refresh variables
-        let refreshInterval = null;
-        let chatRefreshInterval = null;
-        let currentChatName = '';
+        async function showAllMessages(type) {
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
 
-        // تحديث الرسائل تلقائياً كل 3 ثواني
-        async function startAutoRefresh() {
+            if (isMobile) {
+                document.getElementById('chat-view').classList.add('active');
+            }
+
+            document.getElementById('chat-name').textContent = type === 'sent' ? 'الرسائل الصادرة' : 'الرسائل الواردة';
+            document.getElementById('chat-avatar').textContent = type === 'sent' ? '📤' : '📥';
+            document.getElementById('chat-status').textContent = 'جاري التحميل...';
+            document.getElementById('input-area').style.display = 'none';
+            document.getElementById('messages-area').innerHTML = '<div class="loading">جاري التحميل...</div>';
+
+            try {
+                const response = await fetch(`${API}/messages?token=${TOKEN}&limit=500`);
+                const data = await response.json();
+                const messages = data.messages || [];
+
+                const filtered = messages.filter(m => type === 'sent' ? m.fromMe : !m.fromMe);
+                document.getElementById('chat-status').textContent = `${filtered.length} رسالة`;
+
+                let html = '';
+                let lastDate = '';
+
+                filtered.forEach(msg => {
+                    const date = new Date(msg.timestamp * 1000);
+                    const dateStr = date.toLocaleDateString('ar-SA');
+                    const timeStr = date.toLocaleTimeString('ar-SA', {hour: '2-digit', minute: '2-digit'});
+
+                    if (dateStr !== lastDate) {
+                        html += `<div class="date-divider"><span>${dateStr}</span></div>`;
+                        lastDate = dateStr;
+                    }
+
+                    const chatName = msg.chatName || msg.from?.replace('@c.us', '').replace('@g.us', '') || 'غير معروف';
+
+                    let content = '';
+                    const mediaLabels = {
+                        'image': '🖼️ صورة',
+                        'video': '🎬 فيديو',
+                        'audio': '🎵 صوت',
+                        'ptt': '🎤 رسالة صوتية',
+                        'document': '📎 ملف',
+                        'sticker': '😊 ملصق'
+                    };
+
+                    if (msg.media) {
+                        if (msg.type === 'image') {
+                            content = `<img src="${msg.media}" style="max-width:200px;border-radius:8px;" onerror="this.outerHTML='<span>🖼️</span>'">`;
+                        } else if (msg.type === 'video') {
+                            content = `<video src="${msg.media}" controls style="max-width:200px;"></video>`;
+                        } else if (msg.type === 'audio' || msg.type === 'ptt') {
+                            content = `<audio src="${msg.media}" controls></audio>`;
+                        } else if (msg.type === 'document') {
+                            content = `<a href="${msg.media}" target="_blank" style="color:#00a884;">📎 ${msg.filename || 'ملف'}</a>`;
+                        }
+                    } else if (mediaLabels[msg.type]) {
+                        content = `<div class="media-placeholder">${mediaLabels[msg.type]}</div>`;
+                    } else if (msg.type === 'e2e_notification' || msg.type === 'gp2') {
+                        return;
+                    } else {
+                        content = `<div class="message-text">${escapeHtml(msg.body || '[رسالة]')}</div>`;
+                    }
+
+                    html += `
+                        <div class="message ${type === 'sent' ? 'sent' : 'received'}" style="max-width:90%;">
+                            <div class="message-content">
+                                <div style="font-size:0.75em;color:#00a884;margin-bottom:4px;">${chatName}</div>
+                                ${content}
+                                <div class="message-time">${timeStr}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('messages-area').innerHTML = html || '<div class="loading">لا توجد رسائل</div>';
+            } catch(e) {
+                console.error(e);
+                document.getElementById('messages-area').innerHTML = '<div class="loading">خطأ في التحميل</div>';
+            }
+        }
+
+        // Auto-refresh
+        let refreshInterval = null;
+
+        function startAutoRefresh() {
             if (refreshInterval) clearInterval(refreshInterval);
 
             refreshInterval = setInterval(async () => {
@@ -864,42 +1133,31 @@
                 } catch(e) {
                     console.error('Auto-refresh error:', e);
                 }
-            }, 3000); // كل 3 ثواني
+            }, 5000);
         }
 
-        // تحديث قائمة المحادثات كل 10 ثواني
-        function startChatListRefresh() {
-            if (chatRefreshInterval) clearInterval(chatRefreshInterval);
+        // Chat list refresh
+        setInterval(async () => {
+            try {
+                const response = await fetch(`${API}/chats?token=${TOKEN}&limit=10000`);
+                const newChats = await response.json();
+                newChats.sort((a, b) => (b.last_time || 0) - (a.last_time || 0));
 
-            chatRefreshInterval = setInterval(async () => {
-                try {
-                    const response = await fetch(`${API}/chats?token=${TOKEN}&limit=10000`);
-                    const newChats = await response.json();
+                if (JSON.stringify(newChats.map(c => c.last_time)) !== JSON.stringify(allChats.map(c => c.last_time))) {
+                    allChats = newChats;
+                    renderChats(allChats);
 
-                    // تحديث فقط إذا تغير العدد
-                    if (newChats.length !== allChats.length) {
-                        allChats = newChats;
-                        renderChats(allChats);
-                    }
-                } catch(e) {
-                    console.error('Chat list refresh error:', e);
+                    const unreadTotal = allChats.reduce((sum, c) => sum + (c.unread || 0), 0);
+                    document.getElementById('unread-count').textContent = unreadTotal > 0 ? `(${unreadTotal})` : '';
+                    const navUnread = document.getElementById('nav-unread');
+                    if (navUnread) navUnread.textContent = unreadTotal > 0 ? unreadTotal : '';
                 }
-            }, 10000); // كل 10 ثواني
-        }
-
-        // تعديل openChat لتشغيل التحديث التلقائي
-        const originalOpenChat = openChat;
-        openChat = async function(chatId, name) {
-            currentChatName = name;
-            await originalOpenChat(chatId, name);
-            startAutoRefresh();
-        };
+            } catch(e) {}
+        }, 10000);
 
         // Init
         loadChats();
-        startChatListRefresh();
-
-        console.log('🟢 Live mode enabled - refreshing every 3 seconds');
+        console.log('WhatsApp Dashboard loaded');
     </script>
 </body>
 </html>
