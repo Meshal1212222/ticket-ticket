@@ -580,11 +580,25 @@
 
                     const chatName = msg.chatName || msg.from?.replace('@c.us', '').replace('@g.us', '') || 'غير معروف';
 
+                    // عرض الوسائط
+                    let content = '';
+                    if (msg.type === 'image' && msg.media) {
+                        content = `<img src="${msg.media}" style="max-width:200px;border-radius:8px;cursor:pointer;" onclick="window.open('${msg.media}')">`;
+                    } else if (msg.type === 'video' && msg.media) {
+                        content = `<video src="${msg.media}" controls style="max-width:200px;"></video>`;
+                    } else if ((msg.type === 'audio' || msg.type === 'ptt') && msg.media) {
+                        content = `<audio src="${msg.media}" controls style="max-width:200px;"></audio>`;
+                    } else if (msg.type === 'document' && msg.media) {
+                        content = `<a href="${msg.media}" target="_blank" style="color:#00a884;">📎 ${msg.filename || 'ملف'}</a>`;
+                    } else {
+                        content = `<div class="message-text">${escapeHtml(msg.body || '[' + (msg.type || 'وسائط') + ']')}</div>`;
+                    }
+
                     html += `
                         <div class="message ${type === 'sent' ? 'sent' : 'received'}" style="max-width:90%;">
                             <div class="message-content">
                                 <div style="font-size:0.75em;color:#00a884;margin-bottom:4px;">${chatName}</div>
-                                <div class="message-text">${escapeHtml(msg.body || '[وسائط]')}</div>
+                                ${content}
                                 <div class="message-time">${timeStr}</div>
                             </div>
                         </div>
@@ -657,13 +671,33 @@
                     lastDate = dateStr;
                 }
 
-                const type = msg.fromMe ? 'sent' : 'received';
-                const body = msg.body || '[وسائط]';
+                const direction = msg.fromMe ? 'sent' : 'received';
+
+                // عرض الوسائط حسب النوع
+                let content = '';
+                if (msg.type === 'image' && msg.media) {
+                    content = `<img src="${msg.media}" style="max-width:300px;border-radius:8px;cursor:pointer;" onclick="window.open('${msg.media}')">`;
+                    if (msg.body) content += `<div class="message-text" style="margin-top:8px;">${escapeHtml(msg.body)}</div>`;
+                } else if (msg.type === 'video' && msg.media) {
+                    content = `<video src="${msg.media}" controls style="max-width:300px;border-radius:8px;"></video>`;
+                    if (msg.body) content += `<div class="message-text" style="margin-top:8px;">${escapeHtml(msg.body)}</div>`;
+                } else if ((msg.type === 'audio' || msg.type === 'ptt') && msg.media) {
+                    content = `<audio src="${msg.media}" controls style="max-width:250px;"></audio>`;
+                } else if (msg.type === 'document' && msg.media) {
+                    const filename = msg.filename || 'ملف';
+                    content = `<a href="${msg.media}" target="_blank" style="color:#00a884;display:flex;align-items:center;gap:8px;">📎 ${filename}</a>`;
+                } else if (msg.type === 'sticker' && msg.media) {
+                    content = `<img src="${msg.media}" style="max-width:150px;">`;
+                } else if (msg.body) {
+                    content = `<div class="message-text">${escapeHtml(msg.body)}</div>`;
+                } else {
+                    content = `<div class="message-text" style="color:#8696a0;">[${msg.type || 'وسائط'}]</div>`;
+                }
 
                 html += `
-                    <div class="message ${type}">
+                    <div class="message ${direction}">
                         <div class="message-content">
-                            <div class="message-text">${escapeHtml(body)}</div>
+                            ${content}
                             <div class="message-time">
                                 ${timeStr}
                                 ${msg.fromMe ? '<span class="check">✓✓</span>' : ''}
