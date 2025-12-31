@@ -525,6 +525,169 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ==================== أداة تصدير البيانات ====================
+
+// Proxy لجلب البيانات من Ultra Msg مع محاولة جلب الوسائط
+app.get('/api/export/chats', async (req, res) => {
+    try {
+        const response = await fetch(`https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/chats?token=${ULTRAMSG_TOKEN}`);
+        const chats = await response.json();
+        res.json({ success: true, chats });
+    } catch(e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// جلب جميع الرسائل مع محاولة جلب روابط الوسائط
+app.get('/api/export/messages/:chatId', async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const limit = parseInt(req.query.limit) || 500;
+
+        // جلب الرسائل
+        const response = await fetch(
+            `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/chats/messages?token=${ULTRAMSG_TOKEN}&chatId=${chatId}&limit=${limit}`
+        );
+        const messages = await response.json();
+
+        // محاولة جلب روابط الوسائط للرسائل التي تحتوي على وسائط
+        const mediaTypes = ['image', 'video', 'audio', 'ptt', 'document', 'sticker'];
+
+        for (let i = 0; i < messages.length; i++) {
+            const msg = messages[i];
+            if (mediaTypes.includes(msg.type) && !msg.media && msg.id) {
+                // محاولة جلب رابط الوسائط
+                try {
+                    const mediaResponse = await fetch(
+                        `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/media?token=${ULTRAMSG_TOKEN}&msgId=${msg.id}`
+                    );
+                    const mediaData = await mediaResponse.json();
+                    if (mediaData.media) {
+                        messages[i].media = mediaData.media;
+                        messages[i].mediaFetched = true;
+                    }
+                } catch(e) {
+                    // تجاهل الأخطاء
+                }
+            }
+        }
+
+        res.json({ success: true, messages });
+    } catch(e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// جلب جميع البيانات دفعة واحدة
+app.get('/api/export/all', async (req, res) => {
+    try {
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            instance: ULTRAMSG_INSTANCE_ID,
+            chats: [],
+            allMessages: [],
+            mediaMessages: [],
+            stats: {
+                totalChats: 0,
+                totalMessages: 0,
+                mediaMessages: 0
+            }
+        };
+
+        // جلب المحادثات
+        const chatsResponse = await fetch(
+            `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/chats?token=${ULTRAMSG_TOKEN}`
+        );
+        const chats = await chatsResponse.json();
+        exportData.chats = chats;
+        exportData.stats.totalChats = chats.length;
+
+        // جلب رسائل كل محادثة
+        for (const chat of chats) {
+            try {
+                const msgsResponse = await fetch(
+                    `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/chats/messages?token=${ULTRAMSG_TOKEN}&chatId=${chat.id}&limit=500`
+                );
+                const msgs = await msgsResponse.json();
+
+                if (Array.isArray(msgs)) {
+                    const chatMessages = {
+                        chatId: chat.id,
+                        chatName: chat.name || chat.id,
+                        messageCount: msgs.length,
+                        messages: msgs
+                    };
+
+                    exportData.allMessages.push(chatMessages);
+                    exportData.stats.totalMessages += msgs.length;
+
+                    // جمع رسائل الوسائط
+                    const mediaTypes = ['image', 'video', 'audio', 'ptt', 'document', 'sticker'];
+                    msgs.forEach(m => {
+                        if (mediaTypes.includes(m.type)) {
+                            exportData.mediaMessages.push({
+                                chatId: chat.id,
+                                chatName: chat.name,
+                                messageId: m.id,
+                                type: m.type,
+                                media: m.media || null,
+                                timestamp: m.timestamp,
+                                body: m.body
+                            });
+                            exportData.stats.mediaMessages++;
+                        }
+                    });
+                }
+
+                // تأخير لتجنب rate limiting
+                await new Promise(r => setTimeout(r, 100));
+            } catch(e) {
+                console.error(`Error fetching messages for ${chat.id}:`, e.message);
+            }
+        }
+
+        res.json({ success: true, data: exportData });
+    } catch(e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// محاولة جلب وسائط رسالة معينة
+app.get('/api/export/media/:msgId', async (req, res) => {
+    try {
+        const { msgId } = req.params;
+
+        // طريقة 1: استخدام messages/media endpoint
+        const mediaResponse = await fetch(
+            `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/media?token=${ULTRAMSG_TOKEN}&msgId=${msgId}`
+        );
+        const mediaData = await mediaResponse.json();
+
+        if (mediaData.media) {
+            return res.json({ success: true, media: mediaData.media, source: 'messages/media' });
+        }
+
+        // طريقة 2: استخدام media endpoint
+        const media2Response = await fetch(
+            `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/media/${msgId}?token=${ULTRAMSG_TOKEN}`
+        );
+        const media2Data = await media2Response.json();
+
+        if (media2Data.media || media2Data.url) {
+            return res.json({ success: true, media: media2Data.media || media2Data.url, source: 'media/{id}' });
+        }
+
+        res.json({ success: false, message: 'لم يتم العثور على رابط الوسائط', response: { mediaData, media2Data } });
+    } catch(e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// Serve export page
+app.get('/export', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'export.html'));
+});
+
 // Public endpoint للوسائط من Firebase (بدون authentication)
 app.get('/api/public/media', async (req, res) => {
     try {
