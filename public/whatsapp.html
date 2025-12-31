@@ -687,10 +687,35 @@
                 </div>
             `;
 
-            // Load messages
+            // Load messages from Ultra Msg + Firebase media
             try {
+                // جلب الرسائل من Ultra Msg
                 const response = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${chatId}&limit=100`);
                 const messages = await response.json();
+
+                // جلب الوسائط من Firebase
+                const mediaResponse = await fetch(`/api/public/media?chatId=${chatId}&limit=100`);
+                const mediaData = await mediaResponse.json();
+
+                // دمج الوسائط مع الرسائل
+                if (mediaData.success && mediaData.messages.length > 0) {
+                    const mediaMap = new Map();
+                    mediaData.messages.forEach(m => {
+                        if (m.media && m.messageId) {
+                            mediaMap.set(m.messageId, m.media);
+                        }
+                    });
+
+                    // إضافة روابط الوسائط للرسائل
+                    messages.forEach(msg => {
+                        if (!msg.media && mediaMap.has(msg.id)) {
+                            msg.media = mediaMap.get(msg.id);
+                        }
+                    });
+
+                    console.log('📷 Media URLs merged:', mediaMap.size);
+                }
+
                 renderMessages(messages);
             } catch(e) {
                 console.error('Error loading messages:', e);
