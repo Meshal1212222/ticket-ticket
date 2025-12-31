@@ -17,6 +17,8 @@
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* ==================== MOBILE FIRST DESIGN ==================== */
@@ -129,7 +131,12 @@
         .chats-list {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scroll-behavior: smooth;
+            will-change: scroll-position;
+            touch-action: pan-y;
         }
 
         .chat-item {
@@ -363,10 +370,15 @@
         .messages-area {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 10px 12px;
             background: #0b141a;
             background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAG1BMVEUNExgNExgNExgNExgNExgNExgNExgNExgNExgPSv+nAAAACHRSTlMIEBggKDA4QH+9qYkAAABfSURBVDjLY2AYBfQABqJUKDMwOBClAqSbgUGBKBXK6AwMTESpUGZkYBAgSoWyPAMDPVEqkFWKMBADGBiJcsIIVUGCCuRIkCZSBUTIkiog0RUQISvJARyhKshxhRAAAPl3ECe0WhLUAAAAAElFTkSuQmCC');
             -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scroll-behavior: auto;
+            will-change: scroll-position;
+            touch-action: pan-y;
         }
 
         .message {
@@ -533,6 +545,15 @@
             font-size: 1.2em;
         }
 
+        /* Main Section Mobile */
+        .main-section {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
         /* ==================== DESKTOP STYLES ==================== */
 
         @media (min-width: 768px) {
@@ -542,8 +563,7 @@
 
             .main-section {
                 width: 400px;
-                display: flex;
-                flex-direction: column;
+                flex: none;
                 border-left: 1px solid #2a3942;
             }
 
@@ -578,18 +598,29 @@
             }
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
+        /* Scrollbar - Hide on mobile, show on desktop */
+        @media (max-width: 767px) {
+            ::-webkit-scrollbar {
+                display: none;
+            }
+            * {
+                scrollbar-width: none;
+            }
         }
 
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
+        @media (min-width: 768px) {
+            ::-webkit-scrollbar {
+                width: 6px;
+            }
 
-        ::-webkit-scrollbar-thumb {
-            background: #374045;
-            border-radius: 3px;
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: #374045;
+                border-radius: 3px;
+            }
         }
 
         /* Media in messages */
