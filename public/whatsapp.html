@@ -439,7 +439,8 @@
                     <span>📊</span>
                     <span>⋮</span>
                 </div>
-                <h2>الدردشات <span id="chat-count" style="font-size:0.6em;color:#00a884;"></span></h2>
+                <h2>الدردشات <span id="chat-count" style="font-size:0.6em;color:#00a884;"></span> <span style="font-size:0.5em;color:#25d366;animation:pulse 2s infinite;">🟢 LIVE</span></h2>
+                <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}</style>
             </div>
 
             <div class="search-box">
@@ -793,8 +794,61 @@
             btn.textContent = '📤';
         }
 
+        // Auto-refresh variables
+        let refreshInterval = null;
+        let chatRefreshInterval = null;
+        let currentChatName = '';
+
+        // تحديث الرسائل تلقائياً كل 3 ثواني
+        async function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+
+            refreshInterval = setInterval(async () => {
+                if (!currentChat) return;
+
+                try {
+                    const response = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${currentChat}&limit=100`);
+                    const messages = await response.json();
+                    renderMessages(messages);
+                } catch(e) {
+                    console.error('Auto-refresh error:', e);
+                }
+            }, 3000); // كل 3 ثواني
+        }
+
+        // تحديث قائمة المحادثات كل 10 ثواني
+        function startChatListRefresh() {
+            if (chatRefreshInterval) clearInterval(chatRefreshInterval);
+
+            chatRefreshInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API}/chats?token=${TOKEN}&limit=10000`);
+                    const newChats = await response.json();
+
+                    // تحديث فقط إذا تغير العدد
+                    if (newChats.length !== allChats.length) {
+                        allChats = newChats;
+                        renderChats(allChats);
+                    }
+                } catch(e) {
+                    console.error('Chat list refresh error:', e);
+                }
+            }, 10000); // كل 10 ثواني
+        }
+
+        // تعديل openChat لتشغيل التحديث التلقائي
+        const originalOpenChat = openChat;
+        openChat = async function(chatId, name) {
+            currentChatName = name;
+            await originalOpenChat(chatId, name);
+            startAutoRefresh();
+        };
+
         // Init
         loadChats();
+        startChatListRefresh();
+
+        console.log('🟢 Live mode enabled - refreshing every 3 seconds');
     </script>
 </body>
 </html>
