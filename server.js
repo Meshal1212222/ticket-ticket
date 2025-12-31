@@ -698,31 +698,37 @@ app.get('/api/public/media', async (req, res) => {
         const chatId = req.query.chatId;
         const limit = parseInt(req.query.limit) || 50;
 
-        let query = db.collection('whatsapp_messages')
-            .where('hasMedia', '==', true)
-            .orderBy('timestamp', 'desc')
-            .limit(limit);
-
+        // استخدام query بسيط بدون composite index
+        let query;
         if (chatId) {
             query = db.collection('whatsapp_messages')
                 .where('chatId', '==', chatId)
-                .where('hasMedia', '==', true)
+                .limit(limit * 2); // جلب أكثر ثم فلترة
+        } else {
+            query = db.collection('whatsapp_messages')
                 .orderBy('timestamp', 'desc')
-                .limit(limit);
+                .limit(limit * 2);
         }
 
         const snapshot = await query.get();
-        const messages = snapshot.docs.map(doc => ({
-            id: doc.id,
-            messageId: doc.data().messageId,
-            type: doc.data().type,
-            media: doc.data().media,
-            mimetype: doc.data().mimetype,
-            filename: doc.data().filename,
-            timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
-            from: doc.data().from,
-            body: doc.data().body
-        }));
+
+        // فلترة الوسائط يدوياً
+        const messages = snapshot.docs
+            .map(doc => ({
+                id: doc.id,
+                messageId: doc.data().messageId,
+                type: doc.data().type,
+                media: doc.data().media,
+                mimetype: doc.data().mimetype,
+                filename: doc.data().filename,
+                timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
+                from: doc.data().from,
+                chatId: doc.data().chatId,
+                hasMedia: doc.data().hasMedia,
+                body: doc.data().body
+            }))
+            .filter(m => m.hasMedia && m.media) // فقط الرسائل التي لديها وسائط مع رابط
+            .slice(0, limit);
 
         res.json({ success: true, count: messages.length, messages });
     } catch (error) {

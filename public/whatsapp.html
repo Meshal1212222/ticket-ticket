@@ -956,8 +956,14 @@
             let html = '';
             let lastDate = '';
 
-            // ترتيب الرسائل من الأقدم للأحدث (الأقدم في الأعلى)
-            const sortedMessages = [...messages].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            // ترتيب الرسائل من الأقدم للأحدث (الأقدم في الأعلى، الأحدث في الأسفل)
+            const sortedMessages = [...messages].sort((a, b) => {
+                const timeA = a.timestamp || 0;
+                const timeB = b.timestamp || 0;
+                return timeA - timeB; // الأصغر (الأقدم) أولاً
+            });
+
+            console.log('Messages order:', sortedMessages.map(m => ({time: m.timestamp, date: new Date(m.timestamp * 1000).toLocaleString()})));
 
             sortedMessages.forEach(msg => {
                 const date = new Date(msg.timestamp * 1000);
@@ -983,19 +989,21 @@
 
                 if (msg.media) {
                     if (msg.type === 'image') {
-                        content = `<img src="${msg.media}" onclick="window.open('${msg.media}')" onerror="this.outerHTML='<div class=\\'media-placeholder\\'>🖼️</div>'">`;
+                        content = `<img src="${msg.media}" onclick="window.open('${msg.media}')" onerror="this.outerHTML='<div class=\\'media-placeholder\\'>🖼️ صورة</div>'">`;
                     } else if (msg.type === 'video') {
-                        content = `<video src="${msg.media}" controls></video>`;
+                        content = `<video src="${msg.media}" controls onerror="this.outerHTML='<div class=\\'media-placeholder\\'>🎬 فيديو</div>'"></video>`;
                     } else if (msg.type === 'audio' || msg.type === 'ptt') {
                         content = `<audio src="${msg.media}" controls></audio>`;
                     } else if (msg.type === 'document') {
                         content = `<a href="${msg.media}" target="_blank" style="color:#00a884;">📎 ${msg.filename || 'ملف'}</a>`;
                     } else if (msg.type === 'sticker') {
-                        content = `<img src="${msg.media}" style="max-width:150px;">`;
+                        content = `<img src="${msg.media}" style="max-width:150px;" onerror="this.outerHTML='😊'">`;
                     }
                     if (msg.body) content += `<div class="message-text" style="margin-top:8px;">${escapeHtml(msg.body)}</div>`;
                 } else if (mediaTypes[msg.type]) {
-                    content = `<div class="media-placeholder">${mediaTypes[msg.type]}</div>`;
+                    // محاولة جلب الوسائط من Ultra Msg
+                    const msgId = msg.id;
+                    content = `<div class="media-placeholder" id="media-${msgId}" onclick="tryLoadMedia('${msgId}', this)">${mediaTypes[msg.type]}<br><small style="font-size:0.5em;">اضغط للمحاولة</small></div>`;
                     if (msg.body) content += `<div class="message-text" style="margin-top:8px;">${escapeHtml(msg.body)}</div>`;
                 } else if (msg.body) {
                     content = `<div class="message-text">${escapeHtml(msg.body)}</div>`;
@@ -1026,6 +1034,32 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // محاولة جلب الوسائط من Ultra Msg
+        async function tryLoadMedia(msgId, element) {
+            element.innerHTML = '⏳ جاري التحميل...';
+            try {
+                const response = await fetch(`/api/export/media/${msgId}`);
+                const data = await response.json();
+
+                if (data.success && data.media) {
+                    // تحديد نوع الوسائط
+                    if (data.media.includes('.jpg') || data.media.includes('.jpeg') || data.media.includes('.png') || data.media.includes('.webp')) {
+                        element.outerHTML = `<img src="${data.media}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="window.open('${data.media}')">`;
+                    } else if (data.media.includes('.mp4') || data.media.includes('.mov')) {
+                        element.outerHTML = `<video src="${data.media}" controls style="max-width:100%;"></video>`;
+                    } else if (data.media.includes('.mp3') || data.media.includes('.ogg') || data.media.includes('.opus')) {
+                        element.outerHTML = `<audio src="${data.media}" controls></audio>`;
+                    } else {
+                        element.outerHTML = `<a href="${data.media}" target="_blank" style="color:#00a884;">📎 تحميل الملف</a>`;
+                    }
+                } else {
+                    element.innerHTML = '❌ غير متاح<br><small>الوسائط القديمة منتهية</small>';
+                }
+            } catch(e) {
+                element.innerHTML = '❌ خطأ';
+            }
         }
 
         async function sendMessage() {
