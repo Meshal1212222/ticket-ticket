@@ -520,9 +520,45 @@ app.get('/api/health', (req, res) => {
         status: 'ok',
         firebase: !!db,
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN),
+        whatsappGroup: WHATSAPP_GROUP_ID ? 'configured' : 'NOT SET',
         openai: !!openai,
         webhook: 'https://ticket-ticket-production.up.railway.app/webhook/ultramsg'
     });
+});
+
+// اختبار إرسال رسالة للقروب
+app.get('/api/test-send', async (req, res) => {
+    try {
+        if (!WHATSAPP_GROUP_ID) {
+            return res.json({
+                success: false,
+                error: 'WHATSAPP_GROUP_ID غير محدد في متغيرات البيئة',
+                hint: 'أضف WHATSAPP_GROUP_ID في Railway Environment Variables'
+            });
+        }
+
+        const testMessage = `🔔 رسالة اختبار\n⏰ ${new Date().toLocaleString('ar-SA')}`;
+
+        const response = await fetch(`https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: ULTRAMSG_TOKEN,
+                to: WHATSAPP_GROUP_ID,
+                body: testMessage
+            })
+        });
+
+        const data = await response.json();
+
+        res.json({
+            success: !data.error,
+            groupId: WHATSAPP_GROUP_ID,
+            response: data
+        });
+    } catch(e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
 });
 
 // ==================== أداة تصدير البيانات ====================
