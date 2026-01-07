@@ -2130,6 +2130,71 @@ app.get('/whatsapp', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'whatsapp.html'));
 });
 
+// Terms of Service page (required by Twitter)
+app.get('/terms', (req, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شروط الخدمة - قولدن تيكت</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.8; }
+        h1 { color: #d4af37; }
+    </style>
+</head>
+<body>
+    <h1>🎫 شروط الخدمة - قولدن تيكت</h1>
+    <p>مرحباً بك في قولدن تيكت. باستخدامك لخدماتنا، فإنك توافق على الشروط التالية:</p>
+    <h2>1. الخدمة</h2>
+    <p>قولدن تيكت هي منصة لبيع وشراء التذاكر للفعاليات.</p>
+    <h2>2. المسؤولية</h2>
+    <p>نحن نسعى لتقديم أفضل خدمة ممكنة، لكننا غير مسؤولين عن أي خسائر ناتجة عن استخدام الخدمة.</p>
+    <h2>3. الاستخدام</h2>
+    <p>يجب استخدام الخدمة بشكل قانوني ومسؤول.</p>
+    <p>آخر تحديث: يناير 2025</p>
+</body>
+</html>
+    `);
+});
+
+// Privacy Policy page (required by Twitter)
+app.get('/privacy', (req, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سياسة الخصوصية - قولدن تيكت</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.8; }
+        h1 { color: #d4af37; }
+    </style>
+</head>
+<body>
+    <h1>🔒 سياسة الخصوصية - قولدن تيكت</h1>
+    <p>نحن في قولدن تيكت نحترم خصوصيتك.</p>
+    <h2>1. البيانات التي نجمعها</h2>
+    <p>نجمع المعلومات اللازمة لتقديم الخدمة مثل: الاسم، رقم الجوال، البريد الإلكتروني.</p>
+    <h2>2. استخدام البيانات</h2>
+    <p>نستخدم بياناتك فقط لتقديم الخدمة والتواصل معك بخصوص طلباتك.</p>
+    <h2>3. حماية البيانات</h2>
+    <p>نتخذ إجراءات أمنية لحماية بياناتك من الوصول غير المصرح به.</p>
+    <h2>4. مشاركة البيانات</h2>
+    <p>لا نبيع أو نشارك بياناتك مع أطراف ثالثة إلا عند الضرورة لتقديم الخدمة.</p>
+    <p>آخر تحديث: يناير 2025</p>
+</body>
+</html>
+    `);
+});
+
+// Twitter OAuth callback
+app.get('/callback', (req, res) => {
+    res.send('Twitter OAuth Callback - Success');
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
