@@ -1143,11 +1143,17 @@ app.get('/api/twitter/check-and-reply', async (req, res) => {
 
     try {
         const me = await twitterClient.v2.me();
-        const mentions = await twitterClient.v2.userMentionTimeline(me.data.id, {
+
+        // بناء الـ options بدون since_id إذا كان null
+        const mentionOptions = {
             max_results: 10,
-            since_id: lastCheckedMentionId,
             'tweet.fields': ['created_at', 'author_id', 'text']
-        });
+        };
+        if (lastCheckedMentionId) {
+            mentionOptions.since_id = lastCheckedMentionId;
+        }
+
+        const mentions = await twitterClient.v2.userMentionTimeline(me.data.id, mentionOptions);
 
         const newMentions = mentions.data?.data || [];
         const processed = [];
