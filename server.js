@@ -1597,25 +1597,44 @@ app.get('/api/twitter/check-dms', async (req, res) => {
     try {
         const me = await twitterClient.v2.me();
 
-        // جلب الرسائل الخاصة
-        let dmEvents;
-        try {
-            dmEvents = await twitterClient.v2.listDmEvents({
-                max_results: 20,
-                'dm_event.fields': ['created_at', 'sender_id', 'text', 'dm_conversation_id']
-            });
-        } catch (dmError) {
-            console.error('❌ DM API Error:', JSON.stringify(dmError, null, 2));
-            return res.status(403).json({
-                success: false,
-                error: dmError.message || 'DM access denied',
-                code: dmError.code,
-                details: dmError.data || dmError.errors,
-                hint: 'تأكد من: 1) الـ App في Project 2) صلاحيات DM مفعلة 3) User authentication settings صحيحة'
-            });
-        }
+        // جلب الرسائل الخاصة - نجرب v1 أولاً ثم v2
+        let events = [];
+        let apiUsed = '';
 
-        const events = dmEvents.data?.data || [];
+        // محاولة 1: Twitter API v1.1
+        try {
+            const v1DMs = await twitterClient.v1.listDmEvents({ count: 20 });
+            events = (v1DMs.events || []).map(e => ({
+                id: e.id,
+                text: e.message_create?.message_data?.text,
+                sender_id: e.message_create?.sender_id,
+                event_type: 'MessageCreate'
+            }));
+            apiUsed = 'v1';
+            console.log('✅ Using Twitter API v1.1 for DMs');
+        } catch (v1Error) {
+            console.log('⚠️ v1 DM failed:', v1Error.message);
+
+            // محاولة 2: Twitter API v2
+            try {
+                const dmEvents = await twitterClient.v2.listDmEvents({
+                    max_results: 20,
+                    'dm_event.fields': ['created_at', 'sender_id', 'text', 'dm_conversation_id']
+                });
+                events = dmEvents.data?.data || [];
+                apiUsed = 'v2';
+                console.log('✅ Using Twitter API v2 for DMs');
+            } catch (v2Error) {
+                console.error('❌ v2 DM failed:', v2Error.message);
+                return res.status(403).json({
+                    success: false,
+                    error: 'لا يمكن الوصول للرسائل الخاصة',
+                    v1Error: v1Error.message,
+                    v2Error: v2Error.message,
+                    hint: 'تأكد من: 1) الـ App في Project 2) لديك Pro أو Enterprise access 3) صلاحيات DM مفعلة'
+                });
+            }
+        }
         const processed = [];
 
         for (const event of events) {
@@ -1668,6 +1687,7 @@ app.get('/api/twitter/check-dms', async (req, res) => {
 
         res.json({
             success: true,
+            apiUsed,
             checked: events.length,
             processed: processed.length,
             messages: processed
