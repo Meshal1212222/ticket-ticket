@@ -1100,14 +1100,10 @@ app.post('/api/twitter/reply/:tweetId', async (req, res) => {
     }
 });
 
-// فحص المنشنز الجديدة والرد عليها تلقائياً + إرسال لقروب الواتساب
+// فحص المنشنز الجديدة وإرسالها لقروب الواتساب (بدون رد تلقائي)
 app.get('/api/twitter/check-and-reply', async (req, res) => {
     if (!twitterClient) {
         return res.status(400).json({ success: false, error: 'Twitter not configured' });
-    }
-
-    if (!twitterAutoReplyEnabled) {
-        return res.json({ success: false, message: 'Auto-reply is disabled' });
     }
 
     try {
@@ -1119,33 +1115,25 @@ app.get('/api/twitter/check-and-reply', async (req, res) => {
         });
 
         const newMentions = mentions.data?.data || [];
-        const replies = [];
+        const processed = [];
 
         for (const mention of newMentions) {
-            // لا نرد على أنفسنا
+            // لا نعالج منشناتنا نحن
             if (mention.author_id === me.data.id) continue;
 
             try {
-                // 1. الرد على المنشن في تويتر
-                const reply = await twitterClient.v2.reply(twitterAutoReplyMessage, mention.id);
-                replies.push({
-                    mentionId: mention.id,
-                    mentionText: mention.text,
-                    replyId: reply.data.id
-                });
-
                 // تحديث آخر منشن تم فحصه
                 if (!lastCheckedMentionId || mention.id > lastCheckedMentionId) {
                     lastCheckedMentionId = mention.id;
                 }
 
-                // 2. إرسال إشعار لقروب الواتساب
+                // 1. إرسال إشعار لقروب الواتساب
                 if (WHATSAPP_GROUP_ID) {
                     const whatsappMsg = `🐦 منشن جديد من تويتر!\n\n📝 ${mention.text}\n\n🔗 https://twitter.com/i/status/${mention.id}`;
                     await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
                 }
 
-                // 3. إنشاء تذكرة في النظام
+                // 2. إنشاء تذكرة في النظام
                 try {
                     await fetch(`http://localhost:${PORT}/api/ticket`, {
                         method: 'POST',
@@ -1165,31 +1153,35 @@ app.get('/api/twitter/check-and-reply', async (req, res) => {
                     console.error('Error creating ticket for mention:', ticketErr.message);
                 }
 
-                // 4. حفظ في Firebase
+                // 3. حفظ في Firebase
                 if (db) {
-                    await db.collection('twitter_replies').add({
+                    await db.collection('twitter_mentions').add({
                         mentionId: mention.id,
                         mentionText: mention.text,
-                        replyText: twitterAutoReplyMessage,
-                        replyId: reply.data.id,
+                        authorId: mention.author_id,
                         sentToWhatsApp: !!WHATSAPP_GROUP_ID,
                         timestamp: new Date()
                     });
                 }
 
-                // تأخير بين الردود لتجنب rate limiting
-                await new Promise(r => setTimeout(r, 1000));
+                processed.push({
+                    mentionId: mention.id,
+                    mentionText: mention.text
+                });
+
+                // تأخير لتجنب rate limiting
+                await new Promise(r => setTimeout(r, 500));
             } catch (e) {
-                console.error('Error replying to mention:', e.message);
+                console.error('Error processing mention:', e.message);
             }
         }
 
         res.json({
             success: true,
             checked: newMentions.length,
-            replied: replies.length,
+            processed: processed.length,
             sentToWhatsApp: !!WHATSAPP_GROUP_ID,
-            replies
+            mentions: processed
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
