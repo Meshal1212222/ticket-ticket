@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 const OpenAI = require('openai');
+const { TwitterApi } = require('twitter-api-v2');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,6 +47,38 @@ if (openai) {
 } else {
     console.log('⚠️ OpenAI not configured - OPENAI_API_KEY missing');
 }
+
+// Twitter/X Configuration
+const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
+const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
+const TWITTER_ACCESS_TOKEN = process.env.TWITTER_ACCESS_TOKEN;
+const TWITTER_ACCESS_SECRET = process.env.TWITTER_ACCESS_SECRET;
+const TWITTER_BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN;
+
+let twitterClient = null;
+let twitterReadOnly = null;
+
+if (TWITTER_API_KEY && TWITTER_API_SECRET && TWITTER_ACCESS_TOKEN && TWITTER_ACCESS_SECRET) {
+    try {
+        twitterClient = new TwitterApi({
+            appKey: TWITTER_API_KEY,
+            appSecret: TWITTER_API_SECRET,
+            accessToken: TWITTER_ACCESS_TOKEN,
+            accessSecret: TWITTER_ACCESS_SECRET,
+        });
+        twitterReadOnly = twitterClient.readOnly;
+        console.log('✅ Twitter configured');
+    } catch (error) {
+        console.error('❌ Twitter config error:', error.message);
+    }
+} else {
+    console.log('⚠️ Twitter not configured - missing credentials');
+}
+
+// إعدادات الرد التلقائي على تويتر
+let twitterAutoReplyEnabled = false;
+let twitterAutoReplyMessage = 'شكراً لتواصلك! سنرد عليك قريباً 🙏';
+let lastCheckedMentionId = null;
 
 // API Key Authentication Middleware
 function authenticateAPI(req, res, next) {
@@ -522,8 +555,198 @@ app.get('/api/health', (req, res) => {
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN),
         whatsappGroup: WHATSAPP_GROUP_ID ? 'configured' : 'NOT SET',
         openai: !!openai,
+        twitter: !!twitterClient,
+        twitterAutoReply: twitterAutoReplyEnabled,
         webhook: 'https://ticket-ticket-production.up.railway.app/webhook/ultramsg'
     });
+});
+
+// ==================== Twitter/X API ====================
+
+// حالة تويتر
+app.get('/api/twitter/status', async (req, res) => {
+    res.json({
+        configured: !!twitterClient,
+        autoReplyEnabled: twitterAutoReplyEnabled,
+        autoReplyMessage: twitterAutoReplyMessage,
+        lastCheckedMentionId
+    });
+});
+
+// تفعيل/تعطيل الرد التلقائي
+app.post('/api/twitter/auto-reply', async (req, res) => {
+    const { enabled, message } = req.body;
+
+    if (typeof enabled === 'boolean') {
+        twitterAutoReplyEnabled = enabled;
+    }
+    if (message) {
+        twitterAutoReplyMessage = message;
+    }
+
+    res.json({
+        success: true,
+        autoReplyEnabled: twitterAutoReplyEnabled,
+        autoReplyMessage: twitterAutoReplyMessage
+    });
+});
+
+// جلب المنشنز
+app.get('/api/twitter/mentions', async (req, res) => {
+    if (!twitterClient) {
+        return res.status(400).json({ success: false, error: 'Twitter not configured' });
+    }
+
+    try {
+        const me = await twitterClient.v2.me();
+        const mentions = await twitterClient.v2.userMentionTimeline(me.data.id, {
+            max_results: 10,
+            'tweet.fields': ['created_at', 'author_id', 'text']
+        });
+
+        res.json({
+            success: true,
+            user: me.data,
+            mentions: mentions.data?.data || []
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// إرسال تغريدة
+app.post('/api/twitter/tweet', async (req, res) => {
+    if (!twitterClient) {
+        return res.status(400).json({ success: false, error: 'Twitter not configured' });
+    }
+
+    const { text, replyToId } = req.body;
+
+    if (!text) {
+        return res.status(400).json({ success: false, error: 'Text is required' });
+    }
+
+    try {
+        let tweet;
+        if (replyToId) {
+            tweet = await twitterClient.v2.reply(text, replyToId);
+        } else {
+            tweet = await twitterClient.v2.tweet(text);
+        }
+
+        res.json({ success: true, tweet: tweet.data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// الرد على منشن معين
+app.post('/api/twitter/reply/:tweetId', async (req, res) => {
+    if (!twitterClient) {
+        return res.status(400).json({ success: false, error: 'Twitter not configured' });
+    }
+
+    const { tweetId } = req.params;
+    const { text } = req.body;
+    const replyText = text || twitterAutoReplyMessage;
+
+    try {
+        const reply = await twitterClient.v2.reply(replyText, tweetId);
+        res.json({ success: true, reply: reply.data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// فحص المنشنز الجديدة والرد عليها تلقائياً
+app.get('/api/twitter/check-and-reply', async (req, res) => {
+    if (!twitterClient) {
+        return res.status(400).json({ success: false, error: 'Twitter not configured' });
+    }
+
+    if (!twitterAutoReplyEnabled) {
+        return res.json({ success: false, message: 'Auto-reply is disabled' });
+    }
+
+    try {
+        const me = await twitterClient.v2.me();
+        const mentions = await twitterClient.v2.userMentionTimeline(me.data.id, {
+            max_results: 10,
+            since_id: lastCheckedMentionId,
+            'tweet.fields': ['created_at', 'author_id', 'text']
+        });
+
+        const newMentions = mentions.data?.data || [];
+        const replies = [];
+
+        for (const mention of newMentions) {
+            // لا نرد على أنفسنا
+            if (mention.author_id === me.data.id) continue;
+
+            try {
+                const reply = await twitterClient.v2.reply(twitterAutoReplyMessage, mention.id);
+                replies.push({
+                    mentionId: mention.id,
+                    mentionText: mention.text,
+                    replyId: reply.data.id
+                });
+
+                // تحديث آخر منشن تم فحصه
+                if (!lastCheckedMentionId || mention.id > lastCheckedMentionId) {
+                    lastCheckedMentionId = mention.id;
+                }
+
+                // حفظ في Firebase
+                if (db) {
+                    await db.collection('twitter_replies').add({
+                        mentionId: mention.id,
+                        mentionText: mention.text,
+                        replyText: twitterAutoReplyMessage,
+                        replyId: reply.data.id,
+                        timestamp: new Date()
+                    });
+                }
+
+                // تأخير بين الردود لتجنب rate limiting
+                await new Promise(r => setTimeout(r, 1000));
+            } catch (e) {
+                console.error('Error replying to mention:', e.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            checked: newMentions.length,
+            replied: replies.length,
+            replies
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// اختبار اتصال تويتر
+app.get('/api/twitter/test', async (req, res) => {
+    if (!twitterClient) {
+        return res.json({
+            success: false,
+            error: 'Twitter not configured',
+            hint: 'Add TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET to environment variables'
+        });
+    }
+
+    try {
+        const me = await twitterClient.v2.me();
+        res.json({
+            success: true,
+            user: me.data
+        });
+    } catch (error) {
+        res.json({
+            success: false,
+            error: error.message
+        });
+    }
 });
 
 // اختبار إرسال رسالة للقروب
