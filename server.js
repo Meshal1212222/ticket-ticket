@@ -1598,10 +1598,22 @@ app.get('/api/twitter/check-dms', async (req, res) => {
         const me = await twitterClient.v2.me();
 
         // جلب الرسائل الخاصة
-        const dmEvents = await twitterClient.v2.listDmEvents({
-            max_results: 20,
-            'dm_event.fields': ['created_at', 'sender_id', 'text', 'dm_conversation_id']
-        });
+        let dmEvents;
+        try {
+            dmEvents = await twitterClient.v2.listDmEvents({
+                max_results: 20,
+                'dm_event.fields': ['created_at', 'sender_id', 'text', 'dm_conversation_id']
+            });
+        } catch (dmError) {
+            console.error('❌ DM API Error:', JSON.stringify(dmError, null, 2));
+            return res.status(403).json({
+                success: false,
+                error: dmError.message || 'DM access denied',
+                code: dmError.code,
+                details: dmError.data || dmError.errors,
+                hint: 'تأكد من: 1) الـ App في Project 2) صلاحيات DM مفعلة 3) User authentication settings صحيحة'
+            });
+        }
 
         const events = dmEvents.data?.data || [];
         const processed = [];
