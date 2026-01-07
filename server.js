@@ -80,6 +80,57 @@ let twitterAutoReplyEnabled = false;
 let twitterAutoReplyMessage = 'شكراً لتواصلك! سنرد عليك قريباً 🙏';
 let lastCheckedMentionId = null;
 
+// إعدادات الرد التلقائي على واتساب
+let whatsappAutoReplyEnabled = true; // مفعل افتراضياً
+let whatsappAutoReplyMessage = `مرحباً بك في قولدن تيكت! 🎫
+
+شكراً لتواصلك معنا.
+تم استلام رسالتك وسيتم الرد عليك في أقرب وقت ممكن.
+
+للاستفسارات العاجلة يمكنك:
+📱 الاتصال على: [رقم الهاتف]
+🌐 زيارة موقعنا: [الموقع]
+
+فريق الدعم - قولدن تيكت`;
+let whatsappAutoReplyDelay = 2000; // تأخير 2 ثانية قبل الرد
+let whatsappRepliedChats = new Set(); // لتجنب الرد المتكرر في نفس الجلسة
+
+// دالة إرسال رد تلقائي على واتساب
+async function sendWhatsAppAutoReply(to, customMessage = null) {
+    if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN) {
+        console.log('⚠️ WhatsApp not configured for auto-reply');
+        return null;
+    }
+
+    const message = customMessage || whatsappAutoReplyMessage;
+    const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: ULTRAMSG_TOKEN,
+                to: to,
+                body: message
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            console.error('❌ WhatsApp Auto-Reply Error:', data.error);
+            return null;
+        }
+
+        console.log('✅ Auto-reply sent to:', to);
+        return data;
+    } catch (error) {
+        console.error('❌ Error sending auto-reply:', error);
+        return null;
+    }
+}
+
 // API Key Authentication Middleware
 function authenticateAPI(req, res, next) {
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
@@ -443,18 +494,21 @@ app.post('/webhook/ultramsg', async (req, res) => {
         // التحقق من نوع الـ webhook
         if (data.event_type === 'message_received' || data.data || data.from || data.body !== undefined) {
             const message = data.data || data;
+            const fromNumber = message.from || message.sender || '';
+            const isFromMe = message.fromMe === true;
+            const isGroup = message.isGroup === true || (fromNumber && fromNumber.includes('@g.us'));
 
             // حفظ الرسالة في Firebase
             if (db) {
                 const messageDoc = {
                     messageId: message.id || `msg_${Date.now()}`,
-                    from: message.from || message.sender || '',
+                    from: fromNumber,
                     to: message.to || '',
                     body: message.body || '',
                     type: message.type || 'chat',
                     timestamp: message.timestamp ? new Date(message.timestamp * 1000) : new Date(),
-                    fromMe: message.fromMe === true,
-                    chatId: message.from || message.chatId || message.sender || '',
+                    fromMe: isFromMe,
+                    chatId: fromNumber || message.chatId || '',
                     // معلومات الوسائط
                     hasMedia: ['image', 'video', 'audio', 'ptt', 'document', 'sticker'].includes(message.type),
                     media: message.media || '',
@@ -462,12 +516,51 @@ app.post('/webhook/ultramsg', async (req, res) => {
                     filename: message.filename || '',
                     // معلومات إضافية
                     pushName: message.pushName || message.notifyName || '',
-                    isGroup: message.isGroup === true || (message.from && message.from.includes('@g.us')),
+                    isGroup: isGroup,
                     receivedAt: new Date().toISOString()
                 };
 
                 await db.collection('whatsapp_messages').add(messageDoc);
                 console.log('✅ Message saved to Firebase:', messageDoc.from, messageDoc.body.substring(0, 50));
+            }
+
+            // ========== الرد التلقائي على واتساب ==========
+            // لا نرد على:
+            // - رسائلنا نحن (fromMe)
+            // - رسائل المجموعات
+            // - إذا كان الرد التلقائي معطل
+            if (whatsappAutoReplyEnabled && !isFromMe && !isGroup && fromNumber) {
+                // التحقق من عدم الرد على نفس الشخص في فترة قصيرة
+                const chatKey = fromNumber;
+
+                if (!whatsappRepliedChats.has(chatKey)) {
+                    // إضافة للقائمة لتجنب الرد المتكرر
+                    whatsappRepliedChats.add(chatKey);
+
+                    // إزالة من القائمة بعد ساعة (لإعادة الرد إذا راسل مرة أخرى)
+                    setTimeout(() => {
+                        whatsappRepliedChats.delete(chatKey);
+                    }, 60 * 60 * 1000); // ساعة واحدة
+
+                    // تأخير قبل إرسال الرد
+                    setTimeout(async () => {
+                        console.log('🤖 Sending auto-reply to:', fromNumber);
+                        const result = await sendWhatsAppAutoReply(fromNumber);
+
+                        // حفظ الرد في Firebase
+                        if (db && result) {
+                            await db.collection('whatsapp_auto_replies').add({
+                                to: fromNumber,
+                                message: whatsappAutoReplyMessage,
+                                originalMessage: message.body || '',
+                                timestamp: new Date(),
+                                success: true
+                            });
+                        }
+                    }, whatsappAutoReplyDelay);
+                } else {
+                    console.log('⏭️ Skipping auto-reply (already replied recently):', fromNumber);
+                }
             }
         }
 
@@ -554,6 +647,7 @@ app.get('/api/health', (req, res) => {
         firebase: !!db,
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN),
         whatsappGroup: WHATSAPP_GROUP_ID ? 'configured' : 'NOT SET',
+        whatsappAutoReply: whatsappAutoReplyEnabled,
         openai: !!openai,
         twitter: !!twitterClient,
         twitterAutoReply: twitterAutoReplyEnabled,
@@ -745,6 +839,124 @@ app.get('/api/twitter/test', async (req, res) => {
         res.json({
             success: false,
             error: error.message
+        });
+    }
+});
+
+// ==================== WhatsApp Auto-Reply API ====================
+
+// حالة الرد التلقائي على واتساب
+app.get('/api/whatsapp/auto-reply/status', async (req, res) => {
+    res.json({
+        success: true,
+        enabled: whatsappAutoReplyEnabled,
+        message: whatsappAutoReplyMessage,
+        delay: whatsappAutoReplyDelay,
+        recentlyReplied: whatsappRepliedChats.size,
+        configured: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
+    });
+});
+
+// تفعيل/تعطيل الرد التلقائي
+app.post('/api/whatsapp/auto-reply/toggle', async (req, res) => {
+    const { enabled } = req.body;
+
+    if (typeof enabled === 'boolean') {
+        whatsappAutoReplyEnabled = enabled;
+    } else {
+        // Toggle if no value provided
+        whatsappAutoReplyEnabled = !whatsappAutoReplyEnabled;
+    }
+
+    console.log(`🔄 WhatsApp Auto-Reply ${whatsappAutoReplyEnabled ? 'enabled' : 'disabled'}`);
+
+    res.json({
+        success: true,
+        enabled: whatsappAutoReplyEnabled,
+        message: `الرد التلقائي ${whatsappAutoReplyEnabled ? 'مفعل' : 'معطل'}`
+    });
+});
+
+// تحديث رسالة الرد التلقائي
+app.post('/api/whatsapp/auto-reply/message', async (req, res) => {
+    const { message, delay } = req.body;
+
+    if (message && typeof message === 'string') {
+        whatsappAutoReplyMessage = message;
+    }
+
+    if (delay && typeof delay === 'number' && delay >= 0) {
+        whatsappAutoReplyDelay = delay;
+    }
+
+    res.json({
+        success: true,
+        message: whatsappAutoReplyMessage,
+        delay: whatsappAutoReplyDelay
+    });
+});
+
+// إعادة تعيين قائمة الردود (للسماح بالرد مجدداً على جميع المحادثات)
+app.post('/api/whatsapp/auto-reply/reset', async (req, res) => {
+    const count = whatsappRepliedChats.size;
+    whatsappRepliedChats.clear();
+
+    res.json({
+        success: true,
+        message: `تم إعادة تعيين ${count} محادثة`,
+        cleared: count
+    });
+});
+
+// جلب سجل الردود التلقائية
+app.get('/api/whatsapp/auto-reply/logs', async (req, res) => {
+    try {
+        if (!db) {
+            return res.json({ success: true, logs: [] });
+        }
+
+        const limit = parseInt(req.query.limit) || 50;
+        const snapshot = await db.collection('whatsapp_auto_replies')
+            .orderBy('timestamp', 'desc')
+            .limit(limit)
+            .get();
+
+        const logs = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp
+        }));
+
+        res.json({ success: true, count: logs.length, logs });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// اختبار إرسال رد تلقائي لرقم معين
+app.post('/api/whatsapp/auto-reply/test', async (req, res) => {
+    const { to, message } = req.body;
+
+    if (!to) {
+        return res.status(400).json({
+            success: false,
+            error: 'الرجاء تحديد رقم المستلم (to)',
+            example: { to: '966501234567@c.us', message: 'رسالة اختبار (اختياري)' }
+        });
+    }
+
+    const result = await sendWhatsAppAutoReply(to, message);
+
+    if (result) {
+        res.json({
+            success: true,
+            message: 'تم إرسال الرسالة',
+            result
+        });
+    } else {
+        res.status(500).json({
+            success: false,
+            error: 'فشل إرسال الرسالة'
         });
     }
 });
