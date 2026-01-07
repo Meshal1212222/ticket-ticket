@@ -849,8 +849,18 @@ app.post('/webhook/ultramsg', async (req, res) => {
         if (data.event_type === 'message_received' || data.data || data.from || data.body !== undefined) {
             const message = data.data || data;
             const fromNumber = message.from || message.sender || '';
-            const isFromMe = message.fromMe === true;
-            const isGroup = message.isGroup === true || (fromNumber && fromNumber.includes('@g.us'));
+            // معالجة fromMe بشكل صحيح (قد يكون string أو boolean أو number)
+            const isFromMe = message.fromMe === true || message.fromMe === 'true' || message.fromMe === 1 || message.fromMe === '1';
+            const isGroup = message.isGroup === true || message.isGroup === 'true' || (fromNumber && fromNumber.includes('@g.us'));
+
+            console.log('📱 Message details:', {
+                from: fromNumber,
+                body: message.body?.substring(0, 50),
+                fromMe: message.fromMe,
+                isFromMe,
+                isGroup,
+                chatbotEnabled
+            });
 
             // حفظ الرسالة في Firebase
             if (db) {
@@ -883,31 +893,51 @@ app.post('/webhook/ultramsg', async (req, res) => {
             // - رسائلنا نحن (fromMe)
             // - رسائل المجموعات
             // - إذا كان الـ chatbot معطل
+
+            console.log('🔍 Chatbot check:', {
+                chatbotEnabled,
+                isFromMe,
+                isGroup,
+                hasFromNumber: !!fromNumber,
+                hasBody: !!message.body,
+                shouldProcess: chatbotEnabled && !isFromMe && !isGroup && fromNumber && message.body
+            });
+
             if (chatbotEnabled && !isFromMe && !isGroup && fromNumber && message.body) {
+                console.log('✅ Chatbot WILL process this message!');
+
                 // تأخير قبل إرسال الرد
                 setTimeout(async () => {
-                    console.log('🤖 Chatbot processing message from:', fromNumber);
+                    try {
+                        console.log('🤖 Chatbot processing message from:', fromNumber);
 
-                    const contactName = message.pushName || message.notifyName || '';
-                    const contactPhone = fromNumber.replace('@c.us', '');
+                        const contactName = message.pushName || message.notifyName || '';
+                        const contactPhone = fromNumber.replace('@c.us', '');
 
-                    // معالجة الرسالة بالـ Chatbot
-                    const botResponse = await handleChatbot(fromNumber, message.body, contactName, contactPhone);
+                        // معالجة الرسالة بالـ Chatbot
+                        const botResponse = await handleChatbot(fromNumber, message.body, contactName, contactPhone);
+                        console.log('🤖 Bot response:', botResponse?.substring(0, 100));
 
-                    if (botResponse) {
-                        await sendWhatsAppMessage(fromNumber, botResponse);
+                        if (botResponse) {
+                            const sendResult = await sendWhatsAppMessage(fromNumber, botResponse);
+                            console.log('📤 Send result:', sendResult);
 
-                        // حفظ الرد في Firebase
-                        if (db) {
-                            await db.collection('chatbot_responses').add({
-                                to: fromNumber,
-                                userMessage: message.body,
-                                botResponse: botResponse,
-                                timestamp: new Date()
-                            });
+                            // حفظ الرد في Firebase
+                            if (db) {
+                                await db.collection('chatbot_responses').add({
+                                    to: fromNumber,
+                                    userMessage: message.body,
+                                    botResponse: botResponse,
+                                    timestamp: new Date()
+                                });
+                            }
                         }
+                    } catch (chatbotError) {
+                        console.error('❌ Chatbot error:', chatbotError);
                     }
                 }, 1500); // تأخير 1.5 ثانية
+            } else {
+                console.log('⏭️ Chatbot skipped this message');
             }
         }
 
