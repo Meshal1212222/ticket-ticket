@@ -79,6 +79,11 @@ if (TWITTER_API_KEY && TWITTER_API_SECRET && TWITTER_ACCESS_TOKEN && TWITTER_ACC
 let twitterAutoReplyEnabled = false;
 let twitterAutoReplyMessage = 'شكراً لتواصلك! سنرد عليك قريباً 🙏';
 let lastCheckedMentionId = null;
+let lastCheckedDMId = null;
+let twitterDMChatbotEnabled = true; // شات بوت الرسائل الخاصة مفعل افتراضياً
+
+// تتبع حالة محادثات تويتر DM
+const twitterConversationStates = new Map();
 
 // ==================== نظام Chatbot قولدن تيكت ====================
 let chatbotEnabled = true; // مفعل افتراضياً
@@ -1240,6 +1245,466 @@ app.get('/api/twitter/test', async (req, res) => {
             error: error.message
         });
     }
+});
+
+// ==================== Twitter DM Chatbot ====================
+
+// إرسال رسالة خاصة على تويتر
+async function sendTwitterDM(userId, message) {
+    if (!twitterClient) return null;
+
+    try {
+        const result = await twitterClient.v2.sendDmToParticipant(userId, {
+            text: message
+        });
+        console.log('✅ Twitter DM sent to:', userId);
+        return result;
+    } catch (error) {
+        console.error('❌ Error sending Twitter DM:', error.message);
+        return null;
+    }
+}
+
+// معالج الشات بوت لرسائل تويتر الخاصة
+async function handleTwitterChatbot(senderId, messageText, senderName) {
+    const userMessage = messageText.trim().toLowerCase();
+    let state = twitterConversationStates.get(senderId) || { step: 'welcome', data: {}, lastUpdate: Date.now() };
+
+    state.lastUpdate = Date.now();
+    state.data.senderName = senderName;
+    state.data.senderId = senderId;
+
+    let response = null;
+
+    switch (state.step) {
+        case 'welcome':
+            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+
+كيف نقدر نساعدك اليوم؟
+
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة
+
+(أرسل رقم الخيار)`;
+            state.step = 'main_choice';
+            break;
+
+        case 'main_choice':
+            if (userMessage.includes('شراء') || userMessage.includes('1')) {
+                state.data.mainChoice = 'شراء تذكرة';
+                response = `🛒 استفسارك قبل ولا بعد شراء التذكرة؟
+
+1️⃣ قبل الشراء
+2️⃣ بعد الشراء
+
+(أرسل رقم الخيار)`;
+                state.step = 'buy_timing';
+            } else if (userMessage.includes('بيع') || userMessage.includes('2')) {
+                state.data.mainChoice = 'بيع تذكرة';
+                response = `💰 استفسارك قبل ولا بعد بيع التذكرة؟
+
+1️⃣ قبل البيع
+2️⃣ بعد البيع
+
+(أرسل رقم الخيار)`;
+                state.step = 'sell_timing';
+            } else {
+                response = `⚠️ عذراً، لم أفهم اختيارك
+
+الرجاء اختيار:
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة`;
+            }
+            break;
+
+        case 'buy_timing':
+            if (userMessage.includes('قبل') || userMessage.includes('1')) {
+                state.data.timing = 'قبل الشراء';
+                response = `🎯 ابشر! وش اسم الفعالية اللي تبي تشتري تذكرة لها؟`;
+                state.step = 'buy_event_name';
+            } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
+                state.data.timing = 'بعد الشراء';
+                response = `⚡ طيب، استفسارك يخص فعالية:
+
+1️⃣ فعالية إنتهت
+2️⃣ فعالية قادمة
+3️⃣ فعالية خارج السعودية
+
+(أرسل رقم الخيار)`;
+                state.step = 'buy_event_type';
+            } else {
+                response = `⚠️ الرجاء اختيار:
+1️⃣ قبل الشراء
+2️⃣ بعد الشراء`;
+            }
+            break;
+
+        case 'buy_event_name':
+            state.data.eventName = messageText;
+            await createTwitterTicket(senderId, state.data);
+            response = `✅ وصلنا طلبك!
+بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            state.step = 'completed';
+            break;
+
+        case 'buy_event_type':
+            if (userMessage.includes('انتهت') || userMessage.includes('إنتهت') || userMessage.includes('1')) {
+                state.data.eventType = 'فعالية إنتهت';
+            } else if (userMessage.includes('قادمة') || userMessage.includes('2')) {
+                state.data.eventType = 'فعالية قادمة';
+            } else if (userMessage.includes('خارج') || userMessage.includes('3')) {
+                state.data.eventType = 'فعالية خارج السعودية';
+            } else {
+                response = `⚠️ الرجاء اختيار:
+1️⃣ فعالية إنتهت
+2️⃣ فعالية قادمة
+3️⃣ فعالية خارج السعودية`;
+                break;
+            }
+            response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+            state.step = 'get_email';
+            break;
+
+        case 'get_email':
+            state.data.email = messageText;
+            await createTwitterTicket(senderId, state.data);
+            response = `✅ وصلنا طلبك!
+بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            state.step = 'completed';
+            break;
+
+        case 'sell_timing':
+            if (userMessage.includes('قبل') || userMessage.includes('1')) {
+                state.data.timing = 'قبل البيع';
+                response = `📋 اختر من القائمة عشان نساعدك:
+
+1️⃣ عرض تذاكري للبيع
+2️⃣ تذكرتي لم يتم قبولها
+3️⃣ لا أرى تذكرتي معروضة
+4️⃣ متى يصلني المبلغ؟
+5️⃣ التراجع عن البيع
+6️⃣ إرسال التذكرة بعد البيع
+
+(أرسل رقم الخيار)`;
+                state.step = 'sell_before_options';
+            } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
+                state.data.timing = 'بعد البيع';
+                response = `📋 اختر من القائمة عشان نساعدك:
+
+1️⃣ كيفية إرسال التذاكر
+2️⃣ التراجع عن البيع
+3️⃣ لم أستلم المبلغ حتى الآن
+4️⃣ حالة التذكرة "لم يستلم"
+5️⃣ أخرى
+
+(أرسل رقم الخيار)`;
+                state.step = 'sell_after_options';
+            } else {
+                response = `⚠️ الرجاء اختيار:
+1️⃣ قبل البيع
+2️⃣ بعد البيع`;
+            }
+            break;
+
+        case 'sell_before_options':
+            let beforeOption = '';
+            if (userMessage.includes('عرض') || userMessage.includes('1')) {
+                beforeOption = 'عرض تذاكري للبيع';
+                response = `📌 تقدر تعرض تذكرتك بالخطوات التالية:
+
+1️⃣ اضغط على "المزيد"
+2️⃣ اختر الفعالية
+3️⃣ أكمل البيانات
+
+وتصير تذكرتك معروضة للبيع! 🎫✨`;
+            } else if (userMessage.includes('قبول') || userMessage.includes('2')) {
+                beforeOption = 'تذكرتي لم يتم قبولها';
+                response = `💬 ابشر! بس زودنا بإيميلك المسجل وبنحل الموضوع 💪`;
+                state.data.sellOption = beforeOption;
+                state.step = 'get_email';
+                break;
+            } else if (userMessage.includes('أرى') || userMessage.includes('ارى') || userMessage.includes('3')) {
+                beforeOption = 'لا أرى تذكرتي معروضة';
+                response = `✅ لا تشيل هم!
+
+إذا حالة التذكرة "نشطة" يعني هي معروضة للعملاء ويشوفونها 👀🎫`;
+            } else if (userMessage.includes('مبلغ') || userMessage.includes('4')) {
+                beforeOption = 'متى يصلني المبلغ';
+                response = `💰 لا تشيل هم!
+
+يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
+وبيوصلك إن شاء الله 🙏`;
+            } else if (userMessage.includes('تراجع') || userMessage.includes('5')) {
+                beforeOption = 'التراجع عن البيع';
+                response = `⚠️ للأسف!
+
+ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
+
+إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
+            } else if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('6')) {
+                beforeOption = 'إرسال التذكرة بعد البيع';
+                response = `📤 طريقة إرسال التذاكر:
+
+🔹 إذا الفعالية من webook:
+ترسلها من التطبيق مباشرة
+
+🔹 إذا منصة ثانية:
+ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
+            } else {
+                response = `⚠️ الرجاء اختيار رقم من 1 إلى 6`;
+                break;
+            }
+            state.data.sellOption = beforeOption;
+            await createTwitterTicket(senderId, state.data);
+            response += `\n\n✅ تم تسجيل استفسارك!`;
+            state.step = 'completed';
+            break;
+
+        case 'sell_after_options':
+            let afterOption = '';
+            if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('1')) {
+                afterOption = 'كيفية إرسال التذاكر';
+                response = `📤 طريقة إرسال التذاكر:
+
+🔹 إذا الفعالية من webook:
+ترسلها من التطبيق مباشرة
+
+🔹 إذا منصة ثانية:
+ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
+            } else if (userMessage.includes('تراجع') || userMessage.includes('2')) {
+                afterOption = 'التراجع عن البيع';
+                response = `⚠️ للأسف!
+
+ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
+
+إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
+            } else if (userMessage.includes('مبلغ') || userMessage.includes('3')) {
+                afterOption = 'لم أستلم المبلغ';
+                response = `💰 لا تشيل هم!
+
+يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
+وبيوصلك إن شاء الله 🙏`;
+            } else if (userMessage.includes('حالة') || userMessage.includes('يستلم') || userMessage.includes('4')) {
+                afterOption = 'حالة التذكرة لم يستلم';
+                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                state.data.sellOption = afterOption;
+                state.step = 'get_email';
+                break;
+            } else if (userMessage.includes('أخرى') || userMessage.includes('اخرى') || userMessage.includes('5')) {
+                afterOption = 'أخرى';
+                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                state.data.sellOption = afterOption;
+                state.step = 'get_email';
+                break;
+            } else {
+                response = `⚠️ الرجاء اختيار رقم من 1 إلى 5`;
+                break;
+            }
+            state.data.sellOption = afterOption;
+            await createTwitterTicket(senderId, state.data);
+            response += `\n\n✅ تم تسجيل استفسارك!`;
+            state.step = 'completed';
+            break;
+
+        case 'completed':
+            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+
+كيف نقدر نساعدك اليوم؟
+
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة
+
+(أرسل رقم الخيار)`;
+            state = { step: 'main_choice', data: { senderName, senderId }, lastUpdate: Date.now() };
+            break;
+
+        default:
+            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+
+كيف نقدر نساعدك اليوم؟
+
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة
+
+(أرسل رقم الخيار)`;
+            state = { step: 'main_choice', data: { senderName, senderId }, lastUpdate: Date.now() };
+    }
+
+    twitterConversationStates.set(senderId, state);
+    return response;
+}
+
+// إنشاء تذكرة من تويتر DM
+async function createTwitterTicket(senderId, data) {
+    try {
+        const subject = [
+            data.mainChoice,
+            data.timing,
+            data.eventType,
+            data.eventName,
+            data.sellOption,
+            data.email
+        ].filter(Boolean).join(', ');
+
+        const ticketData = {
+            name: data.senderName || `Twitter User ${senderId}`,
+            phone: '',
+            email: data.email || '',
+            subject: subject,
+            description: `بلاغ من Twitter DM\nالمرسل: ${senderId}`,
+            category: data.mainChoice || 'استفسار',
+            source: 'twitter_dm'
+        };
+
+        const response = await fetch(`http://localhost:${PORT}/api/ticket`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': API_KEY
+            },
+            body: JSON.stringify(ticketData)
+        });
+
+        const result = await response.json();
+        console.log('✅ Ticket created from Twitter DM:', result.ticketId);
+
+        if (db) {
+            await db.collection('twitter_dm_tickets').add({
+                senderId,
+                ticketId: result.ticketId,
+                data,
+                createdAt: new Date()
+            });
+        }
+
+        return result;
+    } catch (error) {
+        console.error('❌ Error creating ticket from Twitter DM:', error);
+        return null;
+    }
+}
+
+// فحص الرسائل الخاصة الجديدة والرد عليها بالشات بوت
+app.get('/api/twitter/check-dms', async (req, res) => {
+    if (!twitterClient) {
+        return res.status(400).json({ success: false, error: 'Twitter not configured' });
+    }
+
+    if (!twitterDMChatbotEnabled) {
+        return res.json({ success: true, message: 'Twitter DM Chatbot is disabled', processed: 0 });
+    }
+
+    try {
+        const me = await twitterClient.v2.me();
+
+        // جلب الرسائل الخاصة
+        const dmEvents = await twitterClient.v2.listDmEvents({
+            max_results: 20,
+            'dm_event.fields': ['created_at', 'sender_id', 'text', 'dm_conversation_id']
+        });
+
+        const events = dmEvents.data?.data || [];
+        const processed = [];
+
+        for (const event of events) {
+            // تخطي الرسائل القديمة التي تمت معالجتها
+            if (lastCheckedDMId && event.id <= lastCheckedDMId) continue;
+
+            // تخطي رسائلنا نحن
+            if (event.sender_id === me.data.id) continue;
+
+            // تخطي إذا لم تكن رسالة نصية
+            if (event.event_type !== 'MessageCreate' || !event.text) continue;
+
+            try {
+                console.log('📩 Twitter DM from:', event.sender_id, '-', event.text?.substring(0, 50));
+
+                // معالجة الرسالة بالشات بوت
+                const botResponse = await handleTwitterChatbot(event.sender_id, event.text, `User ${event.sender_id}`);
+
+                if (botResponse) {
+                    // إرسال الرد
+                    await sendTwitterDM(event.sender_id, botResponse);
+
+                    // حفظ في Firebase
+                    if (db) {
+                        await db.collection('twitter_dm_responses').add({
+                            senderId: event.sender_id,
+                            userMessage: event.text,
+                            botResponse: botResponse,
+                            timestamp: new Date()
+                        });
+                    }
+
+                    processed.push({
+                        senderId: event.sender_id,
+                        message: event.text?.substring(0, 50)
+                    });
+                }
+
+                // تحديث آخر DM تم فحصه
+                if (!lastCheckedDMId || event.id > lastCheckedDMId) {
+                    lastCheckedDMId = event.id;
+                }
+
+                // تأخير لتجنب rate limiting
+                await new Promise(r => setTimeout(r, 1000));
+            } catch (e) {
+                console.error('Error processing DM:', e.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            checked: events.length,
+            processed: processed.length,
+            messages: processed
+        });
+    } catch (error) {
+        console.error('❌ Error checking Twitter DMs:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// حالة شات بوت تويتر DM
+app.get('/api/twitter/dm-chatbot/status', async (req, res) => {
+    res.json({
+        success: true,
+        enabled: twitterDMChatbotEnabled,
+        activeConversations: twitterConversationStates.size,
+        configured: !!twitterClient
+    });
+});
+
+// تفعيل/تعطيل شات بوت تويتر DM
+app.post('/api/twitter/dm-chatbot/toggle', async (req, res) => {
+    const { enabled } = req.body;
+
+    if (typeof enabled === 'boolean') {
+        twitterDMChatbotEnabled = enabled;
+    } else {
+        twitterDMChatbotEnabled = !twitterDMChatbotEnabled;
+    }
+
+    console.log(`🐦 Twitter DM Chatbot ${twitterDMChatbotEnabled ? 'enabled' : 'disabled'}`);
+
+    res.json({
+        success: true,
+        enabled: twitterDMChatbotEnabled,
+        message: `Twitter DM Chatbot ${twitterDMChatbotEnabled ? 'مفعل' : 'معطل'}`
+    });
+});
+
+// إعادة تعيين محادثات تويتر DM
+app.post('/api/twitter/dm-chatbot/reset', async (req, res) => {
+    const count = twitterConversationStates.size;
+    twitterConversationStates.clear();
+
+    res.json({
+        success: true,
+        message: `تم إعادة تعيين ${count} محادثة تويتر`,
+        cleared: count
+    });
 });
 
 // ==================== WhatsApp Chatbot API ====================
