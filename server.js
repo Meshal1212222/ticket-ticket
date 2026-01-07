@@ -80,31 +80,27 @@ let twitterAutoReplyEnabled = false;
 let twitterAutoReplyMessage = 'شكراً لتواصلك! سنرد عليك قريباً 🙏';
 let lastCheckedMentionId = null;
 
-// إعدادات الرد التلقائي على واتساب
-let whatsappAutoReplyEnabled = true; // مفعل افتراضياً
-let whatsappAutoReplyMessage = `مرحباً بك في قولدن تيكت! 🎫
+// ==================== نظام Chatbot قولدن تيكت ====================
+let chatbotEnabled = true; // مفعل افتراضياً
 
-شكراً لتواصلك معنا.
-تم استلام رسالتك وسيتم الرد عليك في أقرب وقت ممكن.
+// تتبع حالة المحادثات
+const conversationStates = new Map();
 
-للاستفسارات العاجلة يمكنك:
-📱 الاتصال على: [رقم الهاتف]
-🌐 زيارة موقعنا: [الموقع]
-
-فريق الدعم - قولدن تيكت`;
-let whatsappAutoReplyDelay = 2000; // تأخير 2 ثانية قبل الرد
-let whatsappRepliedChats = new Set(); // لتجنب الرد المتكرر في نفس الجلسة
-
-// دالة إرسال رد تلقائي على واتساب
-async function sendWhatsAppAutoReply(to, customMessage = null) {
-    if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN) {
-        console.log('⚠️ WhatsApp not configured for auto-reply');
-        return null;
+// تنظيف المحادثات القديمة كل ساعة
+setInterval(() => {
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    for (const [chatId, state] of conversationStates.entries()) {
+        if (state.lastUpdate < oneHourAgo) {
+            conversationStates.delete(chatId);
+        }
     }
+}, 60 * 60 * 1000);
 
-    const message = customMessage || whatsappAutoReplyMessage;
+// إرسال رسالة واتساب
+async function sendWhatsAppMessage(to, message) {
+    if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN) return null;
+
     const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`;
-
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -115,18 +111,376 @@ async function sendWhatsAppAutoReply(to, customMessage = null) {
                 body: message
             })
         });
-
         const data = await response.json();
-
         if (data.error) {
-            console.error('❌ WhatsApp Auto-Reply Error:', data.error);
+            console.error('❌ WhatsApp Error:', data.error);
             return null;
         }
-
-        console.log('✅ Auto-reply sent to:', to);
+        console.log('✅ Message sent to:', to);
         return data;
     } catch (error) {
-        console.error('❌ Error sending auto-reply:', error);
+        console.error('❌ Error sending message:', error);
+        return null;
+    }
+}
+
+// إرسال رسالة مع أزرار تفاعلية
+async function sendWhatsAppButtons(to, body, buttons) {
+    if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN) return null;
+
+    const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/button`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: ULTRAMSG_TOKEN,
+                to: to,
+                body: body,
+                buttons: buttons.join(',')
+            })
+        });
+        const data = await response.json();
+        if (data.error) {
+            // fallback to regular message if buttons not supported
+            const fallbackMsg = body + '\n\n' + buttons.map((b, i) => `${i+1}. ${b}`).join('\n');
+            return sendWhatsAppMessage(to, fallbackMsg);
+        }
+        return data;
+    } catch (error) {
+        const fallbackMsg = body + '\n\n' + buttons.map((b, i) => `${i+1}. ${b}`).join('\n');
+        return sendWhatsAppMessage(to, fallbackMsg);
+    }
+}
+
+// معالج الـ Chatbot الرئيسي
+async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
+    const userMessage = messageBody.trim().toLowerCase();
+    let state = conversationStates.get(chatId) || { step: 'welcome', data: {}, lastUpdate: Date.now() };
+
+    // تحديث الوقت
+    state.lastUpdate = Date.now();
+    state.data.contactName = contactName;
+    state.data.contactPhone = contactPhone;
+
+    let response = null;
+
+    // ========== معالجة الخطوات ==========
+
+    switch (state.step) {
+        case 'welcome':
+            // رسالة الترحيب الأولى
+            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+
+كيف نقدر نساعدك اليوم؟
+
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة
+
+(أرسل رقم الخيار)`;
+            state.step = 'main_choice';
+            break;
+
+        case 'main_choice':
+            if (userMessage.includes('شراء') || userMessage.includes('1')) {
+                state.data.mainChoice = 'شراء تذكرة';
+                response = `🛒 استفسارك قبل ولا بعد شراء التذكرة؟
+
+1️⃣ قبل الشراء
+2️⃣ بعد الشراء
+
+(أرسل رقم الخيار)`;
+                state.step = 'buy_timing';
+            } else if (userMessage.includes('بيع') || userMessage.includes('2')) {
+                state.data.mainChoice = 'بيع تذكرة';
+                response = `💰 استفسارك قبل ولا بعد بيع التذكرة؟
+
+1️⃣ قبل البيع
+2️⃣ بعد البيع
+
+(أرسل رقم الخيار)`;
+                state.step = 'sell_timing';
+            } else {
+                response = `⚠️ عذراً، لم أفهم اختيارك
+
+الرجاء اختيار:
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة`;
+            }
+            break;
+
+        // ========== مسار الشراء ==========
+        case 'buy_timing':
+            if (userMessage.includes('قبل') || userMessage.includes('1')) {
+                state.data.timing = 'قبل الشراء';
+                response = `🎯 ابشر! وش اسم الفعالية اللي تبي تشتري تذكرة لها؟`;
+                state.step = 'buy_event_name';
+            } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
+                state.data.timing = 'بعد الشراء';
+                response = `⚡ طيب، استفسارك يخص فعالية:
+
+1️⃣ فعالية إنتهت
+2️⃣ فعالية قادمة
+3️⃣ فعالية خارج السعودية
+
+(أرسل رقم الخيار)`;
+                state.step = 'buy_event_type';
+            } else {
+                response = `⚠️ الرجاء اختيار:
+1️⃣ قبل الشراء
+2️⃣ بعد الشراء`;
+            }
+            break;
+
+        case 'buy_event_name':
+            state.data.eventName = messageBody;
+            // إنشاء تذكرة وإرسالها
+            await createTicket(chatId, state.data);
+            response = `✅ وصلنا طلبك!
+بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            state.step = 'completed';
+            break;
+
+        case 'buy_event_type':
+            if (userMessage.includes('انتهت') || userMessage.includes('إنتهت') || userMessage.includes('1')) {
+                state.data.eventType = 'فعالية إنتهت';
+            } else if (userMessage.includes('قادمة') || userMessage.includes('2')) {
+                state.data.eventType = 'فعالية قادمة';
+            } else if (userMessage.includes('خارج') || userMessage.includes('3')) {
+                state.data.eventType = 'فعالية خارج السعودية';
+            } else {
+                response = `⚠️ الرجاء اختيار:
+1️⃣ فعالية إنتهت
+2️⃣ فعالية قادمة
+3️⃣ فعالية خارج السعودية`;
+                break;
+            }
+            response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+            state.step = 'get_email';
+            break;
+
+        case 'get_email':
+            state.data.email = messageBody;
+            await createTicket(chatId, state.data);
+            response = `✅ وصلنا طلبك!
+بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            state.step = 'completed';
+            break;
+
+        // ========== مسار البيع - قبل البيع ==========
+        case 'sell_timing':
+            if (userMessage.includes('قبل') || userMessage.includes('1')) {
+                state.data.timing = 'قبل البيع';
+                response = `📋 اختر من القائمة عشان نساعدك:
+
+1️⃣ عرض تذاكري للبيع
+2️⃣ تذكرتي لم يتم قبولها
+3️⃣ لا أرى تذكرتي معروضة
+4️⃣ متى يصلني المبلغ؟
+5️⃣ التراجع عن البيع
+6️⃣ إرسال التذكرة بعد البيع
+
+(أرسل رقم الخيار)`;
+                state.step = 'sell_before_options';
+            } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
+                state.data.timing = 'بعد البيع';
+                response = `📋 اختر من القائمة عشان نساعدك:
+
+1️⃣ كيفية إرسال التذاكر
+2️⃣ التراجع عن البيع
+3️⃣ لم أستلم المبلغ حتى الآن
+4️⃣ حالة التذكرة "لم يستلم"
+5️⃣ أخرى
+
+(أرسل رقم الخيار)`;
+                state.step = 'sell_after_options';
+            } else {
+                response = `⚠️ الرجاء اختيار:
+1️⃣ قبل البيع
+2️⃣ بعد البيع`;
+            }
+            break;
+
+        case 'sell_before_options':
+            let beforeOption = '';
+            if (userMessage.includes('عرض') || userMessage.includes('1')) {
+                beforeOption = 'عرض تذاكري للبيع';
+                response = `📌 تقدر تعرض تذكرتك بالخطوات التالية:
+
+1️⃣ اضغط على "المزيد"
+2️⃣ اختر الفعالية
+3️⃣ أكمل البيانات
+
+وتصير تذكرتك معروضة للبيع! 🎫✨`;
+            } else if (userMessage.includes('قبول') || userMessage.includes('2')) {
+                beforeOption = 'تذكرتي لم يتم قبولها';
+                response = `💬 ابشر! بس زودنا بإيميلك المسجل وبنحل الموضوع 💪`;
+                state.data.sellOption = beforeOption;
+                state.step = 'get_email';
+                break;
+            } else if (userMessage.includes('أرى') || userMessage.includes('ارى') || userMessage.includes('3')) {
+                beforeOption = 'لا أرى تذكرتي معروضة';
+                response = `✅ لا تشيل هم!
+
+إذا حالة التذكرة "نشطة" يعني هي معروضة للعملاء ويشوفونها 👀🎫`;
+            } else if (userMessage.includes('مبلغ') || userMessage.includes('4')) {
+                beforeOption = 'متى يصلني المبلغ';
+                response = `💰 لا تشيل هم!
+
+يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
+وبيوصلك إن شاء الله 🙏`;
+            } else if (userMessage.includes('تراجع') || userMessage.includes('5')) {
+                beforeOption = 'التراجع عن البيع';
+                response = `⚠️ للأسف!
+
+ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
+
+إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
+            } else if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('6')) {
+                beforeOption = 'إرسال التذكرة بعد البيع';
+                response = `📤 طريقة إرسال التذاكر:
+
+🔹 إذا الفعالية من webook:
+ترسلها من التطبيق مباشرة بعد ما تشوف بيانات المشتري
+
+🔹 إذا منصة ثانية:
+ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
+            } else {
+                response = `⚠️ الرجاء اختيار رقم من 1 إلى 6`;
+                break;
+            }
+            state.data.sellOption = beforeOption;
+            await createTicket(chatId, state.data);
+            response += `\n\n✅ تم تسجيل استفسارك!`;
+            state.step = 'completed';
+            break;
+
+        // ========== مسار البيع - بعد البيع ==========
+        case 'sell_after_options':
+            let afterOption = '';
+            if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('1')) {
+                afterOption = 'كيفية إرسال التذاكر';
+                response = `📤 طريقة إرسال التذاكر:
+
+🔹 إذا الفعالية من webook:
+ترسلها من التطبيق مباشرة بعد ما تشوف بيانات المشتري
+
+🔹 إذا منصة ثانية:
+ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
+            } else if (userMessage.includes('تراجع') || userMessage.includes('2')) {
+                afterOption = 'التراجع عن البيع';
+                response = `⚠️ للأسف!
+
+ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
+
+إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
+            } else if (userMessage.includes('مبلغ') || userMessage.includes('3')) {
+                afterOption = 'لم أستلم المبلغ';
+                response = `💰 لا تشيل هم!
+
+يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
+وبيوصلك إن شاء الله 🙏`;
+            } else if (userMessage.includes('حالة') || userMessage.includes('يستلم') || userMessage.includes('4')) {
+                afterOption = 'حالة التذكرة لم يستلم';
+                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                state.data.sellOption = afterOption;
+                state.step = 'get_email';
+                break;
+            } else if (userMessage.includes('أخرى') || userMessage.includes('اخرى') || userMessage.includes('5')) {
+                afterOption = 'أخرى';
+                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                state.data.sellOption = afterOption;
+                state.step = 'get_email';
+                break;
+            } else {
+                response = `⚠️ الرجاء اختيار رقم من 1 إلى 5`;
+                break;
+            }
+            state.data.sellOption = afterOption;
+            await createTicket(chatId, state.data);
+            response += `\n\n✅ تم تسجيل استفسارك!`;
+            state.step = 'completed';
+            break;
+
+        case 'completed':
+            // إذا أرسل رسالة جديدة بعد الانتهاء، نبدأ من جديد
+            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+
+كيف نقدر نساعدك اليوم؟
+
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة
+
+(أرسل رقم الخيار)`;
+            state = { step: 'main_choice', data: { contactName, contactPhone }, lastUpdate: Date.now() };
+            break;
+
+        default:
+            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+
+كيف نقدر نساعدك اليوم؟
+
+1️⃣ شراء تذكرة
+2️⃣ بيع تذكرة
+
+(أرسل رقم الخيار)`;
+            state = { step: 'main_choice', data: { contactName, contactPhone }, lastUpdate: Date.now() };
+    }
+
+    // حفظ الحالة
+    conversationStates.set(chatId, state);
+
+    return response;
+}
+
+// إنشاء تذكرة في النظام
+async function createTicket(chatId, data) {
+    try {
+        const subject = [
+            data.mainChoice,
+            data.timing,
+            data.eventType,
+            data.eventName,
+            data.sellOption,
+            data.email
+        ].filter(Boolean).join(', ');
+
+        const ticketData = {
+            name: data.contactName || 'عميل واتساب',
+            phone: data.contactPhone || chatId,
+            email: data.email || '',
+            subject: subject,
+            description: `بلاغ من Chatbot\nالمحادثة: ${chatId}`,
+            category: data.mainChoice || 'استفسار',
+            source: 'whatsapp_chatbot'
+        };
+
+        // إرسال للـ API
+        const response = await fetch(`http://localhost:${PORT}/api/ticket`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': API_KEY
+            },
+            body: JSON.stringify(ticketData)
+        });
+
+        const result = await response.json();
+        console.log('✅ Ticket created from chatbot:', result.ticketId);
+
+        // حفظ في Firebase
+        if (db) {
+            await db.collection('chatbot_tickets').add({
+                chatId,
+                ticketId: result.ticketId,
+                data,
+                createdAt: new Date()
+            });
+        }
+
+        return result;
+    } catch (error) {
+        console.error('❌ Error creating ticket from chatbot:', error);
         return null;
     }
 }
@@ -524,43 +878,36 @@ app.post('/webhook/ultramsg', async (req, res) => {
                 console.log('✅ Message saved to Firebase:', messageDoc.from, messageDoc.body.substring(0, 50));
             }
 
-            // ========== الرد التلقائي على واتساب ==========
+            // ========== نظام Chatbot قولدن تيكت ==========
             // لا نرد على:
             // - رسائلنا نحن (fromMe)
             // - رسائل المجموعات
-            // - إذا كان الرد التلقائي معطل
-            if (whatsappAutoReplyEnabled && !isFromMe && !isGroup && fromNumber) {
-                // التحقق من عدم الرد على نفس الشخص في فترة قصيرة
-                const chatKey = fromNumber;
+            // - إذا كان الـ chatbot معطل
+            if (chatbotEnabled && !isFromMe && !isGroup && fromNumber && message.body) {
+                // تأخير قبل إرسال الرد
+                setTimeout(async () => {
+                    console.log('🤖 Chatbot processing message from:', fromNumber);
 
-                if (!whatsappRepliedChats.has(chatKey)) {
-                    // إضافة للقائمة لتجنب الرد المتكرر
-                    whatsappRepliedChats.add(chatKey);
+                    const contactName = message.pushName || message.notifyName || '';
+                    const contactPhone = fromNumber.replace('@c.us', '');
 
-                    // إزالة من القائمة بعد ساعة (لإعادة الرد إذا راسل مرة أخرى)
-                    setTimeout(() => {
-                        whatsappRepliedChats.delete(chatKey);
-                    }, 60 * 60 * 1000); // ساعة واحدة
+                    // معالجة الرسالة بالـ Chatbot
+                    const botResponse = await handleChatbot(fromNumber, message.body, contactName, contactPhone);
 
-                    // تأخير قبل إرسال الرد
-                    setTimeout(async () => {
-                        console.log('🤖 Sending auto-reply to:', fromNumber);
-                        const result = await sendWhatsAppAutoReply(fromNumber);
+                    if (botResponse) {
+                        await sendWhatsAppMessage(fromNumber, botResponse);
 
                         // حفظ الرد في Firebase
-                        if (db && result) {
-                            await db.collection('whatsapp_auto_replies').add({
+                        if (db) {
+                            await db.collection('chatbot_responses').add({
                                 to: fromNumber,
-                                message: whatsappAutoReplyMessage,
-                                originalMessage: message.body || '',
-                                timestamp: new Date(),
-                                success: true
+                                userMessage: message.body,
+                                botResponse: botResponse,
+                                timestamp: new Date()
                             });
                         }
-                    }, whatsappAutoReplyDelay);
-                } else {
-                    console.log('⏭️ Skipping auto-reply (already replied recently):', fromNumber);
-                }
+                    }
+                }, 1500); // تأخير 1.5 ثانية
             }
         }
 
@@ -647,7 +994,8 @@ app.get('/api/health', (req, res) => {
         firebase: !!db,
         whatsapp: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN),
         whatsappGroup: WHATSAPP_GROUP_ID ? 'configured' : 'NOT SET',
-        whatsappAutoReply: whatsappAutoReplyEnabled,
+        chatbot: chatbotEnabled,
+        activeConversations: conversationStates.size,
         openai: !!openai,
         twitter: !!twitterClient,
         twitterAutoReply: twitterAutoReplyEnabled,
@@ -752,7 +1100,7 @@ app.post('/api/twitter/reply/:tweetId', async (req, res) => {
     }
 });
 
-// فحص المنشنز الجديدة والرد عليها تلقائياً
+// فحص المنشنز الجديدة والرد عليها تلقائياً + إرسال لقروب الواتساب
 app.get('/api/twitter/check-and-reply', async (req, res) => {
     if (!twitterClient) {
         return res.status(400).json({ success: false, error: 'Twitter not configured' });
@@ -778,6 +1126,7 @@ app.get('/api/twitter/check-and-reply', async (req, res) => {
             if (mention.author_id === me.data.id) continue;
 
             try {
+                // 1. الرد على المنشن في تويتر
                 const reply = await twitterClient.v2.reply(twitterAutoReplyMessage, mention.id);
                 replies.push({
                     mentionId: mention.id,
@@ -790,13 +1139,40 @@ app.get('/api/twitter/check-and-reply', async (req, res) => {
                     lastCheckedMentionId = mention.id;
                 }
 
-                // حفظ في Firebase
+                // 2. إرسال إشعار لقروب الواتساب
+                if (WHATSAPP_GROUP_ID) {
+                    const whatsappMsg = `🐦 منشن جديد من تويتر!\n\n📝 ${mention.text}\n\n🔗 https://twitter.com/i/status/${mention.id}`;
+                    await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
+                }
+
+                // 3. إنشاء تذكرة في النظام
+                try {
+                    await fetch(`http://localhost:${PORT}/api/ticket`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Key': API_KEY
+                        },
+                        body: JSON.stringify({
+                            name: `Twitter @${mention.author_id}`,
+                            subject: mention.text.substring(0, 100),
+                            description: `منشن من تويتر:\n${mention.text}\n\nرابط: https://twitter.com/i/status/${mention.id}`,
+                            category: 'Twitter',
+                            source: 'twitter_mention'
+                        })
+                    });
+                } catch (ticketErr) {
+                    console.error('Error creating ticket for mention:', ticketErr.message);
+                }
+
+                // 4. حفظ في Firebase
                 if (db) {
                     await db.collection('twitter_replies').add({
                         mentionId: mention.id,
                         mentionText: mention.text,
                         replyText: twitterAutoReplyMessage,
                         replyId: reply.data.id,
+                        sentToWhatsApp: !!WHATSAPP_GROUP_ID,
                         timestamp: new Date()
                     });
                 }
@@ -812,6 +1188,7 @@ app.get('/api/twitter/check-and-reply', async (req, res) => {
             success: true,
             checked: newMentions.length,
             replied: replies.length,
+            sentToWhatsApp: !!WHATSAPP_GROUP_ID,
             replies
         });
     } catch (error) {
@@ -843,63 +1220,41 @@ app.get('/api/twitter/test', async (req, res) => {
     }
 });
 
-// ==================== WhatsApp Auto-Reply API ====================
+// ==================== WhatsApp Chatbot API ====================
 
-// حالة الرد التلقائي على واتساب
-app.get('/api/whatsapp/auto-reply/status', async (req, res) => {
+// حالة الـ Chatbot
+app.get('/api/chatbot/status', async (req, res) => {
     res.json({
         success: true,
-        enabled: whatsappAutoReplyEnabled,
-        message: whatsappAutoReplyMessage,
-        delay: whatsappAutoReplyDelay,
-        recentlyReplied: whatsappRepliedChats.size,
+        enabled: chatbotEnabled,
+        activeConversations: conversationStates.size,
         configured: !!(ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN)
     });
 });
 
-// تفعيل/تعطيل الرد التلقائي
-app.post('/api/whatsapp/auto-reply/toggle', async (req, res) => {
+// تفعيل/تعطيل الـ Chatbot
+app.post('/api/chatbot/toggle', async (req, res) => {
     const { enabled } = req.body;
 
     if (typeof enabled === 'boolean') {
-        whatsappAutoReplyEnabled = enabled;
+        chatbotEnabled = enabled;
     } else {
-        // Toggle if no value provided
-        whatsappAutoReplyEnabled = !whatsappAutoReplyEnabled;
+        chatbotEnabled = !chatbotEnabled;
     }
 
-    console.log(`🔄 WhatsApp Auto-Reply ${whatsappAutoReplyEnabled ? 'enabled' : 'disabled'}`);
+    console.log(`🤖 Chatbot ${chatbotEnabled ? 'enabled' : 'disabled'}`);
 
     res.json({
         success: true,
-        enabled: whatsappAutoReplyEnabled,
-        message: `الرد التلقائي ${whatsappAutoReplyEnabled ? 'مفعل' : 'معطل'}`
+        enabled: chatbotEnabled,
+        message: `Chatbot ${chatbotEnabled ? 'مفعل' : 'معطل'}`
     });
 });
 
-// تحديث رسالة الرد التلقائي
-app.post('/api/whatsapp/auto-reply/message', async (req, res) => {
-    const { message, delay } = req.body;
-
-    if (message && typeof message === 'string') {
-        whatsappAutoReplyMessage = message;
-    }
-
-    if (delay && typeof delay === 'number' && delay >= 0) {
-        whatsappAutoReplyDelay = delay;
-    }
-
-    res.json({
-        success: true,
-        message: whatsappAutoReplyMessage,
-        delay: whatsappAutoReplyDelay
-    });
-});
-
-// إعادة تعيين قائمة الردود (للسماح بالرد مجدداً على جميع المحادثات)
-app.post('/api/whatsapp/auto-reply/reset', async (req, res) => {
-    const count = whatsappRepliedChats.size;
-    whatsappRepliedChats.clear();
+// إعادة تعيين جميع المحادثات
+app.post('/api/chatbot/reset', async (req, res) => {
+    const count = conversationStates.size;
+    conversationStates.clear();
 
     res.json({
         success: true,
@@ -908,15 +1263,53 @@ app.post('/api/whatsapp/auto-reply/reset', async (req, res) => {
     });
 });
 
-// جلب سجل الردود التلقائية
-app.get('/api/whatsapp/auto-reply/logs', async (req, res) => {
+// إعادة تعيين محادثة معينة
+app.post('/api/chatbot/reset/:chatId', async (req, res) => {
+    const { chatId } = req.params;
+    const fullChatId = chatId.includes('@') ? chatId : `${chatId}@c.us`;
+
+    if (conversationStates.has(fullChatId)) {
+        conversationStates.delete(fullChatId);
+        res.json({
+            success: true,
+            message: `تم إعادة تعيين المحادثة: ${fullChatId}`
+        });
+    } else {
+        res.json({
+            success: false,
+            message: 'المحادثة غير موجودة'
+        });
+    }
+});
+
+// عرض المحادثات النشطة
+app.get('/api/chatbot/conversations', async (req, res) => {
+    const conversations = [];
+    for (const [chatId, state] of conversationStates.entries()) {
+        conversations.push({
+            chatId,
+            step: state.step,
+            data: state.data,
+            lastUpdate: new Date(state.lastUpdate).toISOString()
+        });
+    }
+
+    res.json({
+        success: true,
+        count: conversations.length,
+        conversations
+    });
+});
+
+// جلب سجل ردود الـ Chatbot
+app.get('/api/chatbot/logs', async (req, res) => {
     try {
         if (!db) {
             return res.json({ success: true, logs: [] });
         }
 
         const limit = parseInt(req.query.limit) || 50;
-        const snapshot = await db.collection('whatsapp_auto_replies')
+        const snapshot = await db.collection('chatbot_responses')
             .orderBy('timestamp', 'desc')
             .limit(limit)
             .get();
@@ -933,19 +1326,20 @@ app.get('/api/whatsapp/auto-reply/logs', async (req, res) => {
     }
 });
 
-// اختبار إرسال رد تلقائي لرقم معين
-app.post('/api/whatsapp/auto-reply/test', async (req, res) => {
+// اختبار إرسال رسالة
+app.post('/api/chatbot/test', async (req, res) => {
     const { to, message } = req.body;
 
     if (!to) {
         return res.status(400).json({
             success: false,
             error: 'الرجاء تحديد رقم المستلم (to)',
-            example: { to: '966501234567@c.us', message: 'رسالة اختبار (اختياري)' }
+            example: { to: '966501234567@c.us', message: 'رسالة للإرسال' }
         });
     }
 
-    const result = await sendWhatsAppAutoReply(to, message);
+    const fullTo = to.includes('@') ? to : `${to}@c.us`;
+    const result = await sendWhatsAppMessage(fullTo, message || 'رسالة اختبار من Chatbot');
 
     if (result) {
         res.json({
