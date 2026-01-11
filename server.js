@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const admin = require('firebase-admin');
 const OpenAI = require('openai');
 const { TwitterApi } = require('twitter-api-v2');
+const { google } = require('googleapis');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -84,6 +85,26 @@ let twitterDMChatbotEnabled = true; // شات بوت الرسائل الخاصة
 
 // تتبع حالة محادثات تويتر DM
 const twitterConversationStates = new Map();
+
+// ==================== Gmail Configuration ====================
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT_URI = 'https://ticket-ticket-production.up.railway.app/auth/google/callback';
+
+let gmailOAuth2Client = null;
+let gmailTokens = null;
+let lastCheckedEmailId = null;
+
+if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+    gmailOAuth2Client = new google.auth.OAuth2(
+        GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET,
+        GOOGLE_REDIRECT_URI
+    );
+    console.log('✅ Gmail OAuth configured');
+} else {
+    console.log('⚠️ Gmail not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
+}
 
 // ==================== نظام Chatbot قولدن تيكت ====================
 // ⚠️ معطل - Ultra Msg فقط للإشعارات الداخلية، الشات بوت عن طريق بيفاتل
@@ -1743,6 +1764,230 @@ app.post('/api/twitter/dm-chatbot/reset', async (req, res) => {
         success: true,
         message: `تم إعادة تعيين ${count} محادثة تويتر`,
         cleared: count
+    });
+});
+
+// ==================== Gmail API ====================
+
+// بدء عملية ربط Gmail
+app.get('/auth/google', (req, res) => {
+    if (!gmailOAuth2Client) {
+        return res.status(400).json({ success: false, error: 'Gmail not configured' });
+    }
+
+    const authUrl = gmailOAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+        prompt: 'consent'
+    });
+
+    res.redirect(authUrl);
+});
+
+// استقبال callback من Google
+app.get('/auth/google/callback', async (req, res) => {
+    const { code, error } = req.query;
+
+    if (error) {
+        return res.send(`<h1>❌ خطأ</h1><p>${error}</p><a href="/">الرجوع</a>`);
+    }
+
+    if (!code) {
+        return res.send('<h1>❌ لم يتم استلام الكود</h1><a href="/">الرجوع</a>');
+    }
+
+    try {
+        const { tokens } = await gmailOAuth2Client.getToken(code);
+        gmailOAuth2Client.setCredentials(tokens);
+        gmailTokens = tokens;
+
+        // حفظ الـ tokens في Firebase
+        if (db) {
+            await db.collection('settings').doc('gmail_tokens').set({
+                tokens,
+                updatedAt: new Date()
+            });
+        }
+
+        console.log('✅ Gmail connected successfully');
+        res.send(`
+            <html dir="rtl">
+            <head><title>تم الربط</title></head>
+            <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+                <h1>✅ تم ربط Gmail بنجاح!</h1>
+                <p>الآن يمكنك استخدام /api/gmail/check لفحص الإيميلات</p>
+                <a href="/">الرجوع للرئيسية</a>
+            </body>
+            </html>
+        `);
+    } catch (err) {
+        console.error('❌ Gmail auth error:', err);
+        res.send(`<h1>❌ خطأ في الربط</h1><p>${err.message}</p><a href="/auth/google">إعادة المحاولة</a>`);
+    }
+});
+
+// حالة Gmail
+app.get('/api/gmail/status', async (req, res) => {
+    let connected = false;
+
+    // محاولة تحميل الـ tokens من Firebase
+    if (!gmailTokens && db) {
+        try {
+            const doc = await db.collection('settings').doc('gmail_tokens').get();
+            if (doc.exists) {
+                gmailTokens = doc.data().tokens;
+                gmailOAuth2Client?.setCredentials(gmailTokens);
+                connected = true;
+            }
+        } catch (e) {
+            console.log('No saved Gmail tokens');
+        }
+    } else if (gmailTokens) {
+        connected = true;
+    }
+
+    res.json({
+        success: true,
+        configured: !!gmailOAuth2Client,
+        connected,
+        authUrl: gmailOAuth2Client ? '/auth/google' : null
+    });
+});
+
+// فحص الإيميلات الجديدة وإرسالها للواتساب
+app.get('/api/gmail/check', async (req, res) => {
+    if (!gmailOAuth2Client) {
+        return res.status(400).json({ success: false, error: 'Gmail not configured' });
+    }
+
+    // تحميل الـ tokens من Firebase إذا لم تكن موجودة
+    if (!gmailTokens && db) {
+        try {
+            const doc = await db.collection('settings').doc('gmail_tokens').get();
+            if (doc.exists) {
+                gmailTokens = doc.data().tokens;
+                gmailOAuth2Client.setCredentials(gmailTokens);
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    if (!gmailTokens) {
+        return res.status(401).json({
+            success: false,
+            error: 'Gmail غير مربوط',
+            authUrl: '/auth/google',
+            hint: 'اذهب لـ /auth/google لربط حساب Gmail'
+        });
+    }
+
+    try {
+        gmailOAuth2Client.setCredentials(gmailTokens);
+        const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2Client });
+
+        // جلب آخر الإيميلات
+        const response = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: 10,
+            q: 'is:unread'
+        });
+
+        const messages = response.data.messages || [];
+        const processed = [];
+
+        for (const msg of messages) {
+            // تخطي الإيميلات المعالجة سابقاً
+            if (lastCheckedEmailId && msg.id <= lastCheckedEmailId) continue;
+
+            try {
+                // جلب تفاصيل الإيميل
+                const email = await gmail.users.messages.get({
+                    userId: 'me',
+                    id: msg.id,
+                    format: 'metadata',
+                    metadataHeaders: ['From', 'Subject', 'Date']
+                });
+
+                const headers = email.data.payload.headers;
+                const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+                const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+                const date = headers.find(h => h.name === 'Date')?.value || '';
+
+                // إرسال للواتساب
+                if (WHATSAPP_GROUP_ID) {
+                    const whatsappMsg = `📧 إيميل جديد!\n\n📤 من: ${from}\n📋 الموضوع: ${subject}\n📅 ${date}`;
+                    await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
+                }
+
+                // حفظ في Firebase
+                if (db) {
+                    await db.collection('gmail_notifications').add({
+                        emailId: msg.id,
+                        from,
+                        subject,
+                        date,
+                        sentToWhatsApp: !!WHATSAPP_GROUP_ID,
+                        timestamp: new Date()
+                    });
+                }
+
+                processed.push({ from, subject });
+
+                // تحديث آخر إيميل تم فحصه
+                if (!lastCheckedEmailId || msg.id > lastCheckedEmailId) {
+                    lastCheckedEmailId = msg.id;
+                }
+
+                // تأخير لتجنب rate limiting
+                await new Promise(r => setTimeout(r, 500));
+            } catch (e) {
+                console.error('Error processing email:', e.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            checked: messages.length,
+            processed: processed.length,
+            emails: processed
+        });
+    } catch (error) {
+        console.error('❌ Gmail check error:', error);
+
+        // إذا انتهت صلاحية الـ token
+        if (error.message?.includes('invalid_grant') || error.code === 401) {
+            gmailTokens = null;
+            if (db) {
+                await db.collection('settings').doc('gmail_tokens').delete();
+            }
+            return res.status(401).json({
+                success: false,
+                error: 'انتهت صلاحية الربط',
+                authUrl: '/auth/google',
+                hint: 'أعد ربط Gmail من /auth/google'
+            });
+        }
+
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// فصل Gmail
+app.post('/api/gmail/disconnect', async (req, res) => {
+    gmailTokens = null;
+
+    if (db) {
+        try {
+            await db.collection('settings').doc('gmail_tokens').delete();
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    res.json({
+        success: true,
+        message: 'تم فصل Gmail'
     });
 });
 
