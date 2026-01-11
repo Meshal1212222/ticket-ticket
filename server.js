@@ -93,7 +93,7 @@ const GOOGLE_REDIRECT_URI = 'https://ticket-ticket-production.up.railway.app/aut
 
 let gmailOAuth2Client = null;
 let gmailTokens = null;
-let lastCheckedEmailId = null;
+let processedEmailIds = new Set(); // تتبع الإيميلات المُرسلة
 
 if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     gmailOAuth2Client = new google.auth.OAuth2(
@@ -119,18 +119,29 @@ async function autoCheckGmail() {
         gmailOAuth2Client.setCredentials(tokens);
         const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2Client });
 
-        // جلب الإيميلات غير المقروءة (بدون إيميلات النظام)
+        // تحميل الإيميلات المعالجة من Firebase (مرة واحدة عند البداية)
+        if (processedEmailIds.size === 0) {
+            const sentEmails = await db.collection('gmail_notifications').get();
+            sentEmails.forEach(doc => {
+                if (doc.data().emailId) {
+                    processedEmailIds.add(doc.data().emailId);
+                }
+            });
+            console.log(`📧 Loaded ${processedEmailIds.size} processed email IDs from Firebase`);
+        }
+
+        // جلب كل الإيميلات (مقروءة وغير مقروءة) - بدون إيميلات النظام
         const response = await gmail.users.messages.list({
             userId: 'me',
             maxResults: 10,
-            q: 'is:unread -from:noreply@golden4tic.com'
+            q: '-from:noreply@golden4tic.com'
         });
 
         const messages = response.data.messages || [];
 
         for (const msg of messages) {
-            // تخطي المعالج سابقاً
-            if (lastCheckedEmailId && msg.id <= lastCheckedEmailId) continue;
+            // تخطي الإيميلات المُرسل عنها إشعار سابقاً
+            if (processedEmailIds.has(msg.id)) continue;
 
             try {
                 const email = await gmail.users.messages.get({
@@ -195,9 +206,8 @@ async function autoCheckGmail() {
                     timestamp: new Date()
                 });
 
-                if (!lastCheckedEmailId || msg.id > lastCheckedEmailId) {
-                    lastCheckedEmailId = msg.id;
-                }
+                // إضافة للـ Set لمنع التكرار
+                processedEmailIds.add(msg.id);
 
                 await new Promise(r => setTimeout(r, 500));
             } catch (e) {
@@ -1996,19 +2006,29 @@ app.get('/api/gmail/check', async (req, res) => {
         gmailOAuth2Client.setCredentials(gmailTokens);
         const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2Client });
 
-        // جلب الإيميلات غير المقروءة (بدون إيميلات النظام)
+        // تحميل الإيميلات المعالجة من Firebase إذا لم تكن محملة
+        if (processedEmailIds.size === 0 && db) {
+            const sentEmails = await db.collection('gmail_notifications').get();
+            sentEmails.forEach(doc => {
+                if (doc.data().emailId) {
+                    processedEmailIds.add(doc.data().emailId);
+                }
+            });
+        }
+
+        // جلب كل الإيميلات (مقروءة وغير مقروءة) - بدون إيميلات النظام
         const response = await gmail.users.messages.list({
             userId: 'me',
             maxResults: 10,
-            q: 'is:unread -from:noreply@golden4tic.com'
+            q: '-from:noreply@golden4tic.com'
         });
 
         const messages = response.data.messages || [];
         const processed = [];
 
         for (const msg of messages) {
-            // تخطي الإيميلات المعالجة سابقاً
-            if (lastCheckedEmailId && msg.id <= lastCheckedEmailId) continue;
+            // تخطي الإيميلات المُرسل عنها إشعار سابقاً
+            if (processedEmailIds.has(msg.id)) continue;
 
             try {
                 // جلب تفاصيل الإيميل
@@ -2067,10 +2087,8 @@ app.get('/api/gmail/check', async (req, res) => {
 
                 processed.push({ from, subject });
 
-                // تحديث آخر إيميل تم فحصه
-                if (!lastCheckedEmailId || msg.id > lastCheckedEmailId) {
-                    lastCheckedEmailId = msg.id;
-                }
+                // إضافة للـ Set لمنع التكرار
+                processedEmailIds.add(msg.id);
 
                 // تأخير لتجنب rate limiting
                 await new Promise(r => setTimeout(r, 500));
