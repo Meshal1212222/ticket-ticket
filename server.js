@@ -86,7 +86,8 @@ let twitterDMChatbotEnabled = true; // شات بوت الرسائل الخاصة
 const twitterConversationStates = new Map();
 
 // ==================== نظام Chatbot قولدن تيكت ====================
-let chatbotEnabled = true; // مفعل افتراضياً
+// ⚠️ معطل - Ultra Msg فقط للإشعارات الداخلية، الشات بوت عن طريق بيفاتل
+let chatbotEnabled = false;
 
 // تتبع حالة المحادثات
 const conversationStates = new Map();
