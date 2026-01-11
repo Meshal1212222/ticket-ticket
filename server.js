@@ -2294,6 +2294,33 @@ app.get('/api/test-send', async (req, res) => {
     }
 });
 
+// جلب البلاغات من رقم معين
+app.get('/api/tickets-from/:number', async (req, res) => {
+    try {
+        if (!db) {
+            return res.json({ success: false, error: 'Firebase not connected' });
+        }
+
+        const fromNumber = parseInt(req.params.number) || 1;
+
+        const snapshot = await db.collection('tickets')
+            .where('ticketNumber', '>=', fromNumber)
+            .orderBy('ticketNumber', 'asc')
+            .get();
+
+        const tickets = snapshot.docs.map(doc => doc.data());
+
+        res.json({
+            success: true,
+            fromNumber,
+            count: tickets.length,
+            tickets
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // اختبار إرسال رسالة لرقم معين
 app.get('/api/send-to/:phone', async (req, res) => {
     try {
