@@ -2294,6 +2294,37 @@ app.get('/api/test-send', async (req, res) => {
     }
 });
 
+// اختبار إرسال رسالة لرقم معين
+app.get('/api/send-to/:phone', async (req, res) => {
+    try {
+        const { phone } = req.params;
+        const message = req.query.msg || `🔔 رسالة اختبار من قولدن تيكت\n⏰ ${new Date().toLocaleString('ar-SA')}`;
+
+        const to = phone.includes('@') ? phone : `${phone}@c.us`;
+
+        const response = await fetch(`https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: ULTRAMSG_TOKEN,
+                to: to,
+                body: message
+            })
+        });
+
+        const data = await response.json();
+
+        res.json({
+            success: !data.error,
+            sentTo: to,
+            message: message,
+            response: data
+        });
+    } catch(e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 // ==================== أداة تصدير البيانات ====================
 
 // Proxy لجلب البيانات من Ultra Msg مع محاولة جلب الوسائط
