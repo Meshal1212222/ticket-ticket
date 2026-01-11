@@ -106,6 +106,116 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     console.log('⚠️ Gmail not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
 }
 
+// ==================== فحص Gmail التلقائي ====================
+async function autoCheckGmail() {
+    if (!gmailOAuth2Client || !db) return;
+
+    try {
+        // تحميل الـ tokens من Firebase
+        const doc = await db.collection('settings').doc('gmail_tokens').get();
+        if (!doc.exists) return;
+
+        const tokens = doc.data().tokens;
+        gmailOAuth2Client.setCredentials(tokens);
+        const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2Client });
+
+        // جلب الإيميلات غير المقروءة
+        const response = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: 10,
+            q: 'is:unread'
+        });
+
+        const messages = response.data.messages || [];
+
+        for (const msg of messages) {
+            // تخطي المعالج سابقاً
+            if (lastCheckedEmailId && msg.id <= lastCheckedEmailId) continue;
+
+            try {
+                const email = await gmail.users.messages.get({
+                    userId: 'me',
+                    id: msg.id,
+                    format: 'full'
+                });
+
+                const headers = email.data.payload.headers;
+                const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+                const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+                const date = headers.find(h => h.name === 'Date')?.value || '';
+
+                // استخراج محتوى الرسالة
+                let body = '';
+                const payload = email.data.payload;
+
+                if (payload.body?.data) {
+                    body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
+                } else if (payload.parts) {
+                    for (const part of payload.parts) {
+                        if (part.mimeType === 'text/plain' && part.body?.data) {
+                            body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                            break;
+                        }
+                    }
+                }
+
+                // تقصير المحتوى إذا كان طويل
+                body = body.replace(/<[^>]*>/g, '').trim(); // إزالة HTML
+                if (body.length > 500) {
+                    body = body.substring(0, 500) + '...';
+                }
+
+                // إرسال للواتساب
+                if (WHATSAPP_GROUP_ID) {
+                    let whatsappMsg = `📧 إيميل جديد!\n\n📤 من: ${from}\n📋 الموضوع: ${subject}\n📅 ${date}`;
+                    if (body) {
+                        whatsappMsg += `\n\n📝 المحتوى:\n${body}`;
+                    }
+
+                    const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`;
+                    await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: ULTRAMSG_TOKEN,
+                            to: WHATSAPP_GROUP_ID,
+                            body: whatsappMsg
+                        })
+                    });
+                    console.log('📧 Email notification sent:', subject.substring(0, 50));
+                }
+
+                // حفظ في Firebase
+                await db.collection('gmail_notifications').add({
+                    emailId: msg.id,
+                    from,
+                    subject,
+                    date,
+                    sentToWhatsApp: !!WHATSAPP_GROUP_ID,
+                    timestamp: new Date()
+                });
+
+                if (!lastCheckedEmailId || msg.id > lastCheckedEmailId) {
+                    lastCheckedEmailId = msg.id;
+                }
+
+                await new Promise(r => setTimeout(r, 500));
+            } catch (e) {
+                console.error('Error processing email:', e.message);
+            }
+        }
+    } catch (error) {
+        // تجاهل الأخطاء الصامتة
+        if (!error.message?.includes('invalid_grant')) {
+            console.error('Auto Gmail check error:', error.message);
+        }
+    }
+}
+
+// فحص Gmail كل دقيقتين
+setInterval(autoCheckGmail, 2 * 60 * 1000);
+console.log('⏰ Gmail auto-check enabled (every 2 minutes)');
+
 // ==================== نظام Chatbot قولدن تيكت ====================
 // ⚠️ معطل - Ultra Msg فقط للإشعارات الداخلية، الشات بوت عن طريق بيفاتل
 let chatbotEnabled = false;
@@ -1905,8 +2015,7 @@ app.get('/api/gmail/check', async (req, res) => {
                 const email = await gmail.users.messages.get({
                     userId: 'me',
                     id: msg.id,
-                    format: 'metadata',
-                    metadataHeaders: ['From', 'Subject', 'Date']
+                    format: 'full'
                 });
 
                 const headers = email.data.payload.headers;
@@ -1914,9 +2023,33 @@ app.get('/api/gmail/check', async (req, res) => {
                 const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
                 const date = headers.find(h => h.name === 'Date')?.value || '';
 
+                // استخراج محتوى الرسالة
+                let body = '';
+                const payload = email.data.payload;
+
+                if (payload.body?.data) {
+                    body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
+                } else if (payload.parts) {
+                    for (const part of payload.parts) {
+                        if (part.mimeType === 'text/plain' && part.body?.data) {
+                            body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                            break;
+                        }
+                    }
+                }
+
+                // تقصير المحتوى إذا كان طويل
+                body = body.replace(/<[^>]*>/g, '').trim();
+                if (body.length > 500) {
+                    body = body.substring(0, 500) + '...';
+                }
+
                 // إرسال للواتساب
                 if (WHATSAPP_GROUP_ID) {
-                    const whatsappMsg = `📧 إيميل جديد!\n\n📤 من: ${from}\n📋 الموضوع: ${subject}\n📅 ${date}`;
+                    let whatsappMsg = `📧 إيميل جديد!\n\n📤 من: ${from}\n📋 الموضوع: ${subject}\n📅 ${date}`;
+                    if (body) {
+                        whatsappMsg += `\n\n📝 المحتوى:\n${body}`;
+                    }
                     await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
                 }
 
