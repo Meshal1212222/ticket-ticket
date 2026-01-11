@@ -134,7 +134,7 @@ async function autoCheckGmail() {
         const response = await gmail.users.messages.list({
             userId: 'me',
             maxResults: 10,
-            q: '-from:noreply@golden4tic.com'
+            q: '-from:noreply@golden4tic.com -from:noreply@emyfatoorah.com'
         });
 
         const messages = response.data.messages || [];
@@ -2020,7 +2020,7 @@ app.get('/api/gmail/check', async (req, res) => {
         const response = await gmail.users.messages.list({
             userId: 'me',
             maxResults: 10,
-            q: '-from:noreply@golden4tic.com'
+            q: '-from:noreply@golden4tic.com -from:noreply@emyfatoorah.com'
         });
 
         const messages = response.data.messages || [];
