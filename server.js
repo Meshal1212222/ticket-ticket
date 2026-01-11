@@ -119,11 +119,11 @@ async function autoCheckGmail() {
         gmailOAuth2Client.setCredentials(tokens);
         const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2Client });
 
-        // جلب الإيميلات غير المقروءة
+        // جلب الإيميلات غير المقروءة (الأساسية فقط - بدون CC)
         const response = await gmail.users.messages.list({
             userId: 'me',
             maxResults: 10,
-            q: 'is:unread'
+            q: 'is:unread to:me'
         });
 
         const messages = response.data.messages || [];
@@ -1996,11 +1996,11 @@ app.get('/api/gmail/check', async (req, res) => {
         gmailOAuth2Client.setCredentials(gmailTokens);
         const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2Client });
 
-        // جلب آخر الإيميلات
+        // جلب الإيميلات غير المقروءة (الأساسية فقط - بدون CC)
         const response = await gmail.users.messages.list({
             userId: 'me',
             maxResults: 10,
-            q: 'is:unread'
+            q: 'is:unread to:me'
         });
 
         const messages = response.data.messages || [];
