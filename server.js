@@ -155,6 +155,17 @@ async function autoCheckGmail() {
                 const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
                 const date = headers.find(h => h.name === 'Date')?.value || '';
 
+                // فلتر: فقط إيميلات العملاء (الدومينات الشخصية)
+                const personalDomains = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'icloud.com', 'live.com', 'msn.com', 'aol.com', 'protonmail.com', 'ymail.com', 'googlemail.com'];
+                const emailMatch = from.match(/@([a-zA-Z0-9.-]+)/);
+                const senderDomain = emailMatch ? emailMatch[1].toLowerCase() : '';
+
+                if (!personalDomains.includes(senderDomain)) {
+                    // تخطي إيميلات الشركات
+                    processedEmailIds.add(msg.id);
+                    continue;
+                }
+
                 // استخراج محتوى الرسالة
                 let body = '';
                 const payload = email.data.payload;
@@ -2042,6 +2053,17 @@ app.get('/api/gmail/check', async (req, res) => {
                 const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
                 const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
                 const date = headers.find(h => h.name === 'Date')?.value || '';
+
+                // فلتر: فقط إيميلات العملاء (الدومينات الشخصية)
+                const personalDomains = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'icloud.com', 'live.com', 'msn.com', 'aol.com', 'protonmail.com', 'ymail.com', 'googlemail.com'];
+                const emailMatch = from.match(/@([a-zA-Z0-9.-]+)/);
+                const senderDomain = emailMatch ? emailMatch[1].toLowerCase() : '';
+
+                if (!personalDomains.includes(senderDomain)) {
+                    // تخطي إيميلات الشركات
+                    processedEmailIds.add(msg.id);
+                    continue;
+                }
 
                 // استخراج محتوى الرسالة
                 let body = '';
