@@ -166,6 +166,10 @@ async function autoCheckGmail() {
                     continue;
                 }
 
+                // استخراج الإيميل من الـ from
+                const senderEmailMatch = from.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+                const senderEmail = senderEmailMatch ? senderEmailMatch[1].toLowerCase() : '';
+
                 // استخراج محتوى الرسالة
                 let body = '';
                 const payload = email.data.payload;
@@ -181,6 +185,40 @@ async function autoCheckGmail() {
                     }
                 }
 
+                // استخراج أرقام الجوال من المحتوى
+                const phoneMatches = body.match(/(?:\+966|966|05|5)[0-9]{8,9}/g) || [];
+                const phones = [...new Set(phoneMatches.map(p => p.replace(/^(\+?966|0)/, '5')))];
+
+                // التحقق من العميل المتكرر
+                let isRepeatCustomer = false;
+                let repeatInfo = [];
+
+                if (db && senderEmail) {
+                    // البحث عن إيميلات سابقة من نفس المرسل
+                    const prevEmails = await db.collection('gmail_notifications')
+                        .where('senderEmail', '==', senderEmail)
+                        .get();
+
+                    if (!prevEmails.empty) {
+                        isRepeatCustomer = true;
+                        repeatInfo.push(`الإيميل تواصل ${prevEmails.size} مرة سابقاً`);
+                    }
+                }
+
+                // البحث عن أرقام جوال متكررة
+                if (db && phones.length > 0) {
+                    for (const phone of phones) {
+                        const prevPhones = await db.collection('gmail_notifications')
+                            .where('phones', 'array-contains', phone)
+                            .get();
+
+                        if (!prevPhones.empty) {
+                            isRepeatCustomer = true;
+                            repeatInfo.push(`الرقم ${phone} تواصل ${prevPhones.size} مرة سابقاً`);
+                        }
+                    }
+                }
+
                 // تقصير المحتوى إذا كان طويل
                 body = body.replace(/<[^>]*>/g, '').trim(); // إزالة HTML
                 if (body.length > 500) {
@@ -190,6 +228,12 @@ async function autoCheckGmail() {
                 // إرسال للواتساب
                 if (WHATSAPP_GROUP_ID) {
                     let whatsappMsg = `📧 إيميل جديد!\n\n📤 من: ${from}\n📋 الموضوع: ${subject}\n📅 ${date}`;
+
+                    // إضافة تنبيه العميل المتكرر
+                    if (isRepeatCustomer) {
+                        whatsappMsg += `\n\n⚠️ *عميل متكرر!*\n${repeatInfo.join('\n')}`;
+                    }
+
                     if (body) {
                         whatsappMsg += `\n\n📝 المحتوى:\n${body}`;
                     }
@@ -211,8 +255,11 @@ async function autoCheckGmail() {
                 await db.collection('gmail_notifications').add({
                     emailId: msg.id,
                     from,
+                    senderEmail,
+                    phones,
                     subject,
                     date,
+                    isRepeatCustomer,
                     sentToWhatsApp: !!WHATSAPP_GROUP_ID,
                     timestamp: new Date()
                 });
@@ -2065,6 +2112,10 @@ app.get('/api/gmail/check', async (req, res) => {
                     continue;
                 }
 
+                // استخراج الإيميل من الـ from
+                const senderEmailMatch = from.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+                const senderEmail = senderEmailMatch ? senderEmailMatch[1].toLowerCase() : '';
+
                 // استخراج محتوى الرسالة
                 let body = '';
                 const payload = email.data.payload;
@@ -2080,6 +2131,38 @@ app.get('/api/gmail/check', async (req, res) => {
                     }
                 }
 
+                // استخراج أرقام الجوال من المحتوى
+                const phoneMatches = body.match(/(?:\+966|966|05|5)[0-9]{8,9}/g) || [];
+                const phones = [...new Set(phoneMatches.map(p => p.replace(/^(\+?966|0)/, '5')))];
+
+                // التحقق من العميل المتكرر
+                let isRepeatCustomer = false;
+                let repeatInfo = [];
+
+                if (db && senderEmail) {
+                    const prevEmails = await db.collection('gmail_notifications')
+                        .where('senderEmail', '==', senderEmail)
+                        .get();
+
+                    if (!prevEmails.empty) {
+                        isRepeatCustomer = true;
+                        repeatInfo.push(`الإيميل تواصل ${prevEmails.size} مرة سابقاً`);
+                    }
+                }
+
+                if (db && phones.length > 0) {
+                    for (const phone of phones) {
+                        const prevPhones = await db.collection('gmail_notifications')
+                            .where('phones', 'array-contains', phone)
+                            .get();
+
+                        if (!prevPhones.empty) {
+                            isRepeatCustomer = true;
+                            repeatInfo.push(`الرقم ${phone} تواصل ${prevPhones.size} مرة سابقاً`);
+                        }
+                    }
+                }
+
                 // تقصير المحتوى إذا كان طويل
                 body = body.replace(/<[^>]*>/g, '').trim();
                 if (body.length > 500) {
@@ -2089,6 +2172,12 @@ app.get('/api/gmail/check', async (req, res) => {
                 // إرسال للواتساب
                 if (WHATSAPP_GROUP_ID) {
                     let whatsappMsg = `📧 إيميل جديد!\n\n📤 من: ${from}\n📋 الموضوع: ${subject}\n📅 ${date}`;
+
+                    // إضافة تنبيه العميل المتكرر
+                    if (isRepeatCustomer) {
+                        whatsappMsg += `\n\n⚠️ *عميل متكرر!*\n${repeatInfo.join('\n')}`;
+                    }
+
                     if (body) {
                         whatsappMsg += `\n\n📝 المحتوى:\n${body}`;
                     }
@@ -2100,14 +2189,17 @@ app.get('/api/gmail/check', async (req, res) => {
                     await db.collection('gmail_notifications').add({
                         emailId: msg.id,
                         from,
+                        senderEmail,
+                        phones,
                         subject,
                         date,
+                        isRepeatCustomer,
                         sentToWhatsApp: !!WHATSAPP_GROUP_ID,
                         timestamp: new Date()
                     });
                 }
 
-                processed.push({ from, subject });
+                processed.push({ from, subject, isRepeatCustomer });
 
                 // إضافة للـ Set لمنع التكرار
                 processedEmailIds.add(msg.id);
