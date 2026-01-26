@@ -2409,44 +2409,18 @@
                                         "name": "إرسال للقروب",
                                         "type": "ActionStep",
                                         "isNew": false,
-                                        "childs": [
-                                          {
-                                            "id": "rr_assign",
-                                            "pId": "rr_webhook",
-                                            "data": {
-                                              "type": "assign_to",
-                                              "assignTo": "workspace",
-                                              "assignmentLogic": "RoundRobin"
-                                            },
-                                            "name": "تحويل للفريق",
-                                            "type": "AssignToStep",
-                                        "isNew": false,
-                                        "childs": [
-                                          {
-                                            "id": "rr_assign_ok",
-                                            "pId": "rr_assign",
-                                            "name": "Success",
-                                            "type": "ValidAssignTo",
-                                            "childs": [],
-                                            "customType": "AssignToBranch"
-                                          }
-                                        ],
+                                        "childs": [],
                                         "selected": false,
                                         "validate": false,
-                                        "customType": "AssignTo"
+                                        "customType": "HTTPRequest"
                                       }
                                     ],
                                     "selected": false,
                                     "validate": false,
-                                    "customType": "HTTPRequest"
+                                    "customType": "SendMessage"
                                   }
                                 ],
-                                "selected": false,
-                                "validate": false,
-                                "customType": "SendMessage"
-                              }
-                            ],
-                            "customType": "AnswerStep"
+                                "customType": "AnswerStep"
                               }
                             ],
                             "selected": false,
@@ -2568,33 +2542,7 @@
                                         "name": "إرسال للقروب",
                                         "type": "ActionStep",
                                         "isNew": false,
-                                        "childs": [
-                                          {
-                                            "id": "rm_assign",
-                                            "pId": "rm_webhook",
-                                            "data": {
-                                              "type": "assign_to",
-                                              "assignTo": "workspace",
-                                              "assignmentLogic": "RoundRobin"
-                                            },
-                                            "name": "تحويل للفريق",
-                                            "type": "AssignToStep",
-                                            "isNew": false,
-                                            "childs": [
-                                              {
-                                                "id": "rm_assign_ok",
-                                                "pId": "rm_assign",
-                                                "name": "Success",
-                                                "type": "ValidAssignTo",
-                                                "childs": [],
-                                                "customType": "AssignToBranch"
-                                              }
-                                            ],
-                                            "selected": false,
-                                            "validate": false,
-                                            "customType": "AssignTo"
-                                          }
-                                        ],
+                                        "childs": [],
                                         "selected": false,
                                         "validate": false,
                                         "customType": "HTTPRequest"
