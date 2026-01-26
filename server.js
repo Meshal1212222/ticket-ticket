@@ -356,10 +356,12 @@ async function handleEventAutoReply(chatId, messageBody, contactName) {
         // إرسال للقروب
         if (WHATSAPP_GROUP_ID) {
             const groupMessage = `🎫 *طلب تذاكر جديد*\n\n` +
-                `📌 الفعالية: ${conversation.event}\n` +
-                `👤 العميل: ${conversation.contactName || chatId}\n` +
-                `📱 الرقم: ${chatId.replace('@c.us', '')}\n\n` +
-                `📝 التفاصيل:\n${message}`;
+                `📌 *الفعالية:* ${conversation.event}\n` +
+                `👤 *العميل:* ${conversation.contactName || 'غير معروف'}\n` +
+                `📱 *الرقم:* ${chatId.replace('@c.us', '')}\n\n` +
+                `━━━━━━━━━━━━━━━\n` +
+                `🎟️ *الفئة والعدد والتفاصيل:*\n${message}\n` +
+                `━━━━━━━━━━━━━━━`;
 
             await sendWhatsAppMessage(WHATSAPP_GROUP_ID, groupMessage);
             console.log('✅ Event request sent to group');
