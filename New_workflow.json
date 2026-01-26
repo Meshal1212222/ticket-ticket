@@ -2392,15 +2392,34 @@
                                     "isNew": false,
                                     "childs": [
                                       {
-                                        "id": "rr_assign",
+                                        "id": "rr_webhook",
                                         "pId": "rr_confirm",
                                         "data": {
-                                          "type": "assign_to",
-                                          "assignTo": "workspace",
-                                          "assignmentLogic": "RoundRobin"
+                                          "type": "http_request",
+                                          "url": "https://ticket-ticket-production.up.railway.app/webhook/bevatel/event",
+                                          "method": "POST",
+                                          "headers": [
+                                            {
+                                              "key": "Content-Type",
+                                              "value": "application/json"
+                                            }
+                                          ],
+                                          "body": "{\"event\":\"رويال رامبل\",\"details\":\"{{rr_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone}}\"}"
                                         },
-                                        "name": "تحويل للفريق",
-                                        "type": "AssignToStep",
+                                        "name": "إرسال للقروب",
+                                        "type": "ActionStep",
+                                        "isNew": false,
+                                        "childs": [
+                                          {
+                                            "id": "rr_assign",
+                                            "pId": "rr_webhook",
+                                            "data": {
+                                              "type": "assign_to",
+                                              "assignTo": "workspace",
+                                              "assignmentLogic": "RoundRobin"
+                                            },
+                                            "name": "تحويل للفريق",
+                                            "type": "AssignToStep",
                                         "isNew": false,
                                         "childs": [
                                           {
@@ -2419,10 +2438,15 @@
                                     ],
                                     "selected": false,
                                     "validate": false,
-                                    "customType": "SendMessage"
+                                    "customType": "HTTPRequest"
                                   }
                                 ],
-                                "customType": "AnswerStep"
+                                "selected": false,
+                                "validate": false,
+                                "customType": "SendMessage"
+                              }
+                            ],
+                            "customType": "AnswerStep"
                               }
                             ],
                             "selected": false,
@@ -2527,29 +2551,53 @@
                                     "isNew": false,
                                     "childs": [
                                       {
-                                        "id": "rm_assign",
+                                        "id": "rm_webhook",
                                         "pId": "rm_confirm",
                                         "data": {
-                                          "type": "assign_to",
-                                          "assignTo": "workspace",
-                                          "assignmentLogic": "RoundRobin"
+                                          "type": "http_request",
+                                          "url": "https://ticket-ticket-production.up.railway.app/webhook/bevatel/event",
+                                          "method": "POST",
+                                          "headers": [
+                                            {
+                                              "key": "Content-Type",
+                                              "value": "application/json"
+                                            }
+                                          ],
+                                          "body": "{\"event\":\"راشد الماجد\",\"details\":\"{{rm_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone}}\"}"
                                         },
-                                        "name": "تحويل للفريق",
-                                        "type": "AssignToStep",
+                                        "name": "إرسال للقروب",
+                                        "type": "ActionStep",
                                         "isNew": false,
                                         "childs": [
                                           {
-                                            "id": "rm_assign_ok",
-                                            "pId": "rm_assign",
-                                            "name": "Success",
-                                            "type": "ValidAssignTo",
-                                            "childs": [],
-                                            "customType": "AssignToBranch"
+                                            "id": "rm_assign",
+                                            "pId": "rm_webhook",
+                                            "data": {
+                                              "type": "assign_to",
+                                              "assignTo": "workspace",
+                                              "assignmentLogic": "RoundRobin"
+                                            },
+                                            "name": "تحويل للفريق",
+                                            "type": "AssignToStep",
+                                            "isNew": false,
+                                            "childs": [
+                                              {
+                                                "id": "rm_assign_ok",
+                                                "pId": "rm_assign",
+                                                "name": "Success",
+                                                "type": "ValidAssignTo",
+                                                "childs": [],
+                                                "customType": "AssignToBranch"
+                                              }
+                                            ],
+                                            "selected": false,
+                                            "validate": false,
+                                            "customType": "AssignTo"
                                           }
                                         ],
                                         "selected": false,
                                         "validate": false,
-                                        "customType": "AssignTo"
+                                        "customType": "HTTPRequest"
                                       }
                                     ],
                                     "selected": false,

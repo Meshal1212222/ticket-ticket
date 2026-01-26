@@ -284,6 +284,56 @@ async function autoCheckGmail() {
 setInterval(autoCheckGmail, 2 * 60 * 1000);
 console.log('⏰ Gmail auto-check enabled (every 2 minutes)');
 
+// ==================== Webhook لاستقبال طلبات الفعاليات من بيفاتل ====================
+app.post('/webhook/bevatel/event', async (req, res) => {
+    try {
+        const { event, details, customer_name, customer_phone } = req.body;
+
+        console.log('🎫 Event ticket request received:', { event, details, customer_name, customer_phone });
+
+        // إرسال للقروب
+        if (WHATSAPP_GROUP_ID) {
+            const groupMessage = `🎫 *طلب تذاكر جديد*\n\n` +
+                `📌 *الفعالية:* ${event || 'غير محدد'}\n` +
+                `👤 *العميل:* ${customer_name || 'غير معروف'}\n` +
+                `📱 *الرقم:* ${customer_phone || 'غير متوفر'}\n\n` +
+                `━━━━━━━━━━━━━━━\n` +
+                `🎟️ *الفئة والعدد والتفاصيل:*\n${details || 'لا توجد تفاصيل'}\n` +
+                `━━━━━━━━━━━━━━━`;
+
+            const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`;
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: ULTRAMSG_TOKEN,
+                    to: WHATSAPP_GROUP_ID,
+                    body: groupMessage
+                })
+            });
+
+            console.log('✅ Event request sent to WhatsApp group');
+        }
+
+        // حفظ في Firebase
+        if (db) {
+            await db.collection('event_requests').add({
+                event,
+                details,
+                customer_name,
+                customer_phone,
+                timestamp: new Date(),
+                source: 'bevatel_workflow'
+            });
+        }
+
+        res.json({ success: true, message: 'تم إرسال الطلب للقروب' });
+    } catch (error) {
+        console.error('❌ Error processing event request:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ==================== نظام Chatbot قولدن تيكت ====================
 // ⚠️ معطل - Ultra Msg فقط للإشعارات الداخلية، الشات بوت عن طريق بيفاتل
 let chatbotEnabled = false;
