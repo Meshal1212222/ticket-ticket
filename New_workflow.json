@@ -2395,23 +2395,35 @@
                                         "id": "rr_webhook",
                                         "pId": "rr_confirm",
                                         "data": {
-                                          "type": "http_request",
                                           "url": "https://ticket-ticket-production.up.railway.app/webhook/bevatel/event",
-                                          "method": "POST",
+                                          "body": "{\"event\":\"رويال رامبل\",\"details\":\"{{rr_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone_number}}\"}",
+                                          "method": "post",
                                           "headers": [
                                             {
                                               "key": "Content-Type",
                                               "value": "application/json"
                                             }
                                           ],
-                                          "body": "{\"event\":\"رويال رامبل\",\"details\":\"{{rr_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone}}\"}"
+                                          "responseMap": [],
+                                          "saveResponse": {
+                                            "variable": "rr_response",
+                                            "hasVariable": true
+                                          },
+                                          "contentTypeHeader": "application/json"
                                         },
                                         "name": "إرسال للقروب",
-                                        "type": "ActionStep",
+                                        "type": "HttpRequestStep",
                                         "isNew": false,
-                                        "childs": [],
-                                        "selected": false,
-                                        "validate": false,
+                                        "childs": [
+                                          {
+                                            "id": "rr_webhook_success",
+                                            "pId": "rr_webhook",
+                                            "name": "Success",
+                                            "type": "ValidAnswer",
+                                            "childs": [],
+                                            "customType": "HTTPRequestAnswerStep"
+                                          }
+                                        ],
                                         "customType": "HTTPRequest"
                                       }
                                     ],
@@ -2528,23 +2540,35 @@
                                         "id": "rm_webhook",
                                         "pId": "rm_confirm",
                                         "data": {
-                                          "type": "http_request",
                                           "url": "https://ticket-ticket-production.up.railway.app/webhook/bevatel/event",
-                                          "method": "POST",
+                                          "body": "{\"event\":\"راشد الماجد\",\"details\":\"{{rm_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone_number}}\"}",
+                                          "method": "post",
                                           "headers": [
                                             {
                                               "key": "Content-Type",
                                               "value": "application/json"
                                             }
                                           ],
-                                          "body": "{\"event\":\"راشد الماجد\",\"details\":\"{{rm_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone}}\"}"
+                                          "responseMap": [],
+                                          "saveResponse": {
+                                            "variable": "rm_response",
+                                            "hasVariable": true
+                                          },
+                                          "contentTypeHeader": "application/json"
                                         },
                                         "name": "إرسال للقروب",
-                                        "type": "ActionStep",
+                                        "type": "HttpRequestStep",
                                         "isNew": false,
-                                        "childs": [],
-                                        "selected": false,
-                                        "validate": false,
+                                        "childs": [
+                                          {
+                                            "id": "rm_webhook_success",
+                                            "pId": "rm_webhook",
+                                            "name": "Success",
+                                            "type": "ValidAnswer",
+                                            "childs": [],
+                                            "customType": "HTTPRequestAnswerStep"
+                                          }
+                                        ],
                                         "customType": "HTTPRequest"
                                       }
                                     ],
