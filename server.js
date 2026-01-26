@@ -284,111 +284,6 @@ async function autoCheckGmail() {
 setInterval(autoCheckGmail, 2 * 60 * 1000);
 console.log('⏰ Gmail auto-check enabled (every 2 minutes)');
 
-// ==================== نظام الردود التلقائية للفعاليات ====================
-const eventAutoReplies = {
-    'رويال رامبل': {
-        image: 'https://api.golden4tic.com/storage/images/102.jpeg',
-        message: 'اهلا! ممكن تحدد لنا:\n• الفئة\n• عدد التذاكر\n• أي تفاصيل إضافية مهمة\n\nمن خلال الصورة وشكراً 🙏'
-    },
-    'راشد الماجد': {
-        image: 'https://api.golden4tic.com/storage/images/101.jpeg',
-        message: 'اهلا! ممكن تحدد لنا:\n• الفئة\n• عدد التذاكر\n• أي تفاصيل إضافية مهمة\n\nمن خلال الصورة وشكراً 🙏'
-    }
-};
-
-// تتبع محادثات الفعاليات (لإرسالها للقروب)
-const eventConversations = new Map();
-
-// إرسال صورة واتساب
-async function sendWhatsAppImage(to, imageUrl, caption = '') {
-    if (!ULTRAMSG_INSTANCE_ID || !ULTRAMSG_TOKEN) return null;
-
-    const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/image`;
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                token: ULTRAMSG_TOKEN,
-                to: to,
-                image: imageUrl,
-                caption: caption
-            })
-        });
-        const result = await response.json();
-        console.log('📷 Image sent:', result);
-        return result;
-    } catch (error) {
-        console.error('❌ Error sending image:', error);
-        return null;
-    }
-}
-
-// معالج الردود التلقائية للفعاليات
-async function handleEventAutoReply(chatId, messageBody, contactName) {
-    const message = messageBody.trim();
-
-    // التحقق من رسائل الفعاليات
-    for (const [eventName, eventData] of Object.entries(eventAutoReplies)) {
-        if (message.includes(eventName)) {
-            console.log(`🎫 Event detected: ${eventName} from ${chatId}`);
-
-            // حفظ حالة المحادثة
-            eventConversations.set(chatId, {
-                event: eventName,
-                contactName: contactName,
-                startTime: Date.now(),
-                awaitingDetails: true
-            });
-
-            // إرسال الصورة مع الرسالة
-            await sendWhatsAppImage(chatId, eventData.image, eventData.message);
-
-            return true; // تم المعالجة
-        }
-    }
-
-    // التحقق إذا كان العميل يرد على طلب فعالية
-    const conversation = eventConversations.get(chatId);
-    if (conversation && conversation.awaitingDetails) {
-        console.log(`📝 Event details received for ${conversation.event}:`, message);
-
-        // إرسال للقروب
-        if (WHATSAPP_GROUP_ID) {
-            const groupMessage = `🎫 *طلب تذاكر جديد*\n\n` +
-                `📌 *الفعالية:* ${conversation.event}\n` +
-                `👤 *العميل:* ${conversation.contactName || 'غير معروف'}\n` +
-                `📱 *الرقم:* ${chatId.replace('@c.us', '')}\n\n` +
-                `━━━━━━━━━━━━━━━\n` +
-                `🎟️ *الفئة والعدد والتفاصيل:*\n${message}\n` +
-                `━━━━━━━━━━━━━━━`;
-
-            await sendWhatsAppMessage(WHATSAPP_GROUP_ID, groupMessage);
-            console.log('✅ Event request sent to group');
-        }
-
-        // رسالة تأكيد للعميل
-        await sendWhatsAppMessage(chatId, '✅ وصلنا طلبك!\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙');
-
-        // حذف حالة المحادثة
-        eventConversations.delete(chatId);
-
-        return true; // تم المعالجة
-    }
-
-    return false; // لم يتم المعالجة - متابعة مع الـ chatbot العادي
-}
-
-// تنظيف محادثات الفعاليات القديمة (أكثر من 30 دقيقة)
-setInterval(() => {
-    const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
-    for (const [chatId, conv] of eventConversations.entries()) {
-        if (conv.startTime < thirtyMinutesAgo) {
-            eventConversations.delete(chatId);
-        }
-    }
-}, 10 * 60 * 1000);
-
 // ==================== نظام Chatbot قولدن تيكت ====================
 // ⚠️ معطل - Ultra Msg فقط للإشعارات الداخلية، الشات بوت عن طريق بيفاتل
 let chatbotEnabled = false;
@@ -1196,17 +1091,6 @@ app.post('/webhook/ultramsg', async (req, res) => {
 
                 await db.collection('whatsapp_messages').add(messageDoc);
                 console.log('✅ Message saved to Firebase:', messageDoc.from, messageDoc.body.substring(0, 50));
-            }
-
-            // ========== نظام الردود التلقائية للفعاليات ==========
-            // يعمل بشكل منفصل عن الـ chatbot الرئيسي
-            if (!isFromMe && !isGroup && fromNumber && message.body) {
-                const contactName = message.pushName || message.notifyName || '';
-                const eventHandled = await handleEventAutoReply(fromNumber, message.body, contactName);
-                if (eventHandled) {
-                    console.log('🎫 Event auto-reply handled the message');
-                    return res.json({ success: true, handled: 'event_auto_reply' });
-                }
             }
 
             // ========== نظام Chatbot قولدن تيكت ==========
