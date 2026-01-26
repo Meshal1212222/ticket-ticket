@@ -46,36 +46,346 @@
     "type": "Trigger",
     "childs": [
       {
-        "id": "677e56",
+        "id": "event_branch",
         "pId": 1,
-        "data": {
-          "timeout": {
-            "unit": "minutes",
-            "value": 1,
-            "hasTimeout": false
-          },
-          "question": {
-            "text": "✨ أهلاً وسهلاً في قولدن تيكت! 🎫\n\nكيف نقدر نساعدك اليوم؟",
-            "type": "multiple",
-            "regex": "",
-            "options": [
-              "شراء تذكرة",
-              "بيع تذكرة"
-            ],
-            "interactive": null
-          },
-          "saveResponse": {
-            "tag": false,
-            "field": "",
-            "hasField": false,
-            "variable": "mm",
-            "hasVariable": true
-          }
-        },
-        "name": "Ask Question #1",
-        "type": "QuestionStep",
+        "name": "فحص الفعاليات",
+        "type": "BranchStep",
         "isNew": false,
         "childs": [
+          {
+            "id": "royal_rumble_check",
+            "pId": "event_branch",
+            "data": {
+              "conditions": [
+                {
+                  "values": "رويال رامبل",
+                  "variable": null,
+                  "attribute_key": "last_message",
+                  "query_operator": "and",
+                  "filter_operator": "contains",
+                  "custom_attribute_type": ""
+                }
+              ]
+            },
+            "name": "رويال رامبل",
+            "type": "IfCondition",
+            "childs": [
+              {
+                "id": "rr_send_image",
+                "pId": "royal_rumble_check",
+                "data": {
+                  "type": "send_message",
+                  "payload": [
+                    {
+                      "message": {
+                        "type": "image",
+                        "image": "https://api.golden4tic.com/storage/images/102.jpeg",
+                        "caption": ""
+                      }
+                    }
+                  ]
+                },
+                "name": "صورة رويال رامبل",
+                "type": "ActionStep",
+                "isNew": false,
+                "childs": [
+                  {
+                    "id": "rr_ask_details",
+                    "pId": "rr_send_image",
+                    "data": {
+                      "timeout": {
+                        "unit": "minutes",
+                        "value": 30,
+                        "hasTimeout": false
+                      },
+                      "question": {
+                        "text": "اهلا! ممكن تحدد لنا:\n• الفئة\n• عدد التذاكر\n• أي تفاصيل إضافية مهمة\n\nمن خلال الصورة وشكراً 🙏",
+                        "type": "text",
+                        "regex": "",
+                        "options": [],
+                        "interactive": null
+                      },
+                      "saveResponse": {
+                        "tag": false,
+                        "field": "",
+                        "hasField": false,
+                        "variable": "event_details",
+                        "hasVariable": true
+                      }
+                    },
+                    "name": "طلب تفاصيل رويال رامبل",
+                    "type": "QuestionStep",
+                    "isNew": false,
+                    "childs": [
+                      {
+                        "id": "rr_success",
+                        "pId": "rr_ask_details",
+                        "name": "Success",
+                        "type": "ValidAnswer",
+                        "childs": [
+                          {
+                            "id": "rr_confirm",
+                            "pId": "rr_success",
+                            "data": {
+                              "type": "send_message",
+                              "payload": [
+                                {
+                                  "message": {
+                                    "text": "✅ وصلنا طلبك!\n\n📌 الفعالية: رويال رامبل\n🎟️ التفاصيل: {{event_details}}\n\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙",
+                                    "type": "text"
+                                  }
+                                }
+                              ]
+                            },
+                            "name": "تأكيد رويال رامبل",
+                            "type": "ActionStep",
+                            "isNew": false,
+                            "childs": [
+                              {
+                                "id": "rr_assign",
+                                "pId": "rr_confirm",
+                                "data": {
+                                  "type": "assign_to",
+                                  "teamId": null,
+                                  "userId": null,
+                                  "timeout": {
+                                    "unit": "minutes",
+                                    "value": 20,
+                                    "hasTimeout": false
+                                  },
+                                  "assignTo": "workspace",
+                                  "assignmentLogic": "RoundRobin",
+                                  "onlyOnlineUsers": true,
+                                  "hasUsersContactsLess": false,
+                                  "onlyUsersContactsLess": 20
+                                },
+                                "name": "تحويل للفريق",
+                                "type": "AssignToStep",
+                                "isNew": false,
+                                "childs": [
+                                  {
+                                    "id": "rr_assign_success",
+                                    "pId": "rr_assign",
+                                    "name": "Success",
+                                    "type": "ValidAssignTo",
+                                    "childs": [],
+                                    "customType": "AssignToBranch"
+                                  }
+                                ],
+                                "selected": false,
+                                "validate": false,
+                                "customType": "AssignTo"
+                              }
+                            ],
+                            "selected": false,
+                            "validate": false,
+                            "customType": "SendMessage"
+                          }
+                        ],
+                        "customType": "QuestionAnswerStep"
+                      }
+                    ],
+                    "selected": false,
+                    "validate": false,
+                    "customType": "Question"
+                  }
+                ],
+                "selected": false,
+                "validate": false,
+                "customType": "SendMessage"
+              }
+            ],
+            "selected": false,
+            "validate": false,
+            "customType": "IfCondition"
+          },
+          {
+            "id": "rashid_check",
+            "pId": "event_branch",
+            "data": {
+              "conditions": [
+                {
+                  "values": "راشد الماجد",
+                  "variable": null,
+                  "attribute_key": "last_message",
+                  "query_operator": "and",
+                  "filter_operator": "contains",
+                  "custom_attribute_type": ""
+                }
+              ]
+            },
+            "name": "راشد الماجد",
+            "type": "IfCondition",
+            "childs": [
+              {
+                "id": "rm_send_image",
+                "pId": "rashid_check",
+                "data": {
+                  "type": "send_message",
+                  "payload": [
+                    {
+                      "message": {
+                        "type": "image",
+                        "image": "https://api.golden4tic.com/storage/images/101.jpeg",
+                        "caption": ""
+                      }
+                    }
+                  ]
+                },
+                "name": "صورة راشد الماجد",
+                "type": "ActionStep",
+                "isNew": false,
+                "childs": [
+                  {
+                    "id": "rm_ask_details",
+                    "pId": "rm_send_image",
+                    "data": {
+                      "timeout": {
+                        "unit": "minutes",
+                        "value": 30,
+                        "hasTimeout": false
+                      },
+                      "question": {
+                        "text": "اهلا! ممكن تحدد لنا:\n• الفئة\n• عدد التذاكر\n• أي تفاصيل إضافية مهمة\n\nمن خلال الصورة وشكراً 🙏",
+                        "type": "text",
+                        "regex": "",
+                        "options": [],
+                        "interactive": null
+                      },
+                      "saveResponse": {
+                        "tag": false,
+                        "field": "",
+                        "hasField": false,
+                        "variable": "event_details",
+                        "hasVariable": true
+                      }
+                    },
+                    "name": "طلب تفاصيل راشد الماجد",
+                    "type": "QuestionStep",
+                    "isNew": false,
+                    "childs": [
+                      {
+                        "id": "rm_success",
+                        "pId": "rm_ask_details",
+                        "name": "Success",
+                        "type": "ValidAnswer",
+                        "childs": [
+                          {
+                            "id": "rm_confirm",
+                            "pId": "rm_success",
+                            "data": {
+                              "type": "send_message",
+                              "payload": [
+                                {
+                                  "message": {
+                                    "text": "✅ وصلنا طلبك!\n\n📌 الفعالية: راشد الماجد\n🎟️ التفاصيل: {{event_details}}\n\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙",
+                                    "type": "text"
+                                  }
+                                }
+                              ]
+                            },
+                            "name": "تأكيد راشد الماجد",
+                            "type": "ActionStep",
+                            "isNew": false,
+                            "childs": [
+                              {
+                                "id": "rm_assign",
+                                "pId": "rm_confirm",
+                                "data": {
+                                  "type": "assign_to",
+                                  "teamId": null,
+                                  "userId": null,
+                                  "timeout": {
+                                    "unit": "minutes",
+                                    "value": 20,
+                                    "hasTimeout": false
+                                  },
+                                  "assignTo": "workspace",
+                                  "assignmentLogic": "RoundRobin",
+                                  "onlyOnlineUsers": true,
+                                  "hasUsersContactsLess": false,
+                                  "onlyUsersContactsLess": 20
+                                },
+                                "name": "تحويل للفريق",
+                                "type": "AssignToStep",
+                                "isNew": false,
+                                "childs": [
+                                  {
+                                    "id": "rm_assign_success",
+                                    "pId": "rm_assign",
+                                    "name": "Success",
+                                    "type": "ValidAssignTo",
+                                    "childs": [],
+                                    "customType": "AssignToBranch"
+                                  }
+                                ],
+                                "selected": false,
+                                "validate": false,
+                                "customType": "AssignTo"
+                              }
+                            ],
+                            "selected": false,
+                            "validate": false,
+                            "customType": "SendMessage"
+                          }
+                        ],
+                        "customType": "QuestionAnswerStep"
+                      }
+                    ],
+                    "selected": false,
+                    "validate": false,
+                    "customType": "Question"
+                  }
+                ],
+                "selected": false,
+                "validate": false,
+                "customType": "SendMessage"
+              }
+            ],
+            "selected": false,
+            "validate": false,
+            "customType": "IfCondition"
+          },
+          {
+            "id": "default_flow",
+            "pId": "event_branch",
+            "data": {
+              "conditions": []
+            },
+            "name": "المسار العادي",
+            "type": "ElseCondition",
+            "childs": [
+              {
+                "id": "677e56",
+                "pId": "default_flow",
+                "data": {
+                  "timeout": {
+                    "unit": "minutes",
+                    "value": 1,
+                    "hasTimeout": false
+                  },
+                  "question": {
+                    "text": "✨ أهلاً وسهلاً في قولدن تيكت! 🎫\n\nكيف نقدر نساعدك اليوم؟",
+                    "type": "multiple",
+                    "regex": "",
+                    "options": [
+                      "شراء تذكرة",
+                      "بيع تذكرة"
+                    ],
+                    "interactive": null
+                  },
+                  "saveResponse": {
+                    "tag": false,
+                    "field": "",
+                    "hasField": false,
+                    "variable": "mm",
+                    "hasVariable": true
+                  }
+                },
+                "name": "Ask Question #1",
+                "type": "QuestionStep",
+                "isNew": false,
+                "childs": [
           {
             "id": "94b23d",
             "pId": "677e56",
@@ -2329,6 +2639,16 @@
         "selected": false,
         "validate": false,
         "customType": "QuestionStep"
+              }
+            ],
+            "selected": false,
+            "validate": false,
+            "customType": "ElseCondition"
+          }
+        ],
+        "selected": false,
+        "validate": false,
+        "customType": "BranchStep"
       }
     ],
     "selected": false,
