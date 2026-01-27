@@ -208,80 +208,161 @@
                                             "type": "ValidAnswer",
                                             "childs": [
                                               {
-                                                "id": "26c660",
+                                                "id": "event_check_branch",
                                                 "pId": "3929eb",
-                                                "data": {
-                                                  "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                                                  "body": "{\n\n\"name\": \"{{contact.name}}\",\n\n\"email\": \"البريد الإلكتروني\",\n\n\"phone\": \"{{contact.phone_number}}\",\n\n\"category\": \"نوع الطلب\",\n\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\n\"description\": \"تفاصيل المشكلة\"\n\n}",
-                                                  "method": "post",
-                                                  "headers": [
-                                                    {
-                                                      "key": "Content-Type",
-                                                      "value": "application/json"
-                                                    },
-                                                    {
-                                                      "key": "X-API-Key",
-                                                      "value": "bevatel_ticket_2024_secure_key_x7k9m2"
-                                                    }
-                                                  ],
-                                                  "responseMap": [
-                                                    {
-                                                      "key": "ticketId",
-                                                      "variable": "response"
-                                                    },
-                                                    {
-                                                      "key": "message",
-                                                      "variable": "message"
-                                                    }
-                                                  ],
-                                                  "saveResponse": {
-                                                    "variable": "test",
-                                                    "hasVariable": true
-                                                  },
-                                                  "contentTypeHeader": "application/json"
-                                                },
-                                                "name": "HTTP Request  #1",
-                                                "type": "HttpRequestStep",
+                                                "name": "فحص الفعاليات",
+                                                "type": "BranchStep",
                                                 "isNew": false,
                                                 "childs": [
                                                   {
-                                                    "id": "5586fb",
-                                                    "pId": "26c660",
-                                                    "name": "Success",
-                                                    "type": "ValidAnswer",
+                                                    "id": "rashid_in_buy",
+                                                    "pId": "event_check_branch",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "راشد",
+                                                          "variable": "before_buy",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "contains"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "راشد الماجد",
+                                                    "type": "IfCondition",
                                                     "childs": [
                                                       {
-                                                        "id": "932be7",
-                                                        "pId": "5586fb",
+                                                        "id": "rashid_buy_img",
+                                                        "pId": "rashid_in_buy",
                                                         "data": {
                                                           "type": "send_message",
                                                           "payload": [
                                                             {
                                                               "message": {
-                                                                "text": "✅ وصلنا طلبك!\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙",
+                                                                "text": "🎤 حفل راشد الماجد\n\nهذي خريطة المسرح والفئات المتاحة:",
                                                                 "type": "text"
+                                                              }
+                                                            },
+                                                            {
+                                                              "message": {
+                                                                "url": "https://api.golden4tic.com/storage/images/101.jpeg",
+                                                                "type": "image"
                                                               }
                                                             }
                                                           ]
                                                         },
-                                                        "name": "Send Message #16",
+                                                        "name": "صورة مسرح راشد",
                                                         "type": "ActionStep",
                                                         "isNew": false,
                                                         "childs": [
                                                           {
-                                                            "id": "e71cc4",
-                                                            "pId": "e71cc4",
+                                                            "id": "rashid_buy_q",
+                                                            "pId": "rashid_buy_img",
                                                             "data": {
-                                                              "type": "add_comment",
-                                                              "comment": "success\\\n{{test}}  \\\n{{response}}  \\\n{{message}}"
+                                                              "timeout": {
+                                                                "unit": "minutes",
+                                                                "value": 5,
+                                                                "hasTimeout": false
+                                                              },
+                                                              "question": {
+                                                                "text": "📝 اكتب لنا:\n• الفئة المطلوبة\n• عدد التذاكر\n• أي تفاصيل إضافية",
+                                                                "type": "text",
+                                                                "regex": "",
+                                                                "options": [],
+                                                                "interactive": null
+                                                              },
+                                                              "saveResponse": {
+                                                                "tag": false,
+                                                                "field": "",
+                                                                "hasField": false,
+                                                                "variable": "rashid_buy_details",
+                                                                "hasVariable": true
+                                                              }
                                                             },
-                                                            "name": "Add Comment #1",
-                                                            "type": "ActionStep",
+                                                            "name": "تفاصيل راشد",
+                                                            "type": "QuestionStep",
                                                             "isNew": false,
-                                                            "childs": [],
+                                                            "childs": [
+                                                              {
+                                                                "id": "rashid_buy_q_success",
+                                                                "pId": "rashid_buy_q",
+                                                                "name": "Success",
+                                                                "type": "ValidAnswer",
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "rashid_buy_confirm",
+                                                                    "pId": "rashid_buy_q_success",
+                                                                    "data": {
+                                                                      "type": "send_message",
+                                                                      "payload": [
+                                                                        {
+                                                                          "message": {
+                                                                            "text": "✅ تمام! وصلنا طلبك لحفل راشد الماجد\n\nبنتواصل معك قريباً إن شاء الله 🙏",
+                                                                            "type": "text"
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    "name": "تأكيد راشد",
+                                                                    "type": "ActionStep",
+                                                                    "isNew": false,
+                                                                    "childs": [
+                                                                      {
+                                                                        "id": "rashid_buy_webhook",
+                                                                        "pId": "rashid_buy_confirm",
+                                                                        "data": {
+                                                                          "url": "https://ticket-ticket-production.up.railway.app/webhook/bevatel/event",
+                                                                          "body": "{\"event\":\"راشد الماجد\",\"details\":\"{{rashid_buy_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone_number}}\"}",
+                                                                          "method": "post",
+                                                                          "headers": [
+                                                                            {
+                                                                              "key": "Content-Type",
+                                                                              "value": "application/json"
+                                                                            }
+                                                                          ],
+                                                                          "responseMap": [],
+                                                                          "saveResponse": {
+                                                                            "variable": "rashid_buy_resp",
+                                                                            "hasVariable": true
+                                                                          },
+                                                                          "contentTypeHeader": "application/json"
+                                                                        },
+                                                                        "name": "إرسال للقروب",
+                                                                        "type": "HttpRequestStep",
+                                                                        "isNew": false,
+                                                                        "childs": [
+                                                                          {
+                                                                            "id": "rashid_buy_wh_ok",
+                                                                            "pId": "rashid_buy_webhook",
+                                                                            "name": "Success",
+                                                                            "type": "ValidAnswer",
+                                                                            "childs": [],
+                                                                            "customType": "HTTPRequestAnswerStep"
+                                                                          }
+                                                                        ],
+                                                                        "customType": "HTTPRequest"
+                                                                      }
+                                                                    ],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "SendMessage"
+                                                                  }
+                                                                ],
+                                                                "customType": "AnswerStep"
+                                                              },
+                                                              {
+                                                                "id": "rashid_buy_q_fail",
+                                                                "pId": "rashid_buy_q",
+                                                                "name": "Failure: Invalid",
+                                                                "type": "InvalidAnswer",
+                                                                "childs": [],
+                                                                "customType": "AnswerStep"
+                                                              }
+                                                            ],
                                                             "selected": false,
                                                             "validate": false,
-                                                            "customType": "AddComment"
+                                                            "customType": "QuestionStep"
                                                           }
                                                         ],
                                                         "selected": false,
@@ -289,36 +370,294 @@
                                                         "customType": "SendMessage"
                                                       }
                                                     ],
-                                                    "customType": "HTTPRequestAnswerStep"
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
                                                   },
                                                   {
-                                                    "id": "047577",
-                                                    "pId": "26c660",
-                                                    "name": "Failure: Invalid",
-                                                    "type": "InvalidAnswer",
+                                                    "id": "royal_in_buy",
+                                                    "pId": "event_check_branch",
+                                                    "data": {
+                                                      "conditions": [
+                                                        {
+                                                          "values": "رويال",
+                                                          "variable": "before_buy",
+                                                          "hasVariable": true,
+                                                          "attribute_key": "variable",
+                                                          "query_operator": "and",
+                                                          "filter_operator": "contains"
+                                                        }
+                                                      ]
+                                                    },
+                                                    "name": "رويال رامبل",
+                                                    "type": "IfCondition",
                                                     "childs": [
                                                       {
-                                                        "id": "eaf5f1",
-                                                        "pId": "047577",
+                                                        "id": "royal_buy_img",
+                                                        "pId": "royal_in_buy",
                                                         "data": {
-                                                          "type": "add_comment",
-                                                          "comment": "FAILURE"
+                                                          "type": "send_message",
+                                                          "payload": [
+                                                            {
+                                                              "message": {
+                                                                "text": "🤼 رويال رامبل\n\nهذي خريطة المسرح والفئات المتاحة:",
+                                                                "type": "text"
+                                                              }
+                                                            },
+                                                            {
+                                                              "message": {
+                                                                "url": "https://api.golden4tic.com/storage/images/102.jpeg",
+                                                                "type": "image"
+                                                              }
+                                                            }
+                                                          ]
                                                         },
-                                                        "name": "Add Comment #2",
+                                                        "name": "صورة مسرح رويال",
                                                         "type": "ActionStep",
                                                         "isNew": false,
-                                                        "childs": [],
+                                                        "childs": [
+                                                          {
+                                                            "id": "royal_buy_q",
+                                                            "pId": "royal_buy_img",
+                                                            "data": {
+                                                              "timeout": {
+                                                                "unit": "minutes",
+                                                                "value": 5,
+                                                                "hasTimeout": false
+                                                              },
+                                                              "question": {
+                                                                "text": "📝 اكتب لنا:\n• الفئة المطلوبة\n• عدد التذاكر\n• أي تفاصيل إضافية",
+                                                                "type": "text",
+                                                                "regex": "",
+                                                                "options": [],
+                                                                "interactive": null
+                                                              },
+                                                              "saveResponse": {
+                                                                "tag": false,
+                                                                "field": "",
+                                                                "hasField": false,
+                                                                "variable": "royal_buy_details",
+                                                                "hasVariable": true
+                                                              }
+                                                            },
+                                                            "name": "تفاصيل رويال",
+                                                            "type": "QuestionStep",
+                                                            "isNew": false,
+                                                            "childs": [
+                                                              {
+                                                                "id": "royal_buy_q_success",
+                                                                "pId": "royal_buy_q",
+                                                                "name": "Success",
+                                                                "type": "ValidAnswer",
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "royal_buy_confirm",
+                                                                    "pId": "royal_buy_q_success",
+                                                                    "data": {
+                                                                      "type": "send_message",
+                                                                      "payload": [
+                                                                        {
+                                                                          "message": {
+                                                                            "text": "✅ تمام! وصلنا طلبك لرويال رامبل\n\nبنتواصل معك قريباً إن شاء الله 🙏",
+                                                                            "type": "text"
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    "name": "تأكيد رويال",
+                                                                    "type": "ActionStep",
+                                                                    "isNew": false,
+                                                                    "childs": [
+                                                                      {
+                                                                        "id": "royal_buy_webhook",
+                                                                        "pId": "royal_buy_confirm",
+                                                                        "data": {
+                                                                          "url": "https://ticket-ticket-production.up.railway.app/webhook/bevatel/event",
+                                                                          "body": "{\"event\":\"رويال رامبل\",\"details\":\"{{royal_buy_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone_number}}\"}",
+                                                                          "method": "post",
+                                                                          "headers": [
+                                                                            {
+                                                                              "key": "Content-Type",
+                                                                              "value": "application/json"
+                                                                            }
+                                                                          ],
+                                                                          "responseMap": [],
+                                                                          "saveResponse": {
+                                                                            "variable": "royal_buy_resp",
+                                                                            "hasVariable": true
+                                                                          },
+                                                                          "contentTypeHeader": "application/json"
+                                                                        },
+                                                                        "name": "إرسال للقروب",
+                                                                        "type": "HttpRequestStep",
+                                                                        "isNew": false,
+                                                                        "childs": [
+                                                                          {
+                                                                            "id": "royal_buy_wh_ok",
+                                                                            "pId": "royal_buy_webhook",
+                                                                            "name": "Success",
+                                                                            "type": "ValidAnswer",
+                                                                            "childs": [],
+                                                                            "customType": "HTTPRequestAnswerStep"
+                                                                          }
+                                                                        ],
+                                                                        "customType": "HTTPRequest"
+                                                                      }
+                                                                    ],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "SendMessage"
+                                                                  }
+                                                                ],
+                                                                "customType": "AnswerStep"
+                                                              },
+                                                              {
+                                                                "id": "royal_buy_q_fail",
+                                                                "pId": "royal_buy_q",
+                                                                "name": "Failure: Invalid",
+                                                                "type": "InvalidAnswer",
+                                                                "childs": [],
+                                                                "customType": "AnswerStep"
+                                                              }
+                                                            ],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "QuestionStep"
+                                                          }
+                                                        ],
                                                         "selected": false,
                                                         "validate": false,
-                                                        "customType": "AddComment"
+                                                        "customType": "SendMessage"
                                                       }
                                                     ],
-                                                    "customType": "HTTPRequestAnswerStep"
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": "else_regular_ticket",
+                                                    "pId": "event_check_branch",
+                                                    "name": "Else",
+                                                    "type": "ElseCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "26c660",
+                                                        "pId": "else_regular_ticket",
+                                                        "data": {
+                                                          "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                          "body": "{\n\n\"name\": \"{{contact.name}}\",\n\n\"email\": \"البريد الإلكتروني\",\n\n\"phone\": \"{{contact.phone_number}}\",\n\n\"category\": \"نوع الطلب\",\n\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\n\"description\": \"تفاصيل المشكلة\"\n\n}",
+                                                          "method": "post",
+                                                          "headers": [
+                                                            {
+                                                              "key": "Content-Type",
+                                                              "value": "application/json"
+                                                            },
+                                                            {
+                                                              "key": "X-API-Key",
+                                                              "value": "bevatel_ticket_2024_secure_key_x7k9m2"
+                                                            }
+                                                          ],
+                                                          "responseMap": [
+                                                            {
+                                                              "key": "ticketId",
+                                                              "variable": "response"
+                                                            },
+                                                            {
+                                                              "key": "message",
+                                                              "variable": "message"
+                                                            }
+                                                          ],
+                                                          "saveResponse": {
+                                                            "variable": "test",
+                                                            "hasVariable": true
+                                                          },
+                                                          "contentTypeHeader": "application/json"
+                                                        },
+                                                        "name": "HTTP Request  #1",
+                                                        "type": "HttpRequestStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "5586fb",
+                                                            "pId": "26c660",
+                                                            "name": "Success",
+                                                            "type": "ValidAnswer",
+                                                            "childs": [
+                                                              {
+                                                                "id": "932be7",
+                                                                "pId": "5586fb",
+                                                                "data": {
+                                                                  "type": "send_message",
+                                                                  "payload": [
+                                                                    {
+                                                                      "message": {
+                                                                        "text": "✅ وصلنا طلبك!\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙",
+                                                                        "type": "text"
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                },
+                                                                "name": "Send Message #16",
+                                                                "type": "ActionStep",
+                                                                "isNew": false,
+                                                                "childs": [
+                                                                  {
+                                                                    "id": "e71cc4",
+                                                                    "pId": "e71cc4",
+                                                                    "data": {
+                                                                      "type": "add_comment",
+                                                                      "comment": "success\\\n{{test}}  \\\n{{response}}  \\\n{{message}}"
+                                                                    },
+                                                                    "name": "Add Comment #1",
+                                                                    "type": "ActionStep",
+                                                                    "isNew": false,
+                                                                    "childs": [],
+                                                                    "selected": false,
+                                                                    "validate": false,
+                                                                    "customType": "AddComment"
+                                                                  }
+                                                                ],
+                                                                "selected": false,
+                                                                "validate": false,
+                                                                "customType": "SendMessage"
+                                                              }
+                                                            ],
+                                                            "customType": "HTTPRequestAnswerStep"
+                                                          },
+                                                          {
+                                                            "id": "047577",
+                                                            "pId": "26c660",
+                                                            "name": "Failure: Invalid",
+                                                            "type": "InvalidAnswer",
+                                                            "childs": [
+                                                              {
+                                                                "id": "eaf5f1",
+                                                                "pId": "047577",
+                                                                "data": {
+                                                                  "type": "add_comment",
+                                                                  "comment": "FAILURE"
+                                                                },
+                                                                "name": "Add Comment #2",
+                                                                "type": "ActionStep",
+                                                                "isNew": false,
+                                                                "childs": [],
+                                                                "selected": false,
+                                                                "validate": false,
+                                                                "customType": "AddComment"
+                                                              }
+                                                            ],
+                                                            "customType": "HTTPRequestAnswerStep"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "HTTPRequest"
+                                                      }
+                                                    ],
+                                                    "customType": "ConditionStep"
                                                   }
                                                 ],
                                                 "selected": false,
                                                 "validate": false,
-                                                "customType": "HTTPRequest"
+                                                "customType": "BranchStep"
                                               }
                                             ],
                                             "customType": "AnswerStep"
