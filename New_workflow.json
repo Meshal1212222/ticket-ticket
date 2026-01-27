@@ -247,7 +247,7 @@
                                                             {
                                                               "message": {
                                                                 "url": "https://api.golden4tic.com/storage/images/101.jpeg",
-                                                                "type": "image"
+                                                                "type": "attachment"
                                                               }
                                                             }
                                                           ]
@@ -406,7 +406,7 @@
                                                             {
                                                               "message": {
                                                                 "url": "https://api.golden4tic.com/storage/images/102.jpeg",
-                                                                "type": "image"
+                                                                "type": "attachment"
                                                               }
                                                             }
                                                           ]
@@ -2668,7 +2668,7 @@
                           "payload": [
                             {
                               "message": {
-                                "type": "image",
+                                "type": "attachment",
                                 "image": "https://api.golden4tic.com/storage/images/102.jpeg"
                               }
                             }
@@ -2813,7 +2813,7 @@
                           "payload": [
                             {
                               "message": {
-                                "type": "image",
+                                "type": "attachment",
                                 "image": "https://api.golden4tic.com/storage/images/101.jpeg"
                               }
                             }
