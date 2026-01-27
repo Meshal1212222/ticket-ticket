@@ -2852,6 +2852,79 @@ app.get('/callback', (req, res) => {
     res.send('Twitter OAuth Callback - Success');
 });
 
+// ==================== إعادة إرسال بلاغات اليوم للقروب ====================
+app.get('/api/resend-today', async (req, res) => {
+    try {
+        if (!db) {
+            return res.status(500).json({ success: false, message: 'Firebase غير متصل' });
+        }
+
+        // حساب بداية اليوم (توقيت السعودية)
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        todayStart.setHours(0, 0, 0, 0);
+
+        // جلب البلاغات
+        const snapshot = await db.collection('tickets')
+            .where('createdAt', '>=', todayStart.toISOString())
+            .orderBy('createdAt', 'asc')
+            .get();
+
+        const tickets = snapshot.docs.map(doc => doc.data());
+
+        if (tickets.length === 0) {
+            return res.json({ success: true, message: 'لا توجد بلاغات اليوم', count: 0 });
+        }
+
+        // إرسال كل بلاغ للقروب
+        let sentCount = 0;
+        for (const ticket of tickets) {
+            const message = `🎫 *بلاغ #${ticket.ticketNumber}*\n\n` +
+                `👤 *الاسم:* ${ticket.name || 'غير معروف'}\n` +
+                `📱 *الجوال:* ${ticket.phone || 'غير متوفر'}\n` +
+                `📧 *الإيميل:* ${ticket.email || 'غير متوفر'}\n\n` +
+                `📌 *التصنيف:* ${ticket.category || 'غير محدد'}\n` +
+                `📋 *الموضوع:* ${ticket.subject || 'بدون موضوع'}\n\n` +
+                `━━━━━━━━━━━━━━━\n` +
+                `📝 *التفاصيل:*\n${ticket.description || 'لا توجد تفاصيل'}\n` +
+                `━━━━━━━━━━━━━━━\n\n` +
+                `🕐 ${new Date(ticket.createdAt).toLocaleString('ar-SA')}`;
+
+            if (WHATSAPP_GROUP_ID && ULTRAMSG_INSTANCE_ID && ULTRAMSG_TOKEN) {
+                const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`;
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: ULTRAMSG_TOKEN,
+                        to: WHATSAPP_GROUP_ID,
+                        body: message
+                    })
+                });
+                sentCount++;
+                // تأخير بسيط بين الرسائل
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `تم إرسال ${sentCount} بلاغ للقروب`,
+            count: sentCount,
+            tickets: tickets.map(t => ({
+                id: t.ticketId,
+                name: t.name,
+                phone: t.phone,
+                subject: t.subject
+            }))
+        });
+
+    } catch (error) {
+        console.error('Error resending tickets:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
