@@ -233,138 +233,23 @@
                                                     "type": "IfCondition",
                                                     "childs": [
                                                       {
-                                                        "id": "rashid_buy_img",
+                                                        "id": "rashid_link",
                                                         "pId": "rashid_in_buy",
                                                         "data": {
                                                           "type": "send_message",
                                                           "payload": [
                                                             {
                                                               "message": {
-                                                                "text": "🎤 حفل راشد الماجد\n\nهذي خريطة المسرح والفئات المتاحة:",
+                                                                "text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023",
                                                                 "type": "text"
-                                                              }
-                                                            },
-                                                            {
-                                                              "message": {
-                                                                "url": "https://api.golden4tic.com/storage/images/101.jpeg",
-                                                                "type": "attachment"
                                                               }
                                                             }
                                                           ]
                                                         },
-                                                        "name": "صورة مسرح راشد",
+                                                        "name": "رابط راشد",
                                                         "type": "ActionStep",
                                                         "isNew": false,
-                                                        "childs": [
-                                                          {
-                                                            "id": "rashid_buy_q",
-                                                            "pId": "rashid_buy_img",
-                                                            "data": {
-                                                              "timeout": {
-                                                                "unit": "minutes",
-                                                                "value": 5,
-                                                                "hasTimeout": false
-                                                              },
-                                                              "question": {
-                                                                "text": "📝 اكتب لنا:\n• الفئة المطلوبة\n• عدد التذاكر\n• أي تفاصيل إضافية",
-                                                                "type": "text",
-                                                                "regex": "",
-                                                                "options": [],
-                                                                "interactive": null
-                                                              },
-                                                              "saveResponse": {
-                                                                "tag": false,
-                                                                "field": "",
-                                                                "hasField": false,
-                                                                "variable": "rashid_buy_details",
-                                                                "hasVariable": true
-                                                              }
-                                                            },
-                                                            "name": "تفاصيل راشد",
-                                                            "type": "QuestionStep",
-                                                            "isNew": false,
-                                                            "childs": [
-                                                              {
-                                                                "id": "rashid_buy_q_success",
-                                                                "pId": "rashid_buy_q",
-                                                                "name": "Success",
-                                                                "type": "ValidAnswer",
-                                                                "childs": [
-                                                                  {
-                                                                    "id": "rashid_buy_confirm",
-                                                                    "pId": "rashid_buy_q_success",
-                                                                    "data": {
-                                                                      "type": "send_message",
-                                                                      "payload": [
-                                                                        {
-                                                                          "message": {
-                                                                            "text": "✅ تمام! وصلنا طلبك لحفل راشد الماجد\n\nبنتواصل معك قريباً إن شاء الله 🙏",
-                                                                            "type": "text"
-                                                                          }
-                                                                        }
-                                                                      ]
-                                                                    },
-                                                                    "name": "تأكيد راشد",
-                                                                    "type": "ActionStep",
-                                                                    "isNew": false,
-                                                                    "childs": [
-                                                                      {
-                                                                        "id": "rashid_buy_webhook",
-                                                                        "pId": "rashid_buy_confirm",
-                                                                        "data": {
-                                                                          "url": "https://ticket-ticket-production.up.railway.app/webhook/bevatel/event",
-                                                                          "body": "{\"event\":\"راشد الماجد\",\"details\":\"{{rashid_buy_details}}\",\"customer_name\":\"{{contact.name}}\",\"customer_phone\":\"{{contact.phone_number}}\"}",
-                                                                          "method": "post",
-                                                                          "headers": [
-                                                                            {
-                                                                              "key": "Content-Type",
-                                                                              "value": "application/json"
-                                                                            }
-                                                                          ],
-                                                                          "responseMap": [],
-                                                                          "saveResponse": {
-                                                                            "variable": "rashid_buy_resp",
-                                                                            "hasVariable": true
-                                                                          },
-                                                                          "contentTypeHeader": "application/json"
-                                                                        },
-                                                                        "name": "إرسال للقروب",
-                                                                        "type": "HttpRequestStep",
-                                                                        "isNew": false,
-                                                                        "childs": [
-                                                                          {
-                                                                            "id": "rashid_buy_wh_ok",
-                                                                            "pId": "rashid_buy_webhook",
-                                                                            "name": "Success",
-                                                                            "type": "ValidAnswer",
-                                                                            "childs": [],
-                                                                            "customType": "HTTPRequestAnswerStep"
-                                                                          }
-                                                                        ],
-                                                                        "customType": "HTTPRequest"
-                                                                      }
-                                                                    ],
-                                                                    "selected": false,
-                                                                    "validate": false,
-                                                                    "customType": "SendMessage"
-                                                                  }
-                                                                ],
-                                                                "customType": "AnswerStep"
-                                                              },
-                                                              {
-                                                                "id": "rashid_buy_q_fail",
-                                                                "pId": "rashid_buy_q",
-                                                                "name": "Failure: Invalid",
-                                                                "type": "InvalidAnswer",
-                                                                "childs": [],
-                                                                "customType": "AnswerStep"
-                                                              }
-                                                            ],
-                                                            "selected": false,
-                                                            "validate": false,
-                                                            "customType": "QuestionStep"
-                                                          }
-                                                        ],
+                                                        "childs": [],
                                                         "selected": false,
                                                         "validate": false,
                                                         "customType": "SendMessage"
