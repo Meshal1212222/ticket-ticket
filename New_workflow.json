@@ -29,7 +29,7 @@
         "id": "677e56",
         "pId": 1,
         "data": {
-          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": true},
+          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
           "question": {
             "text": "✨ أهلاً وسهلاً في قولدن تيكت! 🎫\n\nكيف نقدر نساعدك اليوم؟",
             "type": "multiple",
@@ -67,7 +67,7 @@
                         "id": "e05c99",
                         "pId": "47b97b",
                         "data": {
-                          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": true},
+                          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
                           "question": {"text": "🛒 استفسارك قبل ولا بعد شراء التذكرة؟", "type": "multiple", "regex": "", "options": ["قبل الشراء", "بعد الشراء"], "interactive": null},
                           "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "op1", "hasVariable": true}
                         },
@@ -99,7 +99,7 @@
                                         "id": "d26074",
                                         "pId": "76157d",
                                         "data": {
-                                          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": true},
+                                          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
                                           "question": {"text": "🎯 ابشر! وش اسم الفعالية اللي تبي تشتري تذكرة لها؟", "type": "text", "regex": "", "options": [], "interactive": null},
                                           "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "before_buy", "hasVariable": true}
                                         },
@@ -258,39 +258,6 @@
                                             {"id": "retry_msg3", "pId": "615ff6", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء كتابة اسم الفعالية", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [
                                               {"id": "goto3", "pId": "retry_msg3", "data": {"step": "d26074"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
                                             ], "selected": false, "validate": false, "customType": "SendMessage"}
-                                          ], "customType": "AnswerStep"},
-                                          {"id": "timeout3", "pId": "d26074", "name": "Failure: Timeout", "type": "TimeoutBranch", "childs": [
-                                            {
-                                              "id": "timeout_ticket3",
-                                              "pId": "timeout3",
-                                              "data": {
-                                                "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                                                "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"انتهاء الوقت\",\n\"subject\": \"{{mm}},{{op1}} - العميل لم يرد\",\n\"description\": \"تم إغلاق المحادثة - سؤال اسم الفعالية\"\n}",
-                                                "method": "post",
-                                                "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-                                                "responseMap": [],
-                                                "saveResponse": {"field": "", "hasField": false, "variable": "timeout3_resp", "hasVariable": true},
-                                                "contentTypeHeader": "application/json"
-                                              },
-                                              "name": "بلاغ انتهاء الوقت",
-                                              "type": "HttpRequestStep",
-                                              "isNew": false,
-                                              "childs": [
-                                                {"id": "t3_success", "pId": "timeout_ticket3", "name": "Success", "type": "ValidAnswer", "childs": [
-                                                  {"id": "close_msg3", "pId": "t3_success", "data": {"type": "send_message", "payload": [{"message": {"text": "⏰ انتهى الوقت المحدد للرد.\nتقدر تتواصل معنا مرة ثانية وقت ما تحتاج 💙", "type": "text"}}]}, "name": "رسالة إغلاق", "type": "ActionStep", "isNew": false, "childs": [
-                                                    {"id": "resolve3", "pId": "close_msg3", "data": {"type": "resolve_conversation"}, "name": "إغلاق المحادثة", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "ResolveConversation"}
-                                                  ], "selected": false, "validate": false, "customType": "SendMessage"}
-                                                ], "customType": "HTTPRequestAnswerStep"},
-                                                {"id": "t3_fail", "pId": "timeout_ticket3", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [
-                                                  {"id": "close_msg3_f", "pId": "t3_fail", "data": {"type": "send_message", "payload": [{"message": {"text": "⏰ انتهى الوقت المحدد للرد.\nتقدر تتواصل معنا مرة ثانية وقت ما تحتاج 💙", "type": "text"}}]}, "name": "رسالة إغلاق", "type": "ActionStep", "isNew": false, "childs": [
-                                                    {"id": "resolve3_f", "pId": "close_msg3_f", "data": {"type": "resolve_conversation"}, "name": "إغلاق المحادثة", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "ResolveConversation"}
-                                                  ], "selected": false, "validate": false, "customType": "SendMessage"}
-                                                ], "customType": "HTTPRequestAnswerStep"}
-                                              ],
-                                              "selected": false,
-                                              "validate": false,
-                                              "customType": "HTTPRequest"
-                                            }
                                           ], "customType": "AnswerStep"}
                                         ],
                                         "selected": false,
@@ -314,39 +281,6 @@
                             {"id": "retry_msg2", "pId": "0f73c8", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء اختيار أحد الخيارات المتاحة", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [
                               {"id": "goto2", "pId": "retry_msg2", "data": {"step": "e05c99"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
                             ], "selected": false, "validate": false, "customType": "SendMessage"}
-                          ], "customType": "AnswerStep"},
-                          {"id": "timeout2", "pId": "e05c99", "name": "Failure: Timeout", "type": "TimeoutBranch", "childs": [
-                            {
-                              "id": "timeout_ticket2",
-                              "pId": "timeout2",
-                              "data": {
-                                "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                                "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"انتهاء الوقت\",\n\"subject\": \"{{mm}} - العميل لم يرد\",\n\"description\": \"تم إغلاق المحادثة - سؤال قبل/بعد الشراء\"\n}",
-                                "method": "post",
-                                "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-                                "responseMap": [],
-                                "saveResponse": {"field": "", "hasField": false, "variable": "timeout2_resp", "hasVariable": true},
-                                "contentTypeHeader": "application/json"
-                              },
-                              "name": "بلاغ انتهاء الوقت",
-                              "type": "HttpRequestStep",
-                              "isNew": false,
-                              "childs": [
-                                {"id": "t2_success", "pId": "timeout_ticket2", "name": "Success", "type": "ValidAnswer", "childs": [
-                                  {"id": "close_msg2", "pId": "t2_success", "data": {"type": "send_message", "payload": [{"message": {"text": "⏰ انتهى الوقت المحدد للرد.\nتقدر تتواصل معنا مرة ثانية وقت ما تحتاج 💙", "type": "text"}}]}, "name": "رسالة إغلاق", "type": "ActionStep", "isNew": false, "childs": [
-                                    {"id": "resolve2", "pId": "close_msg2", "data": {"type": "resolve_conversation"}, "name": "إغلاق المحادثة", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "ResolveConversation"}
-                                  ], "selected": false, "validate": false, "customType": "SendMessage"}
-                                ], "customType": "HTTPRequestAnswerStep"},
-                                {"id": "t2_fail", "pId": "timeout_ticket2", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [
-                                  {"id": "close_msg2_f", "pId": "t2_fail", "data": {"type": "send_message", "payload": [{"message": {"text": "⏰ انتهى الوقت المحدد للرد.\nتقدر تتواصل معنا مرة ثانية وقت ما تحتاج 💙", "type": "text"}}]}, "name": "رسالة إغلاق", "type": "ActionStep", "isNew": false, "childs": [
-                                    {"id": "resolve2_f", "pId": "close_msg2_f", "data": {"type": "resolve_conversation"}, "name": "إغلاق المحادثة", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "ResolveConversation"}
-                                  ], "selected": false, "validate": false, "customType": "SendMessage"}
-                                ], "customType": "HTTPRequestAnswerStep"}
-                              ],
-                              "selected": false,
-                              "validate": false,
-                              "customType": "HTTPRequest"
-                            }
                           ], "customType": "AnswerStep"}
                         ],
                         "selected": false,
@@ -484,39 +418,6 @@
               "selected": false,
               "validate": false,
               "customType": "BranchStep"
-            }
-          ], "customType": "AnswerStep"},
-          {"id": "timeout1", "pId": "677e56", "name": "Failure: Timeout", "type": "TimeoutBranch", "childs": [
-            {
-              "id": "timeout_ticket1",
-              "pId": "timeout1",
-              "data": {
-                "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"انتهاء الوقت\",\n\"subject\": \"العميل لم يرد خلال دقيقة\",\n\"description\": \"تم إغلاق المحادثة تلقائياً - السؤال الأول\"\n}",
-                "method": "post",
-                "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-                "responseMap": [],
-                "saveResponse": {"field": "", "hasField": false, "variable": "timeout_resp", "hasVariable": true},
-                "contentTypeHeader": "application/json"
-              },
-              "name": "بلاغ انتهاء الوقت",
-              "type": "HttpRequestStep",
-              "isNew": false,
-              "childs": [
-                {"id": "timeout_ticket_success", "pId": "timeout_ticket1", "name": "Success", "type": "ValidAnswer", "childs": [
-                  {"id": "close_msg1", "pId": "timeout_ticket_success", "data": {"type": "send_message", "payload": [{"message": {"text": "⏰ انتهى الوقت المحدد للرد.\nتقدر تتواصل معنا مرة ثانية وقت ما تحتاج 💙", "type": "text"}}]}, "name": "رسالة إغلاق", "type": "ActionStep", "isNew": false, "childs": [
-                    {"id": "resolve1", "pId": "close_msg1", "data": {"type": "resolve_conversation"}, "name": "إغلاق المحادثة", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "ResolveConversation"}
-                  ], "selected": false, "validate": false, "customType": "SendMessage"}
-                ], "customType": "HTTPRequestAnswerStep"},
-                {"id": "timeout_ticket_fail", "pId": "timeout_ticket1", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [
-                  {"id": "close_msg1_fail", "pId": "timeout_ticket_fail", "data": {"type": "send_message", "payload": [{"message": {"text": "⏰ انتهى الوقت المحدد للرد.\nتقدر تتواصل معنا مرة ثانية وقت ما تحتاج 💙", "type": "text"}}]}, "name": "رسالة إغلاق", "type": "ActionStep", "isNew": false, "childs": [
-                    {"id": "resolve1_fail", "pId": "close_msg1_fail", "data": {"type": "resolve_conversation"}, "name": "إغلاق المحادثة", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "ResolveConversation"}
-                  ], "selected": false, "validate": false, "customType": "SendMessage"}
-                ], "customType": "HTTPRequestAnswerStep"}
-              ],
-              "selected": false,
-              "validate": false,
-              "customType": "HTTPRequest"
             }
           ], "customType": "AnswerStep"}
         ],
