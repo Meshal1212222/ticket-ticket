@@ -254,11 +254,7 @@
                                             ],
                                             "customType": "AnswerStep"
                                           },
-                                          {"id": "615ff6", "pId": "d26074", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [
-                                            {"id": "retry_msg3", "pId": "615ff6", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء كتابة اسم الفعالية", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [
-                                              {"id": "goto3", "pId": "retry_msg3", "data": {"step": "d26074"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
-                                            ], "selected": false, "validate": false, "customType": "SendMessage"}
-                                          ], "customType": "AnswerStep"}
+                                          {"id": "615ff6", "pId": "d26074", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "AnswerStep"}
                                         ],
                                         "selected": false,
                                         "validate": false,
@@ -277,11 +273,7 @@
                             ],
                             "customType": "AnswerStep"
                           },
-                          {"id": "0f73c8", "pId": "e05c99", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [
-                            {"id": "retry_msg2", "pId": "0f73c8", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء اختيار أحد الخيارات المتاحة", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [
-                              {"id": "goto2", "pId": "retry_msg2", "data": {"step": "e05c99"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
-                            ], "selected": false, "validate": false, "customType": "SendMessage"}
-                          ], "customType": "AnswerStep"}
+                          {"id": "0f73c8", "pId": "e05c99", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "AnswerStep"}
                         ],
                         "selected": false,
                         "validate": false,
@@ -408,9 +400,7 @@
                   "name": "Else",
                   "type": "ElseCondition",
                   "childs": [
-                    {"id": "retry_msg1", "pId": "else_retry1", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء اختيار أحد الخيارات المتاحة", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [
-                      {"id": "goto1", "pId": "retry_msg1", "data": {"step": "677e56"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
-                    ], "selected": false, "validate": false, "customType": "SendMessage"}
+                    {"id": "retry_msg1", "pId": "else_retry1", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء اختيار أحد الخيارات المتاحة", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "SendMessage"}
                   ],
                   "customType": "ConditionStep"
                 }
