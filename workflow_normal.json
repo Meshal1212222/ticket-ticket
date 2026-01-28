@@ -1,0 +1,310 @@
+{
+  "id": 196546,
+  "name": "Golden_Ticket_Normal",
+  "description": "الورك فلو العادي - للعملاء الجدد",
+  "tree": {
+    "id": 1,
+    "pId": null,
+    "data": {
+      "tag": null,
+      "type": "conversation_opened",
+      "action": null,
+      "webhook": {"identifierKey": "", "identifierType": "", "variablesMapping": []},
+      "page_ids": [],
+      "shortcut": {"form": [], "name": null, "description": null},
+      "post_type": null,
+      "conditions": [
+        {"values": "contact", "variable": null, "attribute_key": "source", "query_operator": "or", "filter_operator": "equal_to"},
+        {"values": "ad", "variable": null, "attribute_key": "source", "query_operator": "and", "filter_operator": "equal_to"}
+      ],
+      "contactField": null,
+      "excluded_posts": [],
+      "oncePerContact": false,
+      "specific_posts": []
+    },
+    "name": "trigger",
+    "type": "Trigger",
+    "childs": [
+      {
+        "id": "677e56",
+        "pId": 1,
+        "data": {
+          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
+          "question": {
+            "text": "✨ أهلاً وسهلاً في قولدن تيكت! 🎫\n\nكيف نقدر نساعدك اليوم؟",
+            "type": "multiple",
+            "regex": "",
+            "options": ["شراء تذكرة", "بيع تذكرة"],
+            "interactive": null
+          },
+          "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "mm", "hasVariable": true}
+        },
+        "name": "Ask Question #1",
+        "type": "QuestionStep",
+        "isNew": false,
+        "childs": [
+          {
+            "id": "94b23d",
+            "pId": "677e56",
+            "name": "Success",
+            "type": "ValidAnswer",
+            "childs": [
+              {
+                "id": "6a6187",
+                "pId": "94b23d",
+                "name": "Branch #1",
+                "type": "BranchStep",
+                "isNew": false,
+                "childs": [
+                  {
+                    "id": "47b97b",
+                    "pId": "6a6187",
+                    "data": {"conditions": [{"values": "شراء تذكرة", "variable": "mm", "hasVariable": true, "attribute_key": "variable", "query_operator": "and", "filter_operator": "equal_to", "custom_attribute_type": ""}]},
+                    "name": "شراء تذكرة",
+                    "type": "IfCondition",
+                    "childs": [
+                      {
+                        "id": "e05c99",
+                        "pId": "47b97b",
+                        "data": {
+                          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
+                          "question": {"text": "🛒 استفسارك قبل ولا بعد شراء التذكرة؟", "type": "multiple", "regex": "", "options": ["قبل الشراء", "بعد الشراء"], "interactive": null},
+                          "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "op1", "hasVariable": true}
+                        },
+                        "name": "Ask Question #2",
+                        "type": "QuestionStep",
+                        "isNew": false,
+                        "childs": [
+                          {
+                            "id": "1ef2e2",
+                            "pId": "e05c99",
+                            "name": "Success",
+                            "type": "ValidAnswer",
+                            "childs": [
+                              {
+                                "id": "07324a",
+                                "pId": "1ef2e2",
+                                "name": "Branch #2",
+                                "type": "BranchStep",
+                                "isNew": false,
+                                "childs": [
+                                  {
+                                    "id": "76157d",
+                                    "pId": "07324a",
+                                    "data": {"conditions": [{"values": "قبل الشراء", "variable": "op1", "hasVariable": true, "attribute_key": "variable", "query_operator": "and", "filter_operator": "equal_to", "custom_attribute_type": ""}]},
+                                    "name": "قبل الشراء",
+                                    "type": "IfCondition",
+                                    "childs": [
+                                      {
+                                        "id": "d26074",
+                                        "pId": "76157d",
+                                        "data": {
+                                          "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
+                                          "question": {"text": "🎯 ابشر! وش اسم الفعالية اللي تبي تشتري تذكرة لها؟", "type": "text", "regex": "", "options": [], "interactive": null},
+                                          "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "before_buy", "hasVariable": true}
+                                        },
+                                        "name": "Ask Question #3",
+                                        "type": "QuestionStep",
+                                        "isNew": false,
+                                        "childs": [
+                                          {
+                                            "id": "3929eb",
+                                            "pId": "d26074",
+                                            "name": "Success",
+                                            "type": "ValidAnswer",
+                                            "childs": [
+                                              {
+                                                "id": "event_branch",
+                                                "pId": "3929eb",
+                                                "name": "فحص الفعاليات",
+                                                "type": "BranchStep",
+                                                "isNew": false,
+                                                "childs": [
+                                                  {
+                                                    "id": "rashid_cond",
+                                                    "pId": "event_branch",
+                                                    "data": {"conditions": [{"values": "راشد", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "and", "filter_operator": "contains"}]},
+                                                    "name": "راشد الماجد",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "rashid_msg",
+                                                        "pId": "rashid_cond",
+                                                        "data": {"type": "send_message", "payload": [{"message": {"text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023", "type": "text"}}]},
+                                                        "name": "رابط راشد",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "rashid_ticket",
+                                                            "pId": "rashid_msg",
+                                                            "data": {
+                                                              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                              "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"استفسار عبر البوت\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"راشد الماجد\",\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\"description\": \"العميل يسأل عن حفل راشد الماجد - تم إرسال الرابط\"\n}",
+                                                              "method": "post",
+                                                              "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                                                              "responseMap": [],
+                                                              "saveResponse": {"field": "", "hasField": false, "variable": "ticket_resp", "hasVariable": true},
+                                                              "contentTypeHeader": "application/json"
+                                                            },
+                                                            "name": "بلاغ راشد",
+                                                            "type": "HttpRequestStep",
+                                                            "isNew": false,
+                                                            "childs": [
+                                                              {"id": "rashid_ok", "pId": "rashid_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                                                              {"id": "rashid_fail", "pId": "rashid_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                                                            ],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "HTTPRequest"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": "royal_cond",
+                                                    "pId": "event_branch",
+                                                    "data": {"conditions": [{"values": "رويال", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}, {"values": "رامبل", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}]},
+                                                    "name": "رويال رامبل",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "royal_msg",
+                                                        "pId": "royal_cond",
+                                                        "data": {"type": "send_message", "payload": [{"message": {"text": "🏆 رويال رامبل\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/royal-rumble", "type": "text"}}]},
+                                                        "name": "رابط رويال",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "royal_ticket",
+                                                            "pId": "royal_msg",
+                                                            "data": {
+                                                              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                              "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"استفسار عبر البوت\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"رويال رامبل\",\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\"description\": \"العميل يسأل عن رويال رامبل - تم إرسال الرابط\"\n}",
+                                                              "method": "post",
+                                                              "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                                                              "responseMap": [],
+                                                              "saveResponse": {"field": "", "hasField": false, "variable": "ticket_resp", "hasVariable": true},
+                                                              "contentTypeHeader": "application/json"
+                                                            },
+                                                            "name": "بلاغ رويال",
+                                                            "type": "HttpRequestStep",
+                                                            "isNew": false,
+                                                            "childs": [
+                                                              {"id": "royal_ok", "pId": "royal_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                                                              {"id": "royal_fail", "pId": "royal_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                                                            ],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "HTTPRequest"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
+                                                    "id": "else_normal",
+                                                    "pId": "event_branch",
+                                                    "name": "Else",
+                                                    "type": "ElseCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "26c660",
+                                                        "pId": "else_normal",
+                                                        "data": {
+                                                          "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                          "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"البريد الإلكتروني\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"نوع الطلب\",\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\"description\": \"تفاصيل المشكلة\"\n}",
+                                                          "method": "post",
+                                                          "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                                                          "responseMap": [{"key": "ticketId", "variable": "response"}, {"key": "message", "variable": "message"}],
+                                                          "saveResponse": {"field": "", "hasField": false, "variable": "test", "hasVariable": true},
+                                                          "contentTypeHeader": "application/json"
+                                                        },
+                                                        "name": "HTTP Request #1",
+                                                        "type": "HttpRequestStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {"id": "5586fb", "pId": "26c660", "name": "Success", "type": "ValidAnswer", "childs": [{"id": "932be7", "pId": "5586fb", "data": {"type": "send_message", "payload": [{"message": {"text": "✅ وصلنا طلبك!\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙", "type": "text"}}]}, "name": "Send Message #16", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "SendMessage"}], "customType": "HTTPRequestAnswerStep"},
+                                                          {"id": "047577", "pId": "26c660", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "HTTPRequest"
+                                                      }
+                                                    ],
+                                                    "customType": "ConditionStep"
+                                                  }
+                                                ],
+                                                "selected": false,
+                                                "validate": false,
+                                                "customType": "BranchStep"
+                                              }
+                                            ],
+                                            "customType": "AnswerStep"
+                                          },
+                                          {"id": "615ff6", "pId": "d26074", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "AnswerStep"}
+                                        ],
+                                        "selected": false,
+                                        "validate": false,
+                                        "customType": "QuestionStep"
+                                      }
+                                    ],
+                                    "validate": false,
+                                    "customType": "ConditionStep"
+                                  },
+                                  {"id": "76a308", "pId": "07324a", "name": "Else", "type": "ElseCondition", "childs": [], "customType": "ConditionStep"}
+                                ],
+                                "selected": false,
+                                "validate": false,
+                                "customType": "BranchStep"
+                              }
+                            ],
+                            "customType": "AnswerStep"
+                          },
+                          {"id": "0f73c8", "pId": "e05c99", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "AnswerStep"}
+                        ],
+                        "selected": false,
+                        "validate": false,
+                        "customType": "QuestionStep"
+                      }
+                    ],
+                    "validate": false,
+                    "customType": "ConditionStep"
+                  },
+                  {"id": "f4371f", "pId": "6a6187", "name": "Else", "type": "ElseCondition", "childs": [], "customType": "ConditionStep"}
+                ],
+                "selected": false,
+                "validate": false,
+                "customType": "BranchStep"
+              }
+            ],
+            "customType": "AnswerStep"
+          },
+          {"id": "69e92d", "pId": "677e56", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "AnswerStep"}
+        ],
+        "selected": false,
+        "validate": false,
+        "customType": "QuestionStep"
+      }
+    ],
+    "selected": false,
+    "validate": false,
+    "customType": "Trigger"
+  },
+  "active": false,
+  "inbox_id": 53124,
+  "created_at": "2025-12-30T14:17:51.243Z",
+  "updated_at": "2026-01-28T12:00:00.000Z"
+}
