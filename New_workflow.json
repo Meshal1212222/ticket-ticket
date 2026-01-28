@@ -136,7 +136,7 @@
                 "id": "677e56",
                 "pId": "else_normal_flow",
                 "data": {
-                  "timeout": {"unit": "minutes", "value": 1, "hasTimeout": true},
+                  "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
                   "question": {
                     "text": "✨ أهلاً وسهلاً في قولدن تيكت! 🎫\n\nكيف نقدر نساعدك اليوم؟",
                     "type": "multiple",
@@ -144,9 +144,7 @@
                     "options": ["شراء تذكرة", "بيع تذكرة"],
                     "interactive": null
                   },
-                  "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "mm", "hasVariable": true},
-                  "invalidReply": {"text": "⚠️ الرجاء اختيار أحد الخيارات:\n\n1️⃣ شراء تذكرة\n2️⃣ بيع تذكرة", "type": "text"},
-                  "invalidLimit": 3
+                  "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "mm", "hasVariable": true}
                 },
                 "name": "Ask Question #1",
                 "type": "QuestionStep",
@@ -176,11 +174,9 @@
                                 "id": "e05c99",
                                 "pId": "47b97b",
                                 "data": {
-                                  "timeout": {"unit": "minutes", "value": 1, "hasTimeout": true},
+                                  "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
                                   "question": {"text": "🛒 استفسارك قبل ولا بعد شراء التذكرة؟", "type": "multiple", "regex": "", "options": ["قبل الشراء", "بعد الشراء"], "interactive": null},
-                                  "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "op1", "hasVariable": true},
-                                  "invalidReply": {"text": "⚠️ الرجاء اختيار أحد الخيارات:\n\n1️⃣ قبل الشراء\n2️⃣ بعد الشراء", "type": "text"},
-                                  "invalidLimit": 3
+                                  "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "op1", "hasVariable": true}
                                 },
                                 "name": "Ask Question #2",
                                 "type": "QuestionStep",
@@ -210,7 +206,7 @@
                                                 "id": "d26074",
                                                 "pId": "76157d",
                                                 "data": {
-                                                  "timeout": {"unit": "minutes", "value": 1, "hasTimeout": true},
+                                                  "timeout": {"unit": "minutes", "value": 1, "hasTimeout": false},
                                                   "question": {"text": "🎯 ابشر! وش اسم الفعالية اللي تبي تشتري تذكرة لها؟", "type": "text", "regex": "", "options": [], "interactive": null},
                                                   "saveResponse": {"tag": false, "field": "", "hasField": false, "variable": "before_buy", "hasVariable": true}
                                                 },
@@ -375,38 +371,7 @@
                                             "validate": false,
                                             "customType": "ConditionStep"
                                           },
-                                          {
-                                            "id": "76a308",
-                                            "pId": "07324a",
-                                            "name": "Else",
-                                            "type": "ElseCondition",
-                                            "childs": [
-                                              {
-                                                "id": "after_buy_ticket",
-                                                "pId": "76a308",
-                                                "data": {
-                                                  "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                                                  "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"بعد الشراء\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"بعد الشراء\",\n\"subject\": \"{{mm}},{{op1}}\",\n\"description\": \"العميل يستفسر بعد شراء التذكرة\"\n}",
-                                                  "method": "post",
-                                                  "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-                                                  "responseMap": [],
-                                                  "saveResponse": {"field": "", "hasField": false, "variable": "ticket_resp", "hasVariable": true},
-                                                  "contentTypeHeader": "application/json"
-                                                },
-                                                "name": "بلاغ بعد الشراء",
-                                                "type": "HttpRequestStep",
-                                                "isNew": false,
-                                                "childs": [
-                                                  {"id": "after_ok", "pId": "after_buy_ticket", "name": "Success", "type": "ValidAnswer", "childs": [{"id": "after_msg", "pId": "after_ok", "data": {"type": "send_message", "payload": [{"message": {"text": "✅ وصلنا طلبك!\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙", "type": "text"}}]}, "name": "رسالة بعد الشراء", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "SendMessage"}], "customType": "HTTPRequestAnswerStep"},
-                                                  {"id": "after_fail", "pId": "after_buy_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
-                                                ],
-                                                "selected": false,
-                                                "validate": false,
-                                                "customType": "HTTPRequest"
-                                              }
-                                            ],
-                                            "customType": "ConditionStep"
-                                          }
+                                          {"id": "76a308", "pId": "07324a", "name": "Else", "type": "ElseCondition", "childs": [], "customType": "ConditionStep"}
                                         ],
                                         "selected": false,
                                         "validate": false,
@@ -425,38 +390,7 @@
                             "validate": false,
                             "customType": "ConditionStep"
                           },
-                          {
-                            "id": "f4371f",
-                            "pId": "6a6187",
-                            "name": "Else",
-                            "type": "ElseCondition",
-                            "childs": [
-                              {
-                                "id": "sell_ticket",
-                                "pId": "f4371f",
-                                "data": {
-                                  "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                                  "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"بيع تذكرة\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"بيع تذكرة\",\n\"subject\": \"{{mm}}\",\n\"description\": \"العميل يريد بيع تذكرة\"\n}",
-                                  "method": "post",
-                                  "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-                                  "responseMap": [],
-                                  "saveResponse": {"field": "", "hasField": false, "variable": "ticket_resp", "hasVariable": true},
-                                  "contentTypeHeader": "application/json"
-                                },
-                                "name": "بلاغ بيع تذكرة",
-                                "type": "HttpRequestStep",
-                                "isNew": false,
-                                "childs": [
-                                  {"id": "sell_ok", "pId": "sell_ticket", "name": "Success", "type": "ValidAnswer", "childs": [{"id": "sell_msg", "pId": "sell_ok", "data": {"type": "send_message", "payload": [{"message": {"text": "✅ وصلنا طلبك لبيع التذكرة!\nبنتواصل معك في أقرب وقت إن شاء الله 🙏💙", "type": "text"}}]}, "name": "رسالة بيع", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "SendMessage"}], "customType": "HTTPRequestAnswerStep"},
-                                  {"id": "sell_fail", "pId": "sell_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
-                                ],
-                                "selected": false,
-                                "validate": false,
-                                "customType": "HTTPRequest"
-                              }
-                            ],
-                            "customType": "ConditionStep"
-                          }
+                          {"id": "f4371f", "pId": "6a6187", "name": "Else", "type": "ElseCondition", "childs": [], "customType": "ConditionStep"}
                         ],
                         "selected": false,
                         "validate": false,
