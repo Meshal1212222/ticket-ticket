@@ -215,6 +215,53 @@
                                                     "customType": "ConditionStep"
                                                   },
                                                   {
+                                                    "id": "royal_cond",
+                                                    "pId": "event_branch",
+                                                    "data": {"conditions": [{"values": "رويال", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}, {"values": "رامبل", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}]},
+                                                    "name": "رويال رامبل",
+                                                    "type": "IfCondition",
+                                                    "childs": [
+                                                      {
+                                                        "id": "royal_msg",
+                                                        "pId": "royal_cond",
+                                                        "data": {"type": "send_message", "payload": [{"message": {"text": "🤼 رويال رامبل\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/royal-rumble", "type": "text"}}]},
+                                                        "name": "رابط رويال",
+                                                        "type": "ActionStep",
+                                                        "isNew": false,
+                                                        "childs": [
+                                                          {
+                                                            "id": "royal_ticket",
+                                                            "pId": "royal_msg",
+                                                            "data": {
+                                                              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                              "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"استفسار رويال رامبل\",\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\"description\": \"تم إرسال رابط رويال رامبل للعميل\"\n}",
+                                                              "method": "post",
+                                                              "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                                                              "responseMap": [{"key": "ticketId", "variable": "response"}, {"key": "message", "variable": "message"}],
+                                                              "saveResponse": {"field": "", "hasField": false, "variable": "royal_response", "hasVariable": true},
+                                                              "contentTypeHeader": "application/json"
+                                                            },
+                                                            "name": "بلاغ رويال",
+                                                            "type": "HttpRequestStep",
+                                                            "isNew": false,
+                                                            "childs": [
+                                                              {"id": "royal_success", "pId": "royal_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                                                              {"id": "royal_fail", "pId": "royal_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                                                            ],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "HTTPRequest"
+                                                          }
+                                                        ],
+                                                        "selected": false,
+                                                        "validate": false,
+                                                        "customType": "SendMessage"
+                                                      }
+                                                    ],
+                                                    "validate": false,
+                                                    "customType": "ConditionStep"
+                                                  },
+                                                  {
                                                     "id": "else_normal",
                                                     "pId": "event_branch",
                                                     "name": "Else",
@@ -311,9 +358,171 @@
             "customType": "AnswerStep"
           },
           {"id": "69e92d", "pId": "677e56", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [
-            {"id": "retry_msg1", "pId": "69e92d", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء اختيار أحد الخيارات المتاحة", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [
-              {"id": "goto1", "pId": "retry_msg1", "data": {"step": "677e56"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
-            ], "selected": false, "validate": false, "customType": "SendMessage"}
+            {
+              "id": "invalid_branch1",
+              "pId": "69e92d",
+              "name": "فحص راشد",
+              "type": "BranchStep",
+              "isNew": false,
+              "childs": [
+                {
+                  "id": "rashid_invalid_cond",
+                  "pId": "invalid_branch1",
+                  "data": {"conditions": [{"values": "راشد", "variable": "mm", "hasVariable": true, "attribute_key": "variable", "query_operator": "and", "filter_operator": "contains"}]},
+                  "name": "راشد في الرسالة",
+                  "type": "IfCondition",
+                  "childs": [
+                    {
+                      "id": "rashid_invalid_msg",
+                      "pId": "rashid_invalid_cond",
+                      "data": {"type": "send_message", "payload": [{"message": {"text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023", "type": "text"}}]},
+                      "name": "رابط راشد",
+                      "type": "ActionStep",
+                      "isNew": false,
+                      "childs": [
+                        {
+                          "id": "rashid_invalid_ticket",
+                          "pId": "rashid_invalid_msg",
+                          "data": {
+                            "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                            "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"استفسار راشد الماجد\",\n\"subject\": \"{{mm}}\",\n\"description\": \"استفسار مباشر عن راشد - تم إرسال الرابط\"\n}",
+                            "method": "post",
+                            "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                            "responseMap": [],
+                            "saveResponse": {"field": "", "hasField": false, "variable": "rashid_inv_resp", "hasVariable": true},
+                            "contentTypeHeader": "application/json"
+                          },
+                          "name": "بلاغ راشد",
+                          "type": "HttpRequestStep",
+                          "isNew": false,
+                          "childs": [
+                            {"id": "rashid_inv_success", "pId": "rashid_invalid_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                            {"id": "rashid_inv_fail", "pId": "rashid_invalid_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                          ],
+                          "selected": false,
+                          "validate": false,
+                          "customType": "HTTPRequest"
+                        }
+                      ],
+                      "selected": false,
+                      "validate": false,
+                      "customType": "SendMessage"
+                    }
+                  ],
+                  "validate": false,
+                  "customType": "ConditionStep"
+                },
+                {
+                  "id": "masha_invalid_cond",
+                  "pId": "invalid_branch1",
+                  "data": {"conditions": [{"values": "مشا", "variable": "mm", "hasVariable": true, "attribute_key": "variable", "query_operator": "and", "filter_operator": "contains"}]},
+                  "name": "مشاري في الرسالة",
+                  "type": "IfCondition",
+                  "childs": [
+                    {
+                      "id": "masha_invalid_msg",
+                      "pId": "masha_invalid_cond",
+                      "data": {"type": "send_message", "payload": [{"message": {"text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023", "type": "text"}}]},
+                      "name": "رابط مشا",
+                      "type": "ActionStep",
+                      "isNew": false,
+                      "childs": [
+                        {
+                          "id": "masha_invalid_ticket",
+                          "pId": "masha_invalid_msg",
+                          "data": {
+                            "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                            "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"استفسار مشاري\",\n\"subject\": \"{{mm}}\",\n\"description\": \"استفسار مباشر - تم إرسال الرابط\"\n}",
+                            "method": "post",
+                            "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                            "responseMap": [],
+                            "saveResponse": {"field": "", "hasField": false, "variable": "masha_inv_resp", "hasVariable": true},
+                            "contentTypeHeader": "application/json"
+                          },
+                          "name": "بلاغ مشا",
+                          "type": "HttpRequestStep",
+                          "isNew": false,
+                          "childs": [
+                            {"id": "masha_inv_success", "pId": "masha_invalid_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                            {"id": "masha_inv_fail", "pId": "masha_invalid_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                          ],
+                          "selected": false,
+                          "validate": false,
+                          "customType": "HTTPRequest"
+                        }
+                      ],
+                      "selected": false,
+                      "validate": false,
+                      "customType": "SendMessage"
+                    }
+                  ],
+                  "validate": false,
+                  "customType": "ConditionStep"
+                },
+                {
+                  "id": "royal_invalid_cond",
+                  "pId": "invalid_branch1",
+                  "data": {"conditions": [{"values": "رويال", "variable": "mm", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}, {"values": "رامبل", "variable": "mm", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}]},
+                  "name": "رويال رامبل في الرسالة",
+                  "type": "IfCondition",
+                  "childs": [
+                    {
+                      "id": "royal_invalid_msg",
+                      "pId": "royal_invalid_cond",
+                      "data": {"type": "send_message", "payload": [{"message": {"text": "🤼 رويال رامبل\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/royal-rumble", "type": "text"}}]},
+                      "name": "رابط رويال",
+                      "type": "ActionStep",
+                      "isNew": false,
+                      "childs": [
+                        {
+                          "id": "royal_invalid_ticket",
+                          "pId": "royal_invalid_msg",
+                          "data": {
+                            "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                            "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"استفسار رويال رامبل\",\n\"subject\": \"{{mm}}\",\n\"description\": \"استفسار مباشر - تم إرسال الرابط\"\n}",
+                            "method": "post",
+                            "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                            "responseMap": [],
+                            "saveResponse": {"field": "", "hasField": false, "variable": "royal_inv_resp", "hasVariable": true},
+                            "contentTypeHeader": "application/json"
+                          },
+                          "name": "بلاغ رويال",
+                          "type": "HttpRequestStep",
+                          "isNew": false,
+                          "childs": [
+                            {"id": "royal_inv_success", "pId": "royal_invalid_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                            {"id": "royal_inv_fail", "pId": "royal_invalid_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                          ],
+                          "selected": false,
+                          "validate": false,
+                          "customType": "HTTPRequest"
+                        }
+                      ],
+                      "selected": false,
+                      "validate": false,
+                      "customType": "SendMessage"
+                    }
+                  ],
+                  "validate": false,
+                  "customType": "ConditionStep"
+                },
+                {
+                  "id": "else_retry1",
+                  "pId": "invalid_branch1",
+                  "name": "Else",
+                  "type": "ElseCondition",
+                  "childs": [
+                    {"id": "retry_msg1", "pId": "else_retry1", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الرجاء اختيار أحد الخيارات المتاحة", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [
+                      {"id": "goto1", "pId": "retry_msg1", "data": {"step": "677e56"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
+                    ], "selected": false, "validate": false, "customType": "SendMessage"}
+                  ],
+                  "customType": "ConditionStep"
+                }
+              ],
+              "selected": false,
+              "validate": false,
+              "customType": "BranchStep"
+            }
           ], "customType": "AnswerStep"},
           {"id": "timeout1", "pId": "677e56", "name": "Failure: Timeout", "type": "TimeoutAnswer", "childs": [
             {"id": "close_msg1", "pId": "timeout1", "data": {"type": "send_message", "payload": [{"message": {"text": "⏰ انتهى الوقت المحدد للرد.\nتقدر تتواصل معنا مرة ثانية وقت ما تحتاج 💙", "type": "text"}}]}, "name": "رسالة إغلاق", "type": "ActionStep", "isNew": false, "childs": [
