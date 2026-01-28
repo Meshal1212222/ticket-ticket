@@ -134,7 +134,31 @@
                                                         "name": "رابط راشد",
                                                         "type": "ActionStep",
                                                         "isNew": false,
-                                                        "childs": [],
+                                                        "childs": [
+                                                          {
+                                                            "id": "rashid_ticket",
+                                                            "pId": "rashid_msg",
+                                                            "data": {
+                                                              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                                                              "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"استفسار راشد الماجد\",\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\"description\": \"تم إرسال رابط حفل راشد الماجد للعميل\"\n}",
+                                                              "method": "post",
+                                                              "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                                                              "responseMap": [{"key": "ticketId", "variable": "response"}, {"key": "message", "variable": "message"}],
+                                                              "saveResponse": {"field": "", "hasField": false, "variable": "rashid_response", "hasVariable": true},
+                                                              "contentTypeHeader": "application/json"
+                                                            },
+                                                            "name": "بلاغ راشد",
+                                                            "type": "HttpRequestStep",
+                                                            "isNew": false,
+                                                            "childs": [
+                                                              {"id": "rashid_success", "pId": "rashid_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                                                              {"id": "rashid_fail", "pId": "rashid_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                                                            ],
+                                                            "selected": false,
+                                                            "validate": false,
+                                                            "customType": "HTTPRequest"
+                                                          }
+                                                        ],
                                                         "selected": false,
                                                         "validate": false,
                                                         "customType": "SendMessage"
