@@ -1,0 +1,72 @@
+{
+  "id": 196548,
+  "name": "Golden_Ticket_Royal",
+  "description": "ورك فلو رويال رامبل",
+  "tree": {
+    "id": 1,
+    "pId": null,
+    "data": {
+      "tag": null,
+      "type": "message_created",
+      "action": null,
+      "webhook": {"identifierKey": "", "identifierType": "", "variablesMapping": []},
+      "page_ids": [],
+      "shortcut": {"form": [], "name": null, "description": null},
+      "post_type": null,
+      "conditions": [
+        {"values": "رويال", "variable": null, "attribute_key": "content", "query_operator": "or", "filter_operator": "contains"}
+      ],
+      "contactField": null,
+      "excluded_posts": [],
+      "oncePerContact": false,
+      "specific_posts": []
+    },
+    "name": "trigger",
+    "type": "Trigger",
+    "childs": [
+      {
+        "id": "royal_link",
+        "pId": 1,
+        "data": {"type": "send_message", "payload": [{"message": {"text": "🏆 رويال رامبل\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/royal-rumble", "type": "text"}}]},
+        "name": "رابط رويال",
+        "type": "ActionStep",
+        "isNew": false,
+        "childs": [
+          {
+            "id": "royal_report",
+            "pId": "royal_link",
+            "data": {
+              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+              "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"كلمة مفتاحية\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"رويال رامبل\",\n\"subject\": \"استفسار رويال رامبل - كلمة مفتاحية\",\n\"description\": \"العميل ذكر رويال رامبل - تم إرسال الرابط تلقائياً\"\n}",
+              "method": "post",
+              "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+              "responseMap": [],
+              "saveResponse": {"field": "", "hasField": false, "variable": "ticket_resp", "hasVariable": true},
+              "contentTypeHeader": "application/json"
+            },
+            "name": "بلاغ رويال",
+            "type": "HttpRequestStep",
+            "isNew": false,
+            "childs": [
+              {"id": "royal_ok", "pId": "royal_report", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+              {"id": "royal_fail", "pId": "royal_report", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+            ],
+            "selected": false,
+            "validate": false,
+            "customType": "HTTPRequest"
+          }
+        ],
+        "selected": false,
+        "validate": false,
+        "customType": "SendMessage"
+      }
+    ],
+    "selected": false,
+    "validate": false,
+    "customType": "Trigger"
+  },
+  "active": false,
+  "inbox_id": 53124,
+  "created_at": "2025-12-30T14:17:51.243Z",
+  "updated_at": "2026-01-28T12:00:00.000Z"
+}
