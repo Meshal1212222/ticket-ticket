@@ -168,53 +168,6 @@
                                                     "customType": "ConditionStep"
                                                   },
                                                   {
-                                                    "id": "masha_cond",
-                                                    "pId": "event_branch",
-                                                    "data": {"conditions": [{"values": "مشا", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "and", "filter_operator": "contains"}]},
-                                                    "name": "مشاري",
-                                                    "type": "IfCondition",
-                                                    "childs": [
-                                                      {
-                                                        "id": "masha_msg",
-                                                        "pId": "masha_cond",
-                                                        "data": {"type": "send_message", "payload": [{"message": {"text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023", "type": "text"}}]},
-                                                        "name": "رابط مشا",
-                                                        "type": "ActionStep",
-                                                        "isNew": false,
-                                                        "childs": [
-                                                          {
-                                                            "id": "masha_ticket",
-                                                            "pId": "masha_msg",
-                                                            "data": {
-                                                              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                                                              "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"استفسار مشاري\",\n\"subject\": \"{{mm}},{{op1}},{{before_buy}}\",\n\"description\": \"تم إرسال رابط الحفل للعميل\"\n}",
-                                                              "method": "post",
-                                                              "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-                                                              "responseMap": [{"key": "ticketId", "variable": "response"}, {"key": "message", "variable": "message"}],
-                                                              "saveResponse": {"field": "", "hasField": false, "variable": "masha_response", "hasVariable": true},
-                                                              "contentTypeHeader": "application/json"
-                                                            },
-                                                            "name": "بلاغ مشا",
-                                                            "type": "HttpRequestStep",
-                                                            "isNew": false,
-                                                            "childs": [
-                                                              {"id": "masha_success", "pId": "masha_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
-                                                              {"id": "masha_fail", "pId": "masha_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
-                                                            ],
-                                                            "selected": false,
-                                                            "validate": false,
-                                                            "customType": "HTTPRequest"
-                                                          }
-                                                        ],
-                                                        "selected": false,
-                                                        "validate": false,
-                                                        "customType": "SendMessage"
-                                                      }
-                                                    ],
-                                                    "validate": false,
-                                                    "customType": "ConditionStep"
-                                                  },
-                                                  {
                                                     "id": "royal_cond",
                                                     "pId": "event_branch",
                                                     "data": {"conditions": [{"values": "رويال", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}, {"values": "رامبل", "variable": "before_buy", "hasVariable": true, "attribute_key": "variable", "query_operator": "or", "filter_operator": "contains"}]},
@@ -398,53 +351,6 @@
                           "childs": [
                             {"id": "rashid_inv_success", "pId": "rashid_invalid_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
                             {"id": "rashid_inv_fail", "pId": "rashid_invalid_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
-                          ],
-                          "selected": false,
-                          "validate": false,
-                          "customType": "HTTPRequest"
-                        }
-                      ],
-                      "selected": false,
-                      "validate": false,
-                      "customType": "SendMessage"
-                    }
-                  ],
-                  "validate": false,
-                  "customType": "ConditionStep"
-                },
-                {
-                  "id": "masha_invalid_cond",
-                  "pId": "invalid_branch1",
-                  "data": {"conditions": [{"values": "مشا", "variable": "mm", "hasVariable": true, "attribute_key": "variable", "query_operator": "and", "filter_operator": "contains"}]},
-                  "name": "مشاري في الرسالة",
-                  "type": "IfCondition",
-                  "childs": [
-                    {
-                      "id": "masha_invalid_msg",
-                      "pId": "masha_invalid_cond",
-                      "data": {"type": "send_message", "payload": [{"message": {"text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023", "type": "text"}}]},
-                      "name": "رابط مشا",
-                      "type": "ActionStep",
-                      "isNew": false,
-                      "childs": [
-                        {
-                          "id": "masha_invalid_ticket",
-                          "pId": "masha_invalid_msg",
-                          "data": {
-                            "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-                            "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"استفسار مشاري\",\n\"subject\": \"{{mm}}\",\n\"description\": \"استفسار مباشر - تم إرسال الرابط\"\n}",
-                            "method": "post",
-                            "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-                            "responseMap": [],
-                            "saveResponse": {"field": "", "hasField": false, "variable": "masha_inv_resp", "hasVariable": true},
-                            "contentTypeHeader": "application/json"
-                          },
-                          "name": "بلاغ مشا",
-                          "type": "HttpRequestStep",
-                          "isNew": false,
-                          "childs": [
-                            {"id": "masha_inv_success", "pId": "masha_invalid_ticket", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
-                            {"id": "masha_inv_fail", "pId": "masha_invalid_ticket", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
                           ],
                           "selected": false,
                           "validate": false,
