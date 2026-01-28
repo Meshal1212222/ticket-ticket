@@ -1,7 +1,7 @@
 {
   "id": 196547,
-  "name": "Golden_Ticket_Keywords",
-  "description": "ورك فلو الكلمات المفتاحية - راشد/رويال رامبل",
+  "name": "Golden_Ticket_Rashid",
+  "description": "ورك فلو راشد الماجد",
   "tree": {
     "id": 1,
     "pId": null,
@@ -13,9 +13,7 @@
       "page_ids": [],
       "shortcut": {"form": [], "name": null, "description": null},
       "post_type": null,
-      "conditions": [
-        {"values": "راشد", "variable": null, "attribute_key": "content", "query_operator": "or", "filter_operator": "contains"}
-      ],
+      "conditions": [],
       "contactField": null,
       "excluded_posts": [],
       "oncePerContact": false,
@@ -25,40 +23,71 @@
     "type": "Trigger",
     "childs": [
       {
-        "id": "rashid_link",
+        "id": "check_rashid",
         "pId": 1,
-        "data": {"type": "send_message", "payload": [{"message": {"text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023", "type": "text"}}]},
-        "name": "رابط راشد",
-        "type": "ActionStep",
+        "name": "فحص راشد",
+        "type": "BranchStep",
         "isNew": false,
         "childs": [
           {
-            "id": "rashid_report",
-            "pId": "rashid_link",
-            "data": {
-              "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
-              "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"كلمة مفتاحية\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"راشد الماجد\",\n\"subject\": \"استفسار راشد - كلمة مفتاحية\",\n\"description\": \"العميل ذكر راشد الماجد - تم إرسال الرابط تلقائياً\"\n}",
-              "method": "post",
-              "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
-              "responseMap": [],
-              "saveResponse": {"field": "", "hasField": false, "variable": "ticket_resp", "hasVariable": true},
-              "contentTypeHeader": "application/json"
-            },
-            "name": "بلاغ راشد",
-            "type": "HttpRequestStep",
-            "isNew": false,
+            "id": "rashid_cond",
+            "pId": "check_rashid",
+            "data": {"conditions": [{"values": "راشد", "variable": null, "hasVariable": false, "attribute_key": "last_message", "query_operator": "and", "filter_operator": "contains"}]},
+            "name": "راشد",
+            "type": "IfCondition",
             "childs": [
-              {"id": "rashid_ok", "pId": "rashid_report", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
-              {"id": "rashid_fail", "pId": "rashid_report", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+              {
+                "id": "rashid_link",
+                "pId": "rashid_cond",
+                "data": {"type": "send_message", "payload": [{"message": {"text": "🎤 حفل راشد الماجد\n\nتقدر تحجز تذكرتك مباشرة من هنا:\nhttps://golden4tic.com/tickets/2023", "type": "text"}}]},
+                "name": "رابط راشد",
+                "type": "ActionStep",
+                "isNew": false,
+                "childs": [
+                  {
+                    "id": "rashid_report",
+                    "pId": "rashid_link",
+                    "data": {
+                      "url": "https://ticket-ticket-production.up.railway.app/api/ticket",
+                      "body": "{\n\"name\": \"{{contact.name}}\",\n\"email\": \"كلمة مفتاحية\",\n\"phone\": \"{{contact.phone_number}}\",\n\"category\": \"راشد الماجد\",\n\"subject\": \"استفسار راشد\",\n\"description\": \"العميل ذكر راشد الماجد - تم إرسال الرابط\"\n}",
+                      "method": "post",
+                      "headers": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-API-Key", "value": "bevatel_ticket_2024_secure_key_x7k9m2"}],
+                      "responseMap": [],
+                      "saveResponse": {"field": "", "hasField": false, "variable": "ticket_resp", "hasVariable": true},
+                      "contentTypeHeader": "application/json"
+                    },
+                    "name": "بلاغ راشد",
+                    "type": "HttpRequestStep",
+                    "isNew": false,
+                    "childs": [
+                      {"id": "rashid_ok", "pId": "rashid_report", "name": "Success", "type": "ValidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"},
+                      {"id": "rashid_fail", "pId": "rashid_report", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "HTTPRequestAnswerStep"}
+                    ],
+                    "selected": false,
+                    "validate": false,
+                    "customType": "HTTPRequest"
+                  }
+                ],
+                "selected": false,
+                "validate": false,
+                "customType": "SendMessage"
+              }
             ],
-            "selected": false,
             "validate": false,
-            "customType": "HTTPRequest"
+            "customType": "ConditionStep"
+          },
+          {
+            "id": "else_nothing",
+            "pId": "check_rashid",
+            "name": "Else",
+            "type": "ElseCondition",
+            "childs": [],
+            "customType": "ConditionStep"
           }
         ],
         "selected": false,
         "validate": false,
-        "customType": "SendMessage"
+        "customType": "BranchStep"
       }
     ],
     "selected": false,
