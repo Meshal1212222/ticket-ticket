@@ -380,7 +380,7 @@
                                     ],
                                     "customType": "AnswerStep"
                                   },
-                                  {"id": "0f73c8", "pId": "e05c99", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "AnswerStep"}
+                                  {"id": "0f73c8", "pId": "e05c99", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [{"id": "invalid_msg_2", "pId": "0f73c8", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الاختيار خطأ\n\nنرجو الاختيار من الخيارات التالية:\n1️⃣ قبل الشراء\n2️⃣ بعد الشراء", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "SendMessage"}], "customType": "AnswerStep"}
                                 ],
                                 "selected": false,
                                 "validate": false,
@@ -399,7 +399,7 @@
                     ],
                     "customType": "AnswerStep"
                   },
-                  {"id": "69e92d", "pId": "677e56", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [], "customType": "AnswerStep"}
+                  {"id": "69e92d", "pId": "677e56", "name": "Failure: Invalid", "type": "InvalidAnswer", "childs": [{"id": "invalid_msg_1", "pId": "69e92d", "data": {"type": "send_message", "payload": [{"message": {"text": "⚠️ الاختيار خطأ\n\nنرجو الاختيار من الخيارات التالية:\n1️⃣ شراء تذكرة\n2️⃣ بيع تذكرة", "type": "text"}}]}, "name": "رسالة خطأ", "type": "ActionStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "SendMessage"}], "customType": "AnswerStep"}
                 ],
                 "selected": false,
                 "validate": false,
