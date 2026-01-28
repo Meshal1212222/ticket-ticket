@@ -259,7 +259,7 @@
                                               {"id": "goto3", "pId": "retry_msg3", "data": {"step": "d26074"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
                                             ], "selected": false, "validate": false, "customType": "SendMessage"}
                                           ], "customType": "AnswerStep"},
-                                          {"id": "timeout3", "pId": "d26074", "name": "Failure: Timeout", "type": "TimeoutAnswer", "childs": [
+                                          {"id": "timeout3", "pId": "d26074", "name": "Failure: Timeout", "type": "TimeoutBranch", "childs": [
                                             {
                                               "id": "timeout_ticket3",
                                               "pId": "timeout3",
@@ -315,7 +315,7 @@
                               {"id": "goto2", "pId": "retry_msg2", "data": {"step": "e05c99"}, "name": "إعادة السؤال", "type": "GoToStep", "isNew": false, "childs": [], "selected": false, "validate": false, "customType": "GoToStep"}
                             ], "selected": false, "validate": false, "customType": "SendMessage"}
                           ], "customType": "AnswerStep"},
-                          {"id": "timeout2", "pId": "e05c99", "name": "Failure: Timeout", "type": "TimeoutAnswer", "childs": [
+                          {"id": "timeout2", "pId": "e05c99", "name": "Failure: Timeout", "type": "TimeoutBranch", "childs": [
                             {
                               "id": "timeout_ticket2",
                               "pId": "timeout2",
@@ -486,7 +486,7 @@
               "customType": "BranchStep"
             }
           ], "customType": "AnswerStep"},
-          {"id": "timeout1", "pId": "677e56", "name": "Failure: Timeout", "type": "TimeoutAnswer", "childs": [
+          {"id": "timeout1", "pId": "677e56", "name": "Failure: Timeout", "type": "TimeoutBranch", "childs": [
             {
               "id": "timeout_ticket1",
               "pId": "timeout1",
