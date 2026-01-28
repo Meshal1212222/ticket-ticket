@@ -367,6 +367,8 @@
                                                                           ],
                                                                           "responseMap": [],
                                                                           "saveResponse": {
+                                                                            "field": "",
+                                                                            "hasField": false,
                                                                             "variable": "royal_buy_resp",
                                                                             "hasVariable": true
                                                                           },
@@ -451,9 +453,11 @@
                                                             }
                                                           ],
                                                           "saveResponse": {
-                                                            "variable": "test",
-                                                            "hasVariable": true
-                                                          },
+                                                                            "field": "",
+                                                                            "hasField": false,
+                                                                            "variable": "test",
+                                                                            "hasVariable": true
+                                                                          },
                                                           "contentTypeHeader": "application/json"
                                                         },
                                                         "name": "HTTP Request  #1",
@@ -788,6 +792,8 @@
                                                                             }
                                                                           ],
                                                                           "saveResponse": {
+                                                                            "field": "",
+                                                                            "hasField": false,
                                                                             "variable": "test",
                                                                             "hasVariable": true
                                                                           },
@@ -1286,9 +1292,11 @@
                                                                 }
                                                               ],
                                                               "saveResponse": {
-                                                                "variable": "test",
-                                                                "hasVariable": true
-                                                              },
+                                                                            "field": "",
+                                                                            "hasField": false,
+                                                                            "variable": "test",
+                                                                            "hasVariable": true
+                                                                          },
                                                               "contentTypeHeader": "application/json"
                                                             },
                                                             "name": "clone - HTTP Request  #2",
@@ -1989,9 +1997,11 @@
                                                                                 }
                                                                               ],
                                                                               "saveResponse": {
-                                                                                "variable": "test",
-                                                                                "hasVariable": true
-                                                                              },
+                                                                            "field": "",
+                                                                            "hasField": false,
+                                                                            "variable": "test",
+                                                                            "hasVariable": true
+                                                                          },
                                                                               "contentTypeHeader": "application/json"
                                                                             },
                                                                             "name": "clone - clone - HTTP Request  #1",
@@ -2630,9 +2640,11 @@
                                           ],
                                           "responseMap": [],
                                           "saveResponse": {
-                                            "variable": "rr_response",
-                                            "hasVariable": true
-                                          },
+                                                                            "field": "",
+                                                                            "hasField": false,
+                                                                            "variable": "rr_response",
+                                                                            "hasVariable": true
+                                                                          },
                                           "contentTypeHeader": "application/json"
                                         },
                                         "name": "إرسال للقروب",
@@ -2775,9 +2787,11 @@
                                           ],
                                           "responseMap": [],
                                           "saveResponse": {
-                                            "variable": "rm_response",
-                                            "hasVariable": true
-                                          },
+                                                                            "field": "",
+                                                                            "hasField": false,
+                                                                            "variable": "rm_response",
+                                                                            "hasVariable": true
+                                                                          },
                                           "contentTypeHeader": "application/json"
                                         },
                                         "name": "إرسال للقروب",
