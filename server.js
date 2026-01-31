@@ -2925,6 +2925,125 @@ app.get('/api/resend-today', async (req, res) => {
     }
 });
 
+// ==================== نظام تنبيهات فارس ====================
+
+const FARIS_PHONE = '966506510511';
+const FARIS_SCHEDULE = {
+    0: [ // الأحد
+        { time: '08:00', name: 'علم الدم 1', type: 'محاضرة', room: '1202', doctor: 'حسن عبدالله البارقي' },
+        { time: '14:00', name: 'القيم الاجتماعية في الإسلام', type: 'محاضرة', room: 'قاعة 1404', doctor: 'عبدالله سعيد الذيابي' }
+    ],
+    1: [ // الإثنين
+        { time: '08:00', name: 'الجودة في المختبرات الطبية', type: 'عملي', room: 'G-215', doctor: 'عبدالله عبدالرحمن الغنايم' },
+        { time: '12:00', name: 'الجودة في المختبرات الطبية', type: 'محاضرة', room: '1202', doctor: 'عبدالله عبدالرحمن الغنايم' },
+        { time: '14:00', name: 'التحرير العربي', type: 'محاضرة', room: 'قاعة 1404', doctor: 'عامر ملحم محمد الحطيري' }
+    ],
+    2: [ // الثلاثاء
+        { time: '08:00', name: 'علم الدم 1', type: 'عملي', room: 'G-205', doctor: 'مشعل عبدالله محمد العوض' },
+        { time: '10:00', name: 'كيمياء حيوية اكلينيكية 1', type: 'محاضرة', room: 'G-205', doctor: 'حازم محمد محمود حسن' },
+        { time: '12:00', name: 'كيمياء حيوية اكلينيكية 1', type: 'عملي', room: 'G-205', doctor: 'حازم محمد محمود حسن' },
+        { time: '14:00', name: 'أساسيات الإدارة والسلامة في المختبرات الطبية', type: 'محاضرة', room: '1202', doctor: 'بندر سعد الشريف' }
+    ],
+    3: [ // الأربعاء
+        { time: '12:00', name: 'أساسيات الرعاية الطارئة', type: 'محاضرة', room: '1202', doctor: 'بندر سعد الشريف' },
+        { time: '14:00', name: 'أساسيات الرعاية الطارئة', type: 'عملي', room: 'G-208', doctor: 'بندر سعد الشريف' }
+    ],
+    4: [ // الخميس
+        { time: '10:00', name: 'أساسيات علم المناعة', type: 'عملي', room: 'G-188', doctor: 'مشعل عبدالله محمد العوض' }
+    ],
+    5: [], // الجمعة - إجازة
+    6: []  // السبت - إجازة
+};
+
+const DAY_NAMES = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+// إرسال تنبيه قبل المحاضرة بساعة
+app.get('/api/faris/reminder', async (req, res) => {
+    try {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+
+        const todaySchedule = FARIS_SCHEDULE[dayOfWeek] || [];
+        const reminders = [];
+
+        for (const lecture of todaySchedule) {
+            const [lectureHour] = lecture.time.split(':').map(Number);
+            // تنبيه قبل ساعة
+            if (lectureHour - 1 === currentHour && currentMinute < 15) {
+                const msg = `🔔 تنبيه محاضرة بعد ساعة!\n\n📚 ${lecture.name}\n📝 ${lecture.type}\n🏫 القاعة: ${lecture.room}\n👨‍🏫 الدكتور: ${lecture.doctor}\n⏰ الساعة: ${lecture.time}\n\n💪 يلا شد حيلك!`;
+
+                await fetch(`https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: ULTRAMSG_TOKEN, to: `${FARIS_PHONE}@c.us`, body: msg })
+                });
+                reminders.push(lecture.name);
+            }
+        }
+
+        res.json({ success: true, day: DAY_NAMES[dayOfWeek], reminders });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// إرسال جدول الغد (يُستدعى الساعة 8 مساءً)
+app.get('/api/faris/tomorrow', async (req, res) => {
+    try {
+        const now = new Date();
+        const tomorrow = (now.getDay() + 1) % 7;
+        const tomorrowSchedule = FARIS_SCHEDULE[tomorrow] || [];
+
+        if (tomorrowSchedule.length === 0) {
+            const msg = `🎉 بشرى سارة!\n\nما عندك محاضرات بكرة (${DAY_NAMES[tomorrow]})\n\nاستغل وقتك بالمذاكرة أو الراحة 💙`;
+            await fetch(`https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: ULTRAMSG_TOKEN, to: `${FARIS_PHONE}@c.us`, body: msg })
+            });
+            return res.json({ success: true, day: DAY_NAMES[tomorrow], message: 'إجازة' });
+        }
+
+        let msg = `📅 جدولك بكرة (${DAY_NAMES[tomorrow]})\n\n`;
+        for (const lecture of tomorrowSchedule) {
+            const hour = parseInt(lecture.time.split(':')[0]);
+            const period = hour < 12 ? 'ص' : 'م';
+            const displayHour = hour > 12 ? hour - 12 : hour;
+            msg += `🔹 ${displayHour}:00 ${period} - ${lecture.name} (${lecture.type})\n   📍 ${lecture.room}\n\n`;
+        }
+        msg += `💪 بالتوفيق يا بطل!`;
+
+        await fetch(`https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: ULTRAMSG_TOKEN, to: `${FARIS_PHONE}@c.us`, body: msg })
+        });
+
+        res.json({ success: true, day: DAY_NAMES[tomorrow], lectures: tomorrowSchedule.length });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// جدول اليوم
+app.get('/api/faris/today', async (req, res) => {
+    try {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const todaySchedule = FARIS_SCHEDULE[dayOfWeek] || [];
+
+        if (todaySchedule.length === 0) {
+            return res.json({ success: true, day: DAY_NAMES[dayOfWeek], message: 'إجازة', lectures: [] });
+        }
+
+        res.json({ success: true, day: DAY_NAMES[dayOfWeek], lectures: todaySchedule });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
@@ -2933,4 +3052,5 @@ app.listen(PORT, () => {
     console.log(`📱 WhatsApp: ${ULTRAMSG_INSTANCE_ID ? 'Configured' : 'Not configured'}`);
     console.log(`🔥 Firebase: ${db ? 'Connected' : 'Not configured'}`);
     console.log(`🤖 OpenAI: ${openai ? 'Configured' : 'Not configured'}`);
+    console.log(`📚 Faris Reminder System: Active`);
 });
