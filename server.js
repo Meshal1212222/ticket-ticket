@@ -251,6 +251,31 @@ async function autoCheckGmail() {
                     console.log('📧 Email notification sent:', subject.substring(0, 50));
                 }
 
+                // إنشاء بلاغ تلقائي من الإيميل
+                try {
+                    const ticketNumber = await getNextTicketNumber();
+                    const ticketData = {
+                        ticketId: `TKT-${ticketNumber}`,
+                        ticketNumber,
+                        name: from.replace(/<.*>/, '').trim() || 'عميل إيميل',
+                        email: senderEmail,
+                        phone: phones.length > 0 ? phones[0] : '',
+                        subject: subject || 'بلاغ من إيميل',
+                        description: body || 'لا يوجد محتوى',
+                        category: 'إيميل',
+                        source: 'gmail',
+                        status: 'جديد',
+                        priority: isRepeatCustomer ? 'عالي' : 'متوسط',
+                        isRepeatCustomer,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    await db.collection('tickets').doc(ticketData.ticketId).set(ticketData);
+                    console.log('🎫 Ticket created from email:', ticketData.ticketId);
+                } catch (ticketErr) {
+                    console.error('Error creating ticket from email:', ticketErr.message);
+                }
+
                 // حفظ في Firebase
                 await db.collection('gmail_notifications').add({
                     emailId: msg.id,
