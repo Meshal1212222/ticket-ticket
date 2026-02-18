@@ -2313,6 +2313,82 @@ app.get('/api/gmail/check', async (req, res) => {
     }
 });
 
+// تحويل الإيميلات القديمة لبلاغات
+app.get('/api/gmail/convert-to-tickets', async (req, res) => {
+    if (!db) {
+        return res.status(500).json({ success: false, error: 'Database not connected' });
+    }
+
+    try {
+        // جلب كل الإيميلات المسجلة
+        const emailsSnapshot = await db.collection('gmail_notifications').get();
+
+        if (emailsSnapshot.empty) {
+            return res.json({ success: true, message: 'لا توجد إيميلات قديمة', converted: 0 });
+        }
+
+        // جلب البلاغات الموجودة لتجنب التكرار
+        const ticketsSnapshot = await db.collection('tickets').where('source', '==', 'gmail').get();
+        const existingEmailIds = new Set();
+        ticketsSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (data.emailId) existingEmailIds.add(data.emailId);
+        });
+
+        let converted = 0;
+        const results = [];
+
+        for (const doc of emailsSnapshot.docs) {
+            const email = doc.data();
+
+            // تخطي إذا البلاغ موجود
+            if (existingEmailIds.has(email.emailId)) {
+                continue;
+            }
+
+            try {
+                const ticketNumber = await getNextTicketNumber();
+                const ticketData = {
+                    ticketId: `TKT-${ticketNumber}`,
+                    ticketNumber,
+                    emailId: email.emailId,
+                    name: email.from?.replace(/<.*>/, '').trim() || 'عميل إيميل',
+                    email: email.senderEmail || '',
+                    phone: email.phones?.length > 0 ? email.phones[0] : '',
+                    subject: email.subject || 'بلاغ من إيميل',
+                    description: 'تم استيراد هذا البلاغ من إيميل سابق',
+                    category: 'إيميل',
+                    source: 'gmail',
+                    status: 'جديد',
+                    priority: email.isRepeatCustomer ? 'عالي' : 'متوسط',
+                    isRepeatCustomer: email.isRepeatCustomer || false,
+                    createdAt: email.timestamp?.toDate?.()?.toISOString() || new Date().toISOString()
+                };
+
+                await db.collection('tickets').doc(ticketData.ticketId).set(ticketData);
+                converted++;
+                results.push({
+                    ticketId: ticketData.ticketId,
+                    subject: ticketData.subject,
+                    email: ticketData.email
+                });
+            } catch (err) {
+                console.error('Error converting email to ticket:', err.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `تم تحويل ${converted} إيميل لبلاغات`,
+            converted,
+            tickets: results
+        });
+    } catch (error) {
+        console.error('Error converting emails:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // فصل Gmail
 app.post('/api/gmail/disconnect', async (req, res) => {
     gmailTokens = null;
