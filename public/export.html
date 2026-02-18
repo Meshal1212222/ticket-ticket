@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تصدير بيانات Ultra Msg - قولدن تيكت</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; font-size: 2em; }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .card h2 { color: #4ecdc4; margin-bottom: 15px; }
+
+        .btn {
+            background: #4ecdc4;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn:hover { background: #45b7aa; transform: translateY(-2px); }
+        .btn:disabled { background: #666; cursor: not-allowed; transform: none; }
+        .btn.danger { background: #e74c3c; }
+        .btn.success { background: #27ae60; }
+
+        .progress {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            height: 30px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #4ecdc4, #27ae60);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-box h3 { font-size: 2em; color: #4ecdc4; }
+        .stat-box p { color: #aaa; font-size: 0.9em; }
+
+        .log-box {
+            background: #0a0a15;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+        .log-box .info { color: #4ecdc4; }
+        .log-box .success { color: #27ae60; }
+        .log-box .error { color: #e74c3c; }
+        .log-box .warning { color: #f39c12; }
+
+        .data-preview {
+            background: #0a0a15;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 400px;
+            overflow: auto;
+            margin-top: 15px;
+        }
+        .data-preview pre {
+            color: #4ecdc4;
+            font-size: 0.8em;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .chat-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-right: 4px solid #4ecdc4;
+        }
+        .chat-item h4 { color: #4ecdc4; margin-bottom: 5px; }
+        .chat-item p { color: #aaa; font-size: 0.9em; }
+        .chat-item .msg-count {
+            background: #27ae60;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn.active, .tab-btn:hover { background: #4ecdc4; color: #1a1a2e; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th { background: rgba(78,205,196,0.2); color: #4ecdc4; }
+        tr:hover { background: rgba(255,255,255,0.05); }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .media-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .media-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .media-item .no-preview {
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 3em;
+        }
+        .media-item .info {
+            padding: 8px;
+            font-size: 0.75em;
+            color: #aaa;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .btn { width: 100%; margin: 5px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 أداة تصدير بيانات Ultra Msg</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('export')">📥 التصدير</button>
+            <button class="tab-btn" onclick="showTab('chats')">💬 المحادثات</button>
+            <button class="tab-btn" onclick="showTab('media')">🖼️ الوسائط</button>
+            <button class="tab-btn" onclick="showTab('api')">🔌 API</button>
+        </div>
+
+        <!-- تبويب التصدير -->
+        <div id="export-tab">
+            <div class="card">
+                <h2>📊 إحصائيات الحساب</h2>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-box">
+                        <h3 id="stat-chats">-</h3>
+                        <p>المحادثات</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="stat-msgs">-</h3>
+                        <p>الرسائل</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="stat-media">-</h3>
+                        <p>الوسائط</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="stat-status">-</h3>
+                        <p>الحالة</p>
+                    </div>
+                </div>
+                <button class="btn" onclick="loadStats()">🔄 تحديث الإحصائيات</button>
+            </div>
+
+            <div class="card">
+                <h2>📥 تصدير البيانات</h2>
+                <p style="margin-bottom:15px;color:#aaa;">اختر نوع البيانات التي تريد تصديرها:</p>
+
+                <button class="btn" onclick="exportAllData()">📦 تصدير كل شيء + الوسائط</button>
+                <button class="btn" onclick="exportQuick()">⚡ تصدير سريع</button>
+                <button class="btn" onclick="exportChats()">💬 تصدير المحادثات فقط</button>
+                <button class="btn" onclick="exportMessages()">📝 تصدير الرسائل فقط</button>
+                <button class="btn success" onclick="exportToCSV()">📊 تصدير CSV</button>
+
+                <div class="progress" id="progress-container" style="display:none;">
+                    <div class="progress-bar" id="progress-bar">0%</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📋 سجل العمليات</h2>
+                <div class="log-box" id="log-box">
+                    <div class="info">🚀 جاهز للبدء...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- تبويب المحادثات -->
+        <div id="chats-tab" style="display:none;">
+            <div class="card">
+                <h2>💬 جميع المحادثات</h2>
+                <button class="btn" onclick="loadAllChats()">🔄 تحميل المحادثات</button>
+                <div id="chats-list"></div>
+            </div>
+        </div>
+
+        <!-- تبويب الوسائط -->
+        <div id="media-tab" style="display:none;">
+            <div class="card">
+                <h2>🖼️ الوسائط المحفوظة</h2>
+                <p style="color:#f39c12;margin-bottom:15px;">⚠️ ملاحظة: الوسائط القديمة غير متاحة من Ultra Msg API. فقط الوسائط الجديدة عبر Webhook.</p>
+                <button class="btn" onclick="loadMedia()">🔄 تحميل الوسائط من Firebase</button>
+                <div class="media-grid" id="media-grid"></div>
+            </div>
+        </div>
+
+        <!-- تبويب API -->
+        <div id="api-tab" style="display:none;">
+            <div class="card">
+                <h2>🔌 معلومات API</h2>
+                <table>
+                    <tr>
+                        <th>المعلومة</th>
+                        <th>القيمة</th>
+                    </tr>
+                    <tr>
+                        <td>Instance ID</td>
+                        <td id="api-instance">instance100568</td>
+                    </tr>
+                    <tr>
+                        <td>API URL</td>
+                        <td>https://api.ultramsg.com/instance100568</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook URL</td>
+                        <td>https://ticket-ticket-production.up.railway.app/webhook/ultramsg</td>
+                    </tr>
+                </table>
+
+                <h3 style="margin-top:20px;color:#4ecdc4;">🔗 روابط API المتاحة:</h3>
+                <div style="margin-top:10px;">
+                    <p><code style="background:#0a0a15;padding:5px 10px;border-radius:5px;">GET /chats</code> - جلب المحادثات</p>
+                    <p><code style="background:#0a0a15;padding:5px 10px;border-radius:5px;">GET /chats/messages?chatId=xxx</code> - رسائل محادثة</p>
+                    <p><code style="background:#0a0a15;padding:5px 10px;border-radius:5px;">GET /messages?limit=100</code> - آخر الرسائل</p>
+                    <p><code style="background:#0a0a15;padding:5px 10px;border-radius:5px;">GET /instance/status</code> - حالة الاتصال</p>
+                </div>
+
+                <h3 style="margin-top:20px;color:#f39c12;">⚠️ قيود Ultra Msg API:</h3>
+                <ul style="margin-top:10px;color:#aaa;padding-right:20px;">
+                    <li>روابط الوسائط (صور/فيديو) غير متاحة للرسائل القديمة</li>
+                    <li>الوسائط متاحة فقط عبر Webhook لحظة الاستلام</li>
+                    <li>الحد الأقصى 100-500 رسالة لكل طلب</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- معاينة البيانات -->
+        <div class="card" id="preview-card" style="display:none;">
+            <h2>👁️ معاينة البيانات</h2>
+            <button class="btn danger" onclick="document.getElementById('preview-card').style.display='none'">✕ إغلاق</button>
+            <button class="btn success" onclick="downloadPreview()">⬇️ تحميل</button>
+            <div class="data-preview">
+                <pre id="data-preview"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'https://api.ultramsg.com/instance100568';
+        const TOKEN = 'e4e2cwhdsmxmjycg';
+
+        let exportData = null;
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('export-tab').style.display = tab === 'export' ? 'block' : 'none';
+            document.getElementById('chats-tab').style.display = tab === 'chats' ? 'block' : 'none';
+            document.getElementById('media-tab').style.display = tab === 'media' ? 'block' : 'none';
+            document.getElementById('api-tab').style.display = tab === 'api' ? 'block' : 'none';
+        }
+
+        function log(msg, type = 'info') {
+            const box = document.getElementById('log-box');
+            const time = new Date().toLocaleTimeString('ar-SA');
+            box.innerHTML += `<div class="${type}">[${time}] ${msg}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progress-container').style.display = 'block';
+            document.getElementById('progress-bar').style.width = percent + '%';
+            document.getElementById('progress-bar').textContent = percent + '%';
+        }
+
+        async function api(endpoint) {
+            const url = `${API}/${endpoint}${endpoint.includes('?') ? '&' : '?'}token=${TOKEN}`;
+            const response = await fetch(url);
+            return response.json();
+        }
+
+        async function loadStats() {
+            log('📊 جاري تحميل الإحصائيات...');
+            try {
+                // حالة الاتصال
+                const status = await api('instance/status');
+                const isConnected = status.status?.accountStatus?.status === 'authenticated';
+                document.getElementById('stat-status').textContent = isConnected ? '✅' : '❌';
+
+                // المحادثات
+                const chats = await api('chats');
+                document.getElementById('stat-chats').textContent = chats.length || 0;
+
+                // الرسائل
+                const msgs = await api('messages?limit=1');
+                document.getElementById('stat-msgs').textContent = (msgs.total || 0).toLocaleString();
+
+                // عدد الوسائط (تقديري)
+                document.getElementById('stat-media').textContent = '~';
+
+                log('✅ تم تحميل الإحصائيات', 'success');
+            } catch(e) {
+                log('❌ خطأ: ' + e.message, 'error');
+            }
+        }
+
+        async function exportAllData() {
+            log('📦 بدء تصدير جميع البيانات (مع محاولة جلب الوسائط)...');
+            updateProgress(0);
+
+            try {
+                // استخدام API الخادم الجديدة التي تحاول جلب الوسائط
+                log('🔄 جاري جلب جميع البيانات من الخادم...');
+                updateProgress(20);
+
+                const response = await fetch('/api/export/all');
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'خطأ في جلب البيانات');
+                }
+
+                updateProgress(80);
+
+                const data = result.data;
+                log(`✅ تم جلب ${data.stats.totalChats} محادثة`, 'success');
+                log(`✅ تم جلب ${data.stats.totalMessages} رسالة`, 'success');
+                log(`📷 عدد رسائل الوسائط: ${data.stats.mediaMessages}`, 'info');
+
+                // محاولة جلب روابط الوسائط للرسائل القديمة
+                if (data.mediaMessages.length > 0) {
+                    log('🖼️ جاري محاولة جلب روابط الوسائط القديمة...');
+
+                    let mediaFetched = 0;
+                    for (let i = 0; i < Math.min(data.mediaMessages.length, 20); i++) {
+                        const msg = data.mediaMessages[i];
+                        if (!msg.media && msg.messageId) {
+                            try {
+                                const mediaRes = await fetch(`/api/export/media/${msg.messageId}`);
+                                const mediaData = await mediaRes.json();
+                                if (mediaData.success && mediaData.media) {
+                                    data.mediaMessages[i].media = mediaData.media;
+                                    data.mediaMessages[i].mediaSource = mediaData.source;
+                                    mediaFetched++;
+                                }
+                            } catch(e) {}
+                        }
+                        updateProgress(80 + Math.round((i / 20) * 15));
+                    }
+
+                    if (mediaFetched > 0) {
+                        log(`✅ تم جلب ${mediaFetched} رابط وسائط`, 'success');
+                    } else {
+                        log('⚠️ لم يتم العثور على روابط وسائط للرسائل القديمة', 'warning');
+                    }
+                }
+
+                updateProgress(100);
+
+                // عرض المعاينة
+                exportData = data;
+                document.getElementById('data-preview').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('preview-card').style.display = 'block';
+
+            } catch(e) {
+                log('❌ خطأ في التصدير: ' + e.message, 'error');
+            }
+        }
+
+        // تصدير سريع بدون محاولة جلب الوسائط
+        async function exportQuick() {
+            log('📦 بدء التصدير السريع...');
+            updateProgress(0);
+
+            try {
+                const data = {
+                    exportDate: new Date().toISOString(),
+                    instance: 'instance100568',
+                    chats: [],
+                    messages: [],
+                    totalMessages: 0
+                };
+
+                // 1. جلب المحادثات
+                log('💬 جاري جلب المحادثات...');
+                updateProgress(10);
+                const chats = await api('chats');
+                data.chats = chats;
+                log(`✅ تم جلب ${chats.length} محادثة`, 'success');
+
+                // 2. جلب رسائل كل محادثة
+                let totalMsgs = 0;
+                for (let i = 0; i < chats.length; i++) {
+                    const chat = chats[i];
+                    const progress = 10 + Math.round((i / chats.length) * 80);
+                    updateProgress(progress);
+
+                    log(`📝 جاري جلب رسائل: ${chat.name || chat.id}`);
+
+                    try {
+                        const msgs = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${chat.id}&limit=500`).then(r => r.json());
+
+                        if (Array.isArray(msgs)) {
+                            data.messages.push({
+                                chatId: chat.id,
+                                chatName: chat.name,
+                                messages: msgs
+                            });
+                            totalMsgs += msgs.length;
+                        }
+                    } catch(e) {
+                        log(`⚠️ تعذر جلب رسائل ${chat.id}`, 'warning');
+                    }
+
+                    // تأخير بسيط لتجنب rate limiting
+                    await new Promise(r => setTimeout(r, 200));
+                }
+
+                data.totalMessages = totalMsgs;
+                updateProgress(100);
+
+                log(`✅ تم تصدير ${totalMsgs} رسالة من ${chats.length} محادثة`, 'success');
+
+                // عرض المعاينة
+                exportData = data;
+                document.getElementById('data-preview').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('preview-card').style.display = 'block';
+
+            } catch(e) {
+                log('❌ خطأ في التصدير: ' + e.message, 'error');
+            }
+        }
+
+        async function exportChats() {
+            log('💬 جاري تصدير المحادثات...');
+            try {
+                const chats = await api('chats');
+                exportData = { exportDate: new Date().toISOString(), chats };
+                document.getElementById('data-preview').textContent = JSON.stringify(exportData, null, 2);
+                document.getElementById('preview-card').style.display = 'block';
+                log(`✅ تم تصدير ${chats.length} محادثة`, 'success');
+            } catch(e) {
+                log('❌ خطأ: ' + e.message, 'error');
+            }
+        }
+
+        async function exportMessages() {
+            log('📝 جاري تصدير آخر الرسائل...');
+            try {
+                const msgs = await api('messages?limit=500');
+                exportData = { exportDate: new Date().toISOString(), messages: msgs.messages || msgs };
+                document.getElementById('data-preview').textContent = JSON.stringify(exportData, null, 2);
+                document.getElementById('preview-card').style.display = 'block';
+                log(`✅ تم تصدير الرسائل`, 'success');
+            } catch(e) {
+                log('❌ خطأ: ' + e.message, 'error');
+            }
+        }
+
+        async function exportToCSV() {
+            log('📊 جاري إنشاء ملف CSV...');
+            try {
+                const msgs = await api('messages?limit=1000');
+                const messages = msgs.messages || msgs || [];
+
+                // إنشاء CSV
+                let csv = 'التاريخ,المرسل,المستلم,الرسالة,النوع,مني\n';
+                messages.forEach(m => {
+                    const date = new Date(m.created_at * 1000).toLocaleString('ar-SA');
+                    const body = (m.body || '').replace(/"/g, '""').replace(/\n/g, ' ');
+                    csv += `"${date}","${m.from || ''}","${m.to || ''}","${body}","${m.type || ''}","${m.fromMe ? 'نعم' : 'لا'}"\n`;
+                });
+
+                // تحميل الملف
+                const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ultramsg_export_${Date.now()}.csv`;
+                a.click();
+
+                log('✅ تم تحميل ملف CSV', 'success');
+            } catch(e) {
+                log('❌ خطأ: ' + e.message, 'error');
+            }
+        }
+
+        function downloadPreview() {
+            if (!exportData) return;
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ultramsg_export_${Date.now()}.json`;
+            a.click();
+
+            log('✅ تم تحميل الملف', 'success');
+        }
+
+        async function loadAllChats() {
+            const container = document.getElementById('chats-list');
+            container.innerHTML = '<p style="color:#aaa;">جاري التحميل...</p>';
+
+            try {
+                const chats = await api('chats');
+                let html = '';
+
+                for (const chat of chats) {
+                    // جلب عدد الرسائل لكل محادثة
+                    let msgCount = 0;
+                    try {
+                        const msgs = await fetch(`${API}/chats/messages?token=${TOKEN}&chatId=${chat.id}&limit=1`).then(r => r.json());
+                        msgCount = Array.isArray(msgs) ? msgs.length : 0;
+                    } catch(e) {}
+
+                    html += `
+                        <div class="chat-item">
+                            <h4>${chat.name || chat.id.replace(/@.+/, '')}</h4>
+                            <p>${chat.id}</p>
+                            <span class="msg-count">${msgCount > 0 ? msgCount + ' رسالة' : 'فارغة'}</span>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html || '<p style="color:#aaa;">لا توجد محادثات</p>';
+            } catch(e) {
+                container.innerHTML = '<p style="color:#e74c3c;">خطأ في التحميل</p>';
+            }
+        }
+
+        async function loadMedia() {
+            const container = document.getElementById('media-grid');
+            container.innerHTML = '<p style="color:#aaa;grid-column:1/-1;">جاري التحميل...</p>';
+
+            try {
+                // جلب الوسائط من Firebase
+                const response = await fetch('/api/public/media?limit=50');
+                const data = await response.json();
+
+                if (!data.success || !data.messages.length) {
+                    container.innerHTML = '<p style="color:#aaa;grid-column:1/-1;">لا توجد وسائط محفوظة في Firebase</p>';
+                    return;
+                }
+
+                let html = '';
+                data.messages.forEach(m => {
+                    const isImage = m.type === 'image' || m.mimetype?.startsWith('image/');
+                    const time = new Date(m.timestamp).toLocaleString('ar-SA');
+
+                    html += `
+                        <div class="media-item">
+                            ${m.media && isImage ?
+                                `<img src="${m.media}" alt="media" onerror="this.parentElement.innerHTML='<div class=\\'no-preview\\'>❌</div><div class=\\'info\\'>رابط منتهي</div>'">` :
+                                `<div class="no-preview">${m.type === 'video' ? '🎥' : m.type === 'audio' ? '🎵' : '📄'}</div>`
+                            }
+                            <div class="info">
+                                ${m.type} - ${time}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = '<p style="color:#e74c3c;grid-column:1/-1;">خطأ في التحميل: ' + e.message + '</p>';
+            }
+        }
+
+        // تحميل الإحصائيات عند فتح الصفحة
+        loadStats();
+    </script>
+</body>
+</html>
