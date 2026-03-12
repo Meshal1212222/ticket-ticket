@@ -444,12 +444,13 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
     switch (state.step) {
         case 'welcome':
             // رسالة الترحيب الأولى
-            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+            response = `أهلاً فيك! 👋
+أنا المساعد الآلي لفريق الدعم في قولدن تيكت.
 
-كيف نقدر نساعدك اليوم؟
+كيف أقدر أساعدك؟
 
-1️⃣ شراء تذكرة
-2️⃣ بيع تذكرة
+1️⃣ عندي استفسار عن شراء تذكرة
+2️⃣ عندي استفسار عن بيع تذكرة
 
 (أرسل رقم الخيار)`;
             state.step = 'main_choice';
@@ -458,24 +459,20 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
         case 'main_choice':
             if (userMessage.includes('شراء') || userMessage.includes('1')) {
                 state.data.mainChoice = 'شراء تذكرة';
-                response = `🛒 استفسارك قبل ولا بعد شراء التذكرة؟
+                response = `طيب، استفسارك قبل ولا بعد شراء التذكرة؟
 
 1️⃣ قبل الشراء
-2️⃣ بعد الشراء
-
-(أرسل رقم الخيار)`;
+2️⃣ بعد الشراء`;
                 state.step = 'buy_timing';
             } else if (userMessage.includes('بيع') || userMessage.includes('2')) {
                 state.data.mainChoice = 'بيع تذكرة';
-                response = `💰 استفسارك قبل ولا بعد بيع التذكرة؟
+                response = `طيب، استفسارك قبل ولا بعد بيع التذكرة؟
 
 1️⃣ قبل البيع
-2️⃣ بعد البيع
-
-(أرسل رقم الخيار)`;
+2️⃣ بعد البيع`;
                 state.step = 'sell_timing';
             } else {
-                response = `⚠️ عذراً، لم أفهم اختيارك
+                response = `عذراً ما فهمت اختيارك 🙏
 
 الرجاء اختيار:
 1️⃣ شراء تذكرة
@@ -487,31 +484,28 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
         case 'buy_timing':
             if (userMessage.includes('قبل') || userMessage.includes('1')) {
                 state.data.timing = 'قبل الشراء';
-                response = `🎯 ابشر! وش اسم الفعالية اللي تبي تشتري تذكرة لها؟`;
-                state.step = 'buy_event_name';
+                response = `تمام، اكتب لي وش المشكلة أو الاستفسار اللي عندك وبنرفعه لفريق الدعم 📝`;
+                state.step = 'buy_describe_issue';
             } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
                 state.data.timing = 'بعد الشراء';
-                response = `⚡ طيب، استفسارك يخص فعالية:
+                response = `طيب، استفسارك يخص فعالية:
 
 1️⃣ فعالية إنتهت
 2️⃣ فعالية قادمة
-3️⃣ فعالية خارج السعودية
-
-(أرسل رقم الخيار)`;
+3️⃣ فعالية خارج السعودية`;
                 state.step = 'buy_event_type';
             } else {
-                response = `⚠️ الرجاء اختيار:
+                response = `الرجاء اختيار:
 1️⃣ قبل الشراء
 2️⃣ بعد الشراء`;
             }
             break;
 
-        case 'buy_event_name':
-            state.data.eventName = messageBody;
-            // إنشاء تذكرة وإرسالها
+        case 'buy_describe_issue':
+            state.data.userProblem = messageBody;
             await createTicket(chatId, state.data);
-            response = `✅ وصلنا طلبك!
-بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            response = `تم رفع طلبك لفريق الدعم ✅
+بيتواصلون معك في أقرب وقت إن شاء الله 🙏`;
             state.step = 'completed';
             break;
 
@@ -523,21 +517,25 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
             } else if (userMessage.includes('خارج') || userMessage.includes('3')) {
                 state.data.eventType = 'فعالية خارج السعودية';
             } else {
-                response = `⚠️ الرجاء اختيار:
+                response = `الرجاء اختيار:
 1️⃣ فعالية إنتهت
 2️⃣ فعالية قادمة
 3️⃣ فعالية خارج السعودية`;
                 break;
             }
-            response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
-            state.step = 'get_email';
+            response = `اكتب لي وش المشكلة أو الاستفسار اللي عندك 📝
+وإذا عندك إيميل مسجل بالمنصة اذكره`;
+            state.step = 'buy_after_describe';
             break;
 
-        case 'get_email':
-            state.data.email = messageBody;
+        case 'buy_after_describe':
+            state.data.userProblem = messageBody;
+            // محاولة استخراج الإيميل من الرسالة
+            const emailMatch = messageBody.match(/[\w.-]+@[\w.-]+\.\w+/);
+            if (emailMatch) state.data.email = emailMatch[0];
             await createTicket(chatId, state.data);
-            response = `✅ وصلنا طلبك!
-بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            response = `تم رفع طلبك لفريق الدعم ✅
+بيتواصلون معك في أقرب وقت إن شاء الله 🙏`;
             state.step = 'completed';
             break;
 
@@ -545,31 +543,27 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
         case 'sell_timing':
             if (userMessage.includes('قبل') || userMessage.includes('1')) {
                 state.data.timing = 'قبل البيع';
-                response = `📋 اختر من القائمة عشان نساعدك:
+                response = `اختر نوع استفسارك:
 
 1️⃣ عرض تذاكري للبيع
 2️⃣ تذكرتي لم يتم قبولها
 3️⃣ لا أرى تذكرتي معروضة
 4️⃣ متى يصلني المبلغ؟
 5️⃣ التراجع عن البيع
-6️⃣ إرسال التذكرة بعد البيع
-
-(أرسل رقم الخيار)`;
+6️⃣ إرسال التذكرة بعد البيع`;
                 state.step = 'sell_before_options';
             } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
                 state.data.timing = 'بعد البيع';
-                response = `📋 اختر من القائمة عشان نساعدك:
+                response = `اختر نوع استفسارك:
 
 1️⃣ كيفية إرسال التذاكر
 2️⃣ التراجع عن البيع
 3️⃣ لم أستلم المبلغ حتى الآن
 4️⃣ حالة التذكرة "لم يستلم"
-5️⃣ أخرى
-
-(أرسل رقم الخيار)`;
+5️⃣ أخرى`;
                 state.step = 'sell_after_options';
             } else {
-                response = `⚠️ الرجاء اختيار:
+                response = `الرجاء اختيار:
 1️⃣ قبل البيع
 2️⃣ بعد البيع`;
             }
@@ -579,53 +573,56 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
             let beforeOption = '';
             if (userMessage.includes('عرض') || userMessage.includes('1')) {
                 beforeOption = 'عرض تذاكري للبيع';
-                response = `📌 تقدر تعرض تذكرتك بالخطوات التالية:
+                response = `تقدر تعرض تذكرتك بالخطوات التالية:
 
-1️⃣ اضغط على "المزيد"
-2️⃣ اختر الفعالية
-3️⃣ أكمل البيانات
+1- اضغط على "المزيد"
+2- اختر الفعالية
+3- أكمل البيانات
 
-وتصير تذكرتك معروضة للبيع! 🎫✨`;
+وتصير تذكرتك معروضة للبيع 🎫`;
             } else if (userMessage.includes('قبول') || userMessage.includes('2')) {
                 beforeOption = 'تذكرتي لم يتم قبولها';
-                response = `💬 ابشر! بس زودنا بإيميلك المسجل وبنحل الموضوع 💪`;
+                response = `اكتب لي وش المشكلة بالتفصيل وإذا عندك إيميل مسجل بالمنصة اذكره 📝`;
                 state.data.sellOption = beforeOption;
-                state.step = 'get_email';
+                state.step = 'sell_describe_issue';
                 break;
             } else if (userMessage.includes('أرى') || userMessage.includes('ارى') || userMessage.includes('3')) {
                 beforeOption = 'لا أرى تذكرتي معروضة';
-                response = `✅ لا تشيل هم!
+                response = `إذا حالة التذكرة "نشطة" يعني هي معروضة للعملاء ويشوفونها ✅
 
-إذا حالة التذكرة "نشطة" يعني هي معروضة للعملاء ويشوفونها 👀🎫`;
+إذا عندك مشكلة ثانية اكتبها لي`;
             } else if (userMessage.includes('مبلغ') || userMessage.includes('4')) {
                 beforeOption = 'متى يصلني المبلغ';
-                response = `💰 لا تشيل هم!
+                response = `يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
 
-يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
-وبيوصلك إن شاء الله 🙏`;
+إذا تأخر عن كذا اكتب لي وبنرفع طلبك للفريق`;
             } else if (userMessage.includes('تراجع') || userMessage.includes('5')) {
                 beforeOption = 'التراجع عن البيع';
-                response = `⚠️ للأسف!
+                response = `ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها.
 
-ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
-
-إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
+إذا عندك مشكلة اكتبها لي وبنرفعها لفريق الدعم 📝`;
             } else if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('6')) {
                 beforeOption = 'إرسال التذكرة بعد البيع';
-                response = `📤 طريقة إرسال التذاكر:
+                response = `طريقة إرسال التذاكر:
 
-🔹 إذا الفعالية من webook:
-ترسلها من التطبيق مباشرة بعد ما تشوف بيانات المشتري
-
-🔹 إذا منصة ثانية:
-ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
+• إذا الفعالية من webook: ترسلها من التطبيق مباشرة بعد ما تشوف بيانات المشتري
+• إذا منصة ثانية: ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري`;
             } else {
-                response = `⚠️ الرجاء اختيار رقم من 1 إلى 6`;
+                response = `الرجاء اختيار رقم من 1 إلى 6`;
                 break;
             }
             state.data.sellOption = beforeOption;
             await createTicket(chatId, state.data);
-            response += `\n\n✅ تم تسجيل استفسارك!`;
+            state.step = 'completed';
+            break;
+
+        case 'sell_describe_issue':
+            state.data.userProblem = messageBody;
+            const sellEmailMatch = messageBody.match(/[\w.-]+@[\w.-]+\.\w+/);
+            if (sellEmailMatch) state.data.email = sellEmailMatch[0];
+            await createTicket(chatId, state.data);
+            response = `تم رفع طلبك لفريق الدعم ✅
+بيتواصلون معك في أقرب وقت إن شاء الله 🙏`;
             state.step = 'completed';
             break;
 
@@ -634,70 +631,58 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
             let afterOption = '';
             if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('1')) {
                 afterOption = 'كيفية إرسال التذاكر';
-                response = `📤 طريقة إرسال التذاكر:
+                response = `طريقة إرسال التذاكر:
 
-🔹 إذا الفعالية من webook:
-ترسلها من التطبيق مباشرة بعد ما تشوف بيانات المشتري
-
-🔹 إذا منصة ثانية:
-ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
+• إذا الفعالية من webook: ترسلها من التطبيق مباشرة بعد ما تشوف بيانات المشتري
+• إذا منصة ثانية: ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري`;
             } else if (userMessage.includes('تراجع') || userMessage.includes('2')) {
                 afterOption = 'التراجع عن البيع';
-                response = `⚠️ للأسف!
+                response = `ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها.
 
-ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
-
-إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
+إذا عندك مشكلة اكتبها لي وبنرفعها لفريق الدعم 📝`;
             } else if (userMessage.includes('مبلغ') || userMessage.includes('3')) {
                 afterOption = 'لم أستلم المبلغ';
-                response = `💰 لا تشيل هم!
+                response = `يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
 
-يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
-وبيوصلك إن شاء الله 🙏`;
+إذا تأخر عن كذا اكتب لي وبنرفع طلبك للفريق`;
             } else if (userMessage.includes('حالة') || userMessage.includes('يستلم') || userMessage.includes('4')) {
                 afterOption = 'حالة التذكرة لم يستلم';
-                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                response = `اكتب لي وش المشكلة بالتفصيل وإذا عندك إيميل مسجل بالمنصة اذكره 📝`;
                 state.data.sellOption = afterOption;
-                state.step = 'get_email';
+                state.step = 'sell_describe_issue';
                 break;
             } else if (userMessage.includes('أخرى') || userMessage.includes('اخرى') || userMessage.includes('5')) {
                 afterOption = 'أخرى';
-                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                response = `اكتب لي وش المشكلة أو الاستفسار اللي عندك وبنرفعه لفريق الدعم 📝`;
                 state.data.sellOption = afterOption;
-                state.step = 'get_email';
+                state.step = 'sell_describe_issue';
                 break;
             } else {
-                response = `⚠️ الرجاء اختيار رقم من 1 إلى 5`;
+                response = `الرجاء اختيار رقم من 1 إلى 5`;
                 break;
             }
             state.data.sellOption = afterOption;
             await createTicket(chatId, state.data);
-            response += `\n\n✅ تم تسجيل استفسارك!`;
             state.step = 'completed';
             break;
 
         case 'completed':
-            // إذا أرسل رسالة جديدة بعد الانتهاء، نبدأ من جديد
-            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+            response = `أهلاً فيك مرة ثانية! 👋
+كيف أقدر أساعدك؟
 
-كيف نقدر نساعدك اليوم؟
-
-1️⃣ شراء تذكرة
-2️⃣ بيع تذكرة
-
-(أرسل رقم الخيار)`;
+1️⃣ عندي استفسار عن شراء تذكرة
+2️⃣ عندي استفسار عن بيع تذكرة`;
             state = { step: 'main_choice', data: { contactName, contactPhone }, lastUpdate: Date.now() };
             break;
 
         default:
-            response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
+            response = `أهلاً فيك! 👋
+أنا المساعد الآلي لفريق الدعم في قولدن تيكت.
 
-كيف نقدر نساعدك اليوم؟
+كيف أقدر أساعدك؟
 
-1️⃣ شراء تذكرة
-2️⃣ بيع تذكرة
-
-(أرسل رقم الخيار)`;
+1️⃣ عندي استفسار عن شراء تذكرة
+2️⃣ عندي استفسار عن بيع تذكرة`;
             state = { step: 'main_choice', data: { contactName, contactPhone }, lastUpdate: Date.now() };
     }
 
@@ -710,21 +695,30 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
 // إنشاء تذكرة في النظام
 async function createTicket(chatId, data) {
     try {
+        // بناء الموضوع من مسار المحادثة
         const subject = [
             data.mainChoice,
             data.timing,
             data.eventType,
-            data.eventName,
-            data.sellOption,
-            data.email
-        ].filter(Boolean).join(', ');
+            data.sellOption
+        ].filter(Boolean).join(' → ');
+
+        // بناء الوصف من كلام العميل الفعلي
+        let description = '';
+        if (data.userProblem) {
+            description = data.userProblem;
+        } else {
+            // تجميع كل البيانات المتوفرة كوصف
+            const parts = [data.mainChoice, data.timing, data.eventType, data.eventName, data.sellOption].filter(Boolean);
+            description = parts.join(' - ');
+        }
 
         const ticketData = {
             name: data.contactName || 'عميل واتساب',
             phone: data.contactPhone || chatId,
             email: data.email || '',
             subject: subject,
-            description: `بلاغ من Chatbot\nالمحادثة: ${chatId}`,
+            description: description || 'بلاغ من واتساب',
             category: data.mainChoice || 'استفسار',
             source: 'whatsapp_chatbot'
         };
