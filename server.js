@@ -37,9 +37,9 @@ const API_KEY = process.env.API_KEY || crypto.randomBytes(32).toString('hex');
 const ADMIN_KEY = process.env.ADMIN_KEY || 'admin123';
 
 // Ultra Msg WhatsApp Configuration
-const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID;
-const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN;
-const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID;
+const ULTRAMSG_INSTANCE_ID = process.env.ULTRAMSG_INSTANCE_ID || 'instance100568';
+const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || 'e4e2cwhdsmxmjycg';
+const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID || '120363213448061192@g.us';
 
 // OpenAI Configuration
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
