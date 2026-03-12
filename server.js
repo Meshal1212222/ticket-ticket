@@ -2812,6 +2812,114 @@ app.get('/api/resend-today', async (req, res) => {
     }
 });
 
+// إعادة إرسال آخر N إيميلات من Gmail بالمحتوى الكامل
+app.get('/api/gmail/resend-last', async (req, res) => {
+    try {
+        const count = parseInt(req.query.count) || 2;
+
+        if (!oauth2Client?.credentials?.access_token) {
+            return res.status(400).json({ success: false, message: 'Gmail غير متصل' });
+        }
+        if (!WHATSAPP_GROUP_ID) {
+            return res.status(400).json({ success: false, message: 'WhatsApp غير مُعد' });
+        }
+
+        const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+        const response = await gmail.users.messages.list({
+            userId: 'me',
+            labelIds: ['INBOX'],
+            maxResults: count,
+            q: '-from:noreply'
+        });
+
+        const messages = response.data.messages || [];
+        if (messages.length === 0) {
+            return res.json({ success: true, message: 'لا توجد إيميلات', count: 0 });
+        }
+
+        let sentCount = 0;
+        const results = [];
+
+        for (const msg of messages) {
+            const email = await gmail.users.messages.get({
+                userId: 'me',
+                id: msg.id,
+                format: 'full'
+            });
+
+            const headers = email.data.payload.headers;
+            const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+            const subject = headers.find(h => h.name === 'Subject')?.value || 'بدون موضوع';
+            const date = headers.find(h => h.name === 'Date')?.value || '';
+
+            // استخراج المحتوى الكامل
+            let body = '';
+            const payload = email.data.payload;
+
+            function extractParts(parts) {
+                let plain = '';
+                let html = '';
+                for (const part of parts) {
+                    if (part.mimeType === 'text/plain' && part.body?.data) {
+                        plain = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                    } else if (part.mimeType === 'text/html' && part.body?.data) {
+                        html = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                    } else if (part.parts) {
+                        const nested = extractParts(part.parts);
+                        if (nested.plain) plain = nested.plain;
+                        if (nested.html) html = nested.html;
+                    }
+                }
+                return { plain, html };
+            }
+
+            if (payload.body?.data) {
+                body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
+            } else if (payload.parts) {
+                const extracted = extractParts(payload.parts);
+                body = extracted.plain || extracted.html;
+            }
+
+            if (!body && email.data.snippet) {
+                body = email.data.snippet;
+            }
+
+            // تنظيف HTML
+            body = body.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+            // تقصير لو طويل جداً
+            if (body.length > 1000) {
+                body = body.substring(0, 1000) + '...';
+            }
+
+            const whatsappMsg = `📧 *إيميل (إعادة إرسال)*\n\n` +
+                `📤 *من:* ${from}\n` +
+                `📋 *الموضوع:* ${subject}\n` +
+                `📅 ${date}\n\n` +
+                `━━━━━━━━━━━━━━━\n` +
+                `📝 *المحتوى:*\n${body || 'لا يوجد محتوى'}\n` +
+                `━━━━━━━━━━━━━━━`;
+
+            const sent = await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
+            if (sent) sentCount++;
+            results.push({ from, subject, bodyLength: body.length, sent: !!sent });
+
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
+        res.json({
+            success: true,
+            message: `تم إرسال ${sentCount} إيميل للقروب بالمحتوى الكامل`,
+            count: sentCount,
+            results
+        });
+
+    } catch (error) {
+        console.error('Error resending last emails:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ==================== نظام تنبيهات فارس ====================
 
 const FARIS_PHONE = '966506510511';
