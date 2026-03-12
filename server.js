@@ -2953,6 +2953,389 @@ app.get('/callback', (req, res) => {
     res.send('Twitter OAuth Callback - Success');
 });
 
+// ==================== إعدادات الإشعارات ====================
+
+// جلب إعدادات الإشعارات الحالية
+app.get('/api/notification-settings', authenticateAdmin, async (req, res) => {
+    try {
+        let settings = {
+            ultramsg_instance_id: ULTRAMSG_INSTANCE_ID || '',
+            ultramsg_token: ULTRAMSG_TOKEN || '',
+            whatsapp_group_id: WHATSAPP_GROUP_ID || '',
+            gmail_connected: !!(gmailOAuth2Client && db),
+            openai_configured: !!openai
+        };
+
+        // جلب الإعدادات المحفوظة من Firebase
+        if (db) {
+            const doc = await db.collection('settings').doc('notification_config').get();
+            if (doc.exists) {
+                settings = { ...settings, ...doc.data() };
+            }
+        }
+
+        res.json({ success: true, settings });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// تحديث إعدادات الإشعارات
+app.post('/api/notification-settings', authenticateAdmin, async (req, res) => {
+    try {
+        const { ultramsg_instance_id, ultramsg_token, whatsapp_group_id } = req.body;
+
+        // تحديث المتغيرات في الذاكرة
+        if (ultramsg_instance_id) process.env.ULTRAMSG_INSTANCE_ID = ultramsg_instance_id;
+        if (ultramsg_token) process.env.ULTRAMSG_TOKEN = ultramsg_token;
+        if (whatsapp_group_id) process.env.WHATSAPP_GROUP_ID = whatsapp_group_id;
+
+        // حفظ في Firebase
+        if (db) {
+            await db.collection('settings').doc('notification_config').set({
+                ultramsg_instance_id: ultramsg_instance_id || '',
+                ultramsg_token: ultramsg_token || '',
+                whatsapp_group_id: whatsapp_group_id || '',
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+        }
+
+        res.json({ success: true, message: 'تم تحديث الإعدادات بنجاح' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// إعادة إرسال البلاغات من تاريخ معين للقروب
+app.get('/api/resend-since', async (req, res) => {
+    try {
+        if (!db) {
+            return res.status(500).json({ success: false, message: 'Firebase غير متصل' });
+        }
+
+        // تحديد التاريخ (افتراضياً: الأحد الماضي)
+        let sinceDate;
+        if (req.query.date) {
+            sinceDate = new Date(req.query.date);
+        } else {
+            // حساب يوم الأحد الماضي
+            sinceDate = new Date();
+            const dayOfWeek = sinceDate.getDay();
+            sinceDate.setDate(sinceDate.getDate() - dayOfWeek);
+            sinceDate.setHours(0, 0, 0, 0);
+        }
+
+        const instanceId = ULTRAMSG_INSTANCE_ID || process.env.ULTRAMSG_INSTANCE_ID;
+        const token = ULTRAMSG_TOKEN || process.env.ULTRAMSG_TOKEN;
+        const groupId = WHATSAPP_GROUP_ID || process.env.WHATSAPP_GROUP_ID;
+
+        if (!instanceId || !token || !groupId) {
+            return res.status(400).json({
+                success: false,
+                message: 'إعدادات UltraMsg غير مكتملة',
+                missing: {
+                    instanceId: !instanceId,
+                    token: !token,
+                    groupId: !groupId
+                }
+            });
+        }
+
+        // جلب البلاغات من التاريخ المحدد
+        const snapshot = await db.collection('tickets')
+            .where('createdAt', '>=', sinceDate.toISOString())
+            .orderBy('createdAt', 'asc')
+            .get();
+
+        const tickets = snapshot.docs.map(doc => doc.data());
+
+        // جلب إشعارات الإيميل أيضاً
+        const emailSnapshot = await db.collection('gmail_notifications')
+            .where('timestamp', '>=', sinceDate)
+            .orderBy('timestamp', 'asc')
+            .get();
+
+        const emailNotifications = emailSnapshot.docs.map(doc => doc.data());
+
+        if (tickets.length === 0 && emailNotifications.length === 0) {
+            return res.json({
+                success: true,
+                message: `لا توجد بلاغات أو إشعارات منذ ${sinceDate.toLocaleDateString('ar-SA')}`,
+                ticketCount: 0,
+                emailCount: 0
+            });
+        }
+
+        let sentTickets = 0;
+        let sentEmails = 0;
+        const url = `https://api.ultramsg.com/${instanceId}/messages/chat`;
+
+        // إرسال البلاغات
+        for (const ticket of tickets) {
+            const message = `🎫 *بلاغ #${ticket.ticketNumber}*\n\n` +
+                `👤 *الاسم:* ${ticket.name || 'غير معروف'}\n` +
+                `📱 *الجوال:* ${ticket.phone || 'غير متوفر'}\n` +
+                `📧 *الإيميل:* ${ticket.email || 'غير متوفر'}\n\n` +
+                `📌 *التصنيف:* ${ticket.category || 'غير محدد'}\n` +
+                `📋 *الموضوع:* ${ticket.subject || 'بدون موضوع'}\n\n` +
+                `━━━━━━━━━━━━━━━\n` +
+                `📝 *التفاصيل:*\n${ticket.description || 'لا توجد تفاصيل'}\n` +
+                `━━━━━━━━━━━━━━━\n\n` +
+                `🕐 ${new Date(ticket.createdAt).toLocaleString('ar-SA')}`;
+
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, to: groupId, body: message })
+                });
+                sentTickets++;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (e) {
+                console.error('Error resending ticket:', e.message);
+            }
+        }
+
+        // إرسال إشعارات الإيميل
+        for (const email of emailNotifications) {
+            const message = `📧 إيميل (إعادة إرسال)\n\n` +
+                `📤 من: ${email.from || 'غير معروف'}\n` +
+                `📋 الموضوع: ${email.subject || 'بدون موضوع'}\n` +
+                `📅 ${email.date || ''}\n` +
+                (email.isRepeatCustomer ? `\n⚠️ *عميل متكرر!*` : '');
+
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, to: groupId, body: message })
+                });
+                sentEmails++;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (e) {
+                console.error('Error resending email notification:', e.message);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `تم إرسال ${sentTickets} بلاغ و ${sentEmails} إشعار إيميل للقروب`,
+            since: sinceDate.toISOString(),
+            ticketCount: sentTickets,
+            emailCount: sentEmails,
+            totalTickets: tickets.length,
+            totalEmails: emailNotifications.length
+        });
+
+    } catch (error) {
+        console.error('Error resending since:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// صفحة إعدادات الإشعارات
+app.get('/notification-settings', (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات الإشعارات - قولدن تيكت</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #d4af37; text-align: center; margin-bottom: 30px; font-size: 24px; }
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .card h2 { color: #d4af37; margin-bottom: 16px; font-size: 18px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; color: #aaa; font-size: 14px; }
+        .form-group input { width: 100%; padding: 12px; background: #111; border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 14px; direction: ltr; text-align: left; }
+        .form-group input:focus { border-color: #d4af37; outline: none; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; }
+        .btn-gold { background: #d4af37; color: #000; }
+        .btn-gold:hover { background: #e5c548; }
+        .btn-green { background: #27ae60; color: #fff; }
+        .btn-green:hover { background: #2ecc71; }
+        .btn-blue { background: #2980b9; color: #fff; }
+        .btn-blue:hover { background: #3498db; }
+        .btn-red { background: #c0392b; color: #fff; margin-right: 8px; }
+        .btn-red:hover { background: #e74c3c; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .status { padding: 10px 16px; border-radius: 8px; margin-top: 12px; font-size: 14px; display: none; }
+        .status.success { display: block; background: rgba(39,174,96,0.15); border: 1px solid #27ae60; color: #2ecc71; }
+        .status.error { display: block; background: rgba(192,57,43,0.15); border: 1px solid #c0392b; color: #e74c3c; }
+        .status.info { display: block; background: rgba(41,128,185,0.15); border: 1px solid #2980b9; color: #3498db; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px; }
+        .stat { background: #111; border-radius: 8px; padding: 16px; text-align: center; }
+        .stat .num { font-size: 28px; font-weight: bold; color: #d4af37; }
+        .stat .label { font-size: 12px; color: #888; margin-top: 4px; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #d4af37; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .loading { display: none; text-align: center; padding: 20px; color: #888; }
+        .divider { border-top: 1px solid #333; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">→ الرئيسية</a>
+        <h1>⚙️ إعدادات الإشعارات</h1>
+
+        <!-- إعدادات UltraMsg -->
+        <div class="card">
+            <h2>📱 إعدادات واتساب (UltraMsg)</h2>
+            <div class="form-group">
+                <label>Instance ID</label>
+                <input type="text" id="instanceId" placeholder="مثال: instance100568">
+            </div>
+            <div class="form-group">
+                <label>Token</label>
+                <input type="text" id="token" placeholder="التوكن من UltraMsg">
+            </div>
+            <div class="form-group">
+                <label>معرف القروب (Group ID)</label>
+                <input type="text" id="groupId" placeholder="مثال: 120363xxxxx@g.us">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-gold" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+                <button class="btn btn-green" onclick="testConnection()">🔗 اختبار الاتصال</button>
+            </div>
+            <div id="settingsStatus" class="status"></div>
+        </div>
+
+        <!-- إعادة إرسال الإشعارات -->
+        <div class="card">
+            <h2>🔄 إعادة إرسال الإشعارات</h2>
+            <p style="color: #aaa; margin-bottom: 12px;">إعادة إرسال جميع البلاغات وإشعارات الإيميل التي لم تُرسل للقروب</p>
+            <div class="form-group">
+                <label>من تاريخ</label>
+                <input type="date" id="sinceDate" style="direction: ltr;">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-blue" onclick="resendSince()">📤 إعادة الإرسال</button>
+                <button class="btn btn-green" onclick="resendLastSunday()">📤 من الأحد الماضي</button>
+            </div>
+            <div id="resendStatus" class="status"></div>
+            <div id="resendLoading" class="loading">جاري إعادة الإرسال... ⏳</div>
+        </div>
+
+        <!-- حالة النظام -->
+        <div class="card">
+            <h2>📊 حالة النظام</h2>
+            <div id="systemStats" class="stats">
+                <div class="stat"><div class="num" id="statWhatsapp">-</div><div class="label">واتساب</div></div>
+                <div class="stat"><div class="num" id="statGmail">-</div><div class="label">إيميل</div></div>
+                <div class="stat"><div class="num" id="statFirebase">-</div><div class="label">Firebase</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const adminKey = prompt('أدخل مفتاح الأدمن:');
+
+        async function loadSettings() {
+            try {
+                const res = await fetch('/api/notification-settings?key=' + adminKey);
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('instanceId').value = data.settings.ultramsg_instance_id || '';
+                    document.getElementById('token').value = data.settings.ultramsg_token || '';
+                    document.getElementById('groupId').value = data.settings.whatsapp_group_id || '';
+                }
+            } catch(e) { console.error(e); }
+
+            // حالة النظام
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                document.getElementById('statWhatsapp').textContent = data.whatsapp ? '✅' : '❌';
+                document.getElementById('statGmail').textContent = data.firebase ? '✅' : '❌';
+                document.getElementById('statFirebase').textContent = data.firebase ? '✅' : '❌';
+            } catch(e) { console.error(e); }
+
+            // تعيين تاريخ الأحد الماضي كافتراضي
+            const now = new Date();
+            const sunday = new Date(now);
+            sunday.setDate(now.getDate() - now.getDay());
+            document.getElementById('sinceDate').value = sunday.toISOString().split('T')[0];
+        }
+
+        async function saveSettings() {
+            const statusEl = document.getElementById('settingsStatus');
+            try {
+                const res = await fetch('/api/notification-settings?key=' + adminKey, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ultramsg_instance_id: document.getElementById('instanceId').value,
+                        ultramsg_token: document.getElementById('token').value,
+                        whatsapp_group_id: document.getElementById('groupId').value
+                    })
+                });
+                const data = await res.json();
+                statusEl.className = 'status ' + (data.success ? 'success' : 'error');
+                statusEl.textContent = data.success ? '✅ تم حفظ الإعدادات بنجاح' : '❌ ' + data.error;
+            } catch(e) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ خطأ في الاتصال';
+            }
+        }
+
+        async function testConnection() {
+            const statusEl = document.getElementById('settingsStatus');
+            statusEl.className = 'status info';
+            statusEl.textContent = '⏳ جاري اختبار الاتصال...';
+            try {
+                const res = await fetch('/api/test-send');
+                const data = await res.json();
+                statusEl.className = 'status ' + (data.success ? 'success' : 'error');
+                statusEl.textContent = data.success ? '✅ تم الإرسال بنجاح للقروب!' : '❌ ' + (data.error || 'فشل الإرسال');
+            } catch(e) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ خطأ في الاتصال';
+            }
+        }
+
+        async function resendSince() {
+            const date = document.getElementById('sinceDate').value;
+            if (!date) { alert('اختر تاريخ'); return; }
+            await doResend('?date=' + date);
+        }
+
+        async function resendLastSunday() {
+            await doResend('');
+        }
+
+        async function doResend(query) {
+            const statusEl = document.getElementById('resendStatus');
+            const loadingEl = document.getElementById('resendLoading');
+            statusEl.className = 'status';
+            statusEl.style.display = 'none';
+            loadingEl.style.display = 'block';
+
+            try {
+                const res = await fetch('/api/resend-since' + query);
+                const data = await res.json();
+                loadingEl.style.display = 'none';
+                statusEl.className = 'status ' + (data.success ? 'success' : 'error');
+                if (data.success) {
+                    statusEl.textContent = '✅ ' + data.message;
+                } else {
+                    statusEl.textContent = '❌ ' + (data.message || data.error);
+                }
+            } catch(e) {
+                loadingEl.style.display = 'none';
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ خطأ في الاتصال';
+            }
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>`);
+});
+
 // ==================== إعادة إرسال بلاغات اليوم للقروب ====================
 app.get('/api/resend-today', async (req, res) => {
     try {
