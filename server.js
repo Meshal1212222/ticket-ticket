@@ -138,15 +138,34 @@ async function autoCheckGmail() {
                 let body = '';
                 const payload = email.data.payload;
 
+                // دالة للبحث في الأجزاء المتداخلة
+                function extractEmailBody(parts) {
+                    let plainText = '';
+                    let htmlText = '';
+                    for (const part of parts) {
+                        if (part.mimeType === 'text/plain' && part.body?.data) {
+                            plainText = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                        } else if (part.mimeType === 'text/html' && part.body?.data) {
+                            htmlText = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                        } else if (part.parts) {
+                            const nested = extractEmailBody(part.parts);
+                            if (nested.plainText) plainText = nested.plainText;
+                            if (nested.htmlText) htmlText = nested.htmlText;
+                        }
+                    }
+                    return { plainText, htmlText };
+                }
+
                 if (payload.body?.data) {
                     body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
                 } else if (payload.parts) {
-                    for (const part of payload.parts) {
-                        if (part.mimeType === 'text/plain' && part.body?.data) {
-                            body = Buffer.from(part.body.data, 'base64').toString('utf-8');
-                            break;
-                        }
-                    }
+                    const extracted = extractEmailBody(payload.parts);
+                    body = extracted.plainText || extracted.htmlText;
+                }
+
+                // استخراج snippet كفال بيك لو ما لقى محتوى
+                if (!body && email.data.snippet) {
+                    body = email.data.snippet;
                 }
 
                 // استخراج أرقام الجوال من المحتوى
@@ -1556,15 +1575,34 @@ app.get('/api/gmail/check', async (req, res) => {
                 let body = '';
                 const payload = email.data.payload;
 
+                // دالة للبحث في الأجزاء المتداخلة
+                function extractEmailBody2(parts) {
+                    let plainText = '';
+                    let htmlText = '';
+                    for (const part of parts) {
+                        if (part.mimeType === 'text/plain' && part.body?.data) {
+                            plainText = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                        } else if (part.mimeType === 'text/html' && part.body?.data) {
+                            htmlText = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                        } else if (part.parts) {
+                            const nested = extractEmailBody2(part.parts);
+                            if (nested.plainText) plainText = nested.plainText;
+                            if (nested.htmlText) htmlText = nested.htmlText;
+                        }
+                    }
+                    return { plainText, htmlText };
+                }
+
                 if (payload.body?.data) {
                     body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
                 } else if (payload.parts) {
-                    for (const part of payload.parts) {
-                        if (part.mimeType === 'text/plain' && part.body?.data) {
-                            body = Buffer.from(part.body.data, 'base64').toString('utf-8');
-                            break;
-                        }
-                    }
+                    const extracted = extractEmailBody2(payload.parts);
+                    body = extracted.plainText || extracted.htmlText;
+                }
+
+                // استخراج snippet كفال بيك لو ما لقى محتوى
+                if (!body && email.data.snippet) {
+                    body = email.data.snippet;
                 }
 
                 // استخراج أرقام الجوال من المحتوى
