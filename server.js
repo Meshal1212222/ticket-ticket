@@ -2817,14 +2817,22 @@ app.get('/api/gmail/resend-last', async (req, res) => {
     try {
         const count = parseInt(req.query.count) || 2;
 
-        if (!oauth2Client?.credentials?.access_token) {
+        if (!gmailOAuth2Client) {
             return res.status(400).json({ success: false, message: 'Gmail غير متصل' });
         }
         if (!WHATSAPP_GROUP_ID) {
             return res.status(400).json({ success: false, message: 'WhatsApp غير مُعد' });
         }
 
-        const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+        // تحميل التوكن من Firebase لو ما كان محمّل
+        if (!gmailOAuth2Client.credentials?.access_token && db) {
+            const doc = await db.collection('settings').doc('gmail_tokens').get();
+            if (doc.exists) {
+                gmailOAuth2Client.setCredentials(doc.data());
+            }
+        }
+
+        const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2Client });
 
         const response = await gmail.users.messages.list({
             userId: 'me',
