@@ -905,15 +905,24 @@ async function analyzeTicketWithAI(ticketData) {
 
 // Format ticket message for WhatsApp
 function formatTicketMessage(ticket) {
-    let message = `🎫 *بلاغ #${ticket.ticketNumber}*`;
+    let message = `🎫 *بلاغ #${ticket.ticketNumber}*\n`;
 
-    if (ticket.name) message += `\n👤 ${ticket.name}`;
-    if (ticket.phone) message += `\n📱 ${ticket.phone}`;
+    if (ticket.name) message += `\n👤 *الاسم:* ${ticket.name}`;
+    if (ticket.phone) message += `\n📱 *الجوال:* ${ticket.phone}`;
+    if (ticket.email) message += `\n📧 *الإيميل:* ${ticket.email}`;
+    if (ticket.category) message += `\n📌 *التصنيف:* ${ticket.category}`;
+    if (ticket.subject) message += `\n📋 *الموضوع:* ${ticket.subject}`;
 
-    // الملخص من OpenAI
     if (ticket.summary) {
-        message += `\n\n📋 ${ticket.summary}`;
+        message += `\n\n🤖 *ملخص AI:* ${ticket.summary}`;
     }
+
+    if (ticket.description) {
+        const desc = ticket.description.length > 300 ? ticket.description.substring(0, 300) + '...' : ticket.description;
+        message += `\n\n📝 *التفاصيل:*\n${desc}`;
+    }
+
+    message += `\n\n🕐 ${new Date(ticket.createdAt).toLocaleString('ar-SA')}`;
 
     return message;
 }
