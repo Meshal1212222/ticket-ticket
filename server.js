@@ -238,16 +238,11 @@ async function autoCheckGmail() {
                         whatsappMsg += `\n\n📝 المحتوى:\n${body}`;
                     }
 
-                    const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE_ID}/messages/chat`;
-                    await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            token: ULTRAMSG_TOKEN,
-                            to: WHATSAPP_GROUP_ID,
-                            body: whatsappMsg
-                        })
-                    });
+                    const sendResult = await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
+                    if (!sendResult) {
+                        console.error('❌ Failed to send email notification to WhatsApp, will retry later');
+                        continue; // تخطي الحفظ عشان يعيد المحاولة
+                    }
                     console.log('📧 Email notification sent:', subject.substring(0, 50));
                 }
 
@@ -360,8 +355,7 @@ app.post('/webhook/bevatel/event', async (req, res) => {
 });
 
 // ==================== نظام Chatbot قولدن تيكت ====================
-// ⚠️ معطل - Ultra Msg فقط للإشعارات الداخلية، الشات بوت عن طريق بيفاتل
-let chatbotEnabled = false;
+let chatbotEnabled = true;
 
 // تتبع حالة المحادثات
 const conversationStates = new Map();
@@ -2256,10 +2250,14 @@ app.get('/api/gmail/check', async (req, res) => {
                     if (body) {
                         whatsappMsg += `\n\n📝 المحتوى:\n${body}`;
                     }
-                    await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
+                    const sendResult = await sendWhatsAppMessage(WHATSAPP_GROUP_ID, whatsappMsg);
+                    if (!sendResult) {
+                        console.error('❌ Failed to send email notification, will retry later');
+                        continue;
+                    }
                 }
 
-                // حفظ في Firebase
+                // حفظ في Firebase فقط بعد نجاح الإرسال
                 if (db) {
                     await db.collection('gmail_notifications').add({
                         emailId: msg.id,
