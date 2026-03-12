@@ -443,29 +443,31 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
 
     switch (state.step) {
         case 'welcome':
-            // رسالة الترحيب الأولى
             response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
 
 كيف نقدر نساعدك اليوم؟
 
-1️⃣ شراء تذكرة
-2️⃣ بيع تذكرة
+1️⃣ شراء تذكرة 🛒
+2️⃣ بيع تذكرة 💰
+3️⃣ التذكرة ما وصلتني 🎟️
+4️⃣ مشكلة في الدفع أو التطبيق 📱
+5️⃣ استفسار ثاني ❓
 
 (أرسل رقم الخيار)`;
             state.step = 'main_choice';
             break;
 
         case 'main_choice':
-            if (userMessage.includes('شراء') || userMessage.includes('1')) {
+            if (userMessage.includes('شراء') || userMessage === '1') {
                 state.data.mainChoice = 'شراء تذكرة';
                 response = `🛒 استفسارك قبل ولا بعد شراء التذكرة؟
 
-1️⃣ قبل الشراء
-2️⃣ بعد الشراء
+1️⃣ أبي أشتري تذكرة
+2️⃣ اشتريت وعندي مشكلة
 
 (أرسل رقم الخيار)`;
                 state.step = 'buy_timing';
-            } else if (userMessage.includes('بيع') || userMessage.includes('2')) {
+            } else if (userMessage.includes('بيع') || userMessage === '2') {
                 state.data.mainChoice = 'بيع تذكرة';
                 response = `💰 استفسارك قبل ولا بعد بيع التذكرة؟
 
@@ -474,97 +476,177 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
 
 (أرسل رقم الخيار)`;
                 state.step = 'sell_timing';
+            } else if (userMessage.includes('وصل') || userMessage.includes('تذكر') || userMessage === '3') {
+                state.data.mainChoice = 'التذكرة ما وصلت';
+                response = `🎟️ لا تشيل هم! عشان نساعدك بأسرع وقت:
+
+📧 أرسل لنا إيميلك المسجل بالمنصة + رقم الطلب إذا عندك`;
+                state.step = 'ticket_not_received';
+            } else if (userMessage.includes('دفع') || userMessage.includes('تطبيق') || userMessage.includes('معلق') || userMessage === '4') {
+                state.data.mainChoice = 'مشكلة في الدفع أو التطبيق';
+                response = `📱 وش المشكلة اللي تواجهك بالضبط؟
+
+1️⃣ الدفع معلق أو ما تم
+2️⃣ التطبيق ما يشتغل أو فيه خطأ
+3️⃣ QR Code أو الباركود ما يظهر
+4️⃣ مشكلة ثانية
+
+(أرسل رقم الخيار)`;
+                state.step = 'app_payment_issue';
+            } else if (userMessage.includes('استفسار') || userMessage === '5') {
+                state.data.mainChoice = 'استفسار عام';
+                response = `📝 ابشر! اكتب لنا استفسارك وبنساعدك 💪`;
+                state.step = 'general_issue';
             } else {
                 response = `⚠️ عذراً، لم أفهم اختيارك
 
-الرجاء اختيار:
+الرجاء اختيار رقم من 1 إلى 5:
 1️⃣ شراء تذكرة
-2️⃣ بيع تذكرة`;
+2️⃣ بيع تذكرة
+3️⃣ التذكرة ما وصلتني
+4️⃣ مشكلة في الدفع أو التطبيق
+5️⃣ استفسار ثاني`;
             }
+            break;
+
+        // ========== التذكرة ما وصلت (المشكلة #1) ==========
+        case 'ticket_not_received':
+            state.data.userProblem = messageBody;
+            const ticketEmailMatch = messageBody.match(/[\w.-]+@[\w.-]+\.\w+/);
+            if (ticketEmailMatch) state.data.email = ticketEmailMatch[0];
+            await createTicket(chatId, state.data);
+            response = `✅ وصلنا بلاغك!
+
+⏰ فريق الدعم بيتواصل معك بأسرع وقت إن شاء الله
+
+💡 تقدر تتابع حالة تذكرتك من حسابك بالمنصة 🙏💙`;
+            state.step = 'completed';
+            break;
+
+        // ========== مشاكل الدفع والتطبيق ==========
+        case 'app_payment_issue':
+            if (userMessage === '1' || userMessage.includes('دفع') || userMessage.includes('معلق')) {
+                state.data.issueType = 'الدفع معلق أو ما تم';
+            } else if (userMessage === '2' || userMessage.includes('تطبيق') || userMessage.includes('خطأ')) {
+                state.data.issueType = 'التطبيق ما يشتغل';
+            } else if (userMessage === '3' || userMessage.includes('qr') || userMessage.includes('باركود')) {
+                state.data.issueType = 'QR Code ما يظهر';
+            } else if (userMessage === '4' || userMessage.includes('ثاني')) {
+                state.data.issueType = 'مشكلة أخرى';
+            } else {
+                state.data.issueType = messageBody;
+            }
+            response = `📝 اكتب لنا تفاصيل المشكلة (رقم الطلب + إيميلك المسجل إذا ممكن) 💪`;
+            state.step = 'app_payment_describe';
+            break;
+
+        case 'app_payment_describe':
+            state.data.userProblem = messageBody;
+            const appEmailMatch = messageBody.match(/[\w.-]+@[\w.-]+\.\w+/);
+            if (appEmailMatch) state.data.email = appEmailMatch[0];
+            await createTicket(chatId, state.data);
+            response = `✅ وصلنا بلاغك!
+فريق الدعم الفني بيتواصل معك بأسرع وقت إن شاء الله 🙏💙`;
+            state.step = 'completed';
+            break;
+
+        // ========== استفسار عام ==========
+        case 'general_issue':
+            state.data.userProblem = messageBody;
+            const generalEmailMatch = messageBody.match(/[\w.-]+@[\w.-]+\.\w+/);
+            if (generalEmailMatch) state.data.email = generalEmailMatch[0];
+            await createTicket(chatId, state.data);
+            response = `✅ وصلنا طلبك!
+بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            state.step = 'completed';
             break;
 
         // ========== مسار الشراء ==========
         case 'buy_timing':
-            if (userMessage.includes('قبل') || userMessage.includes('1')) {
+            if (userMessage.includes('قبل') || userMessage.includes('اشتري') || userMessage.includes('أبي') || userMessage === '1') {
                 state.data.timing = 'قبل الشراء';
                 response = `🎯 ابشر! وش اسم الفعالية اللي تبي تشتري تذكرة لها؟`;
                 state.step = 'buy_event_name';
-            } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
+            } else if (userMessage.includes('بعد') || userMessage.includes('اشتريت') || userMessage.includes('مشكلة') || userMessage === '2') {
                 state.data.timing = 'بعد الشراء';
-                response = `⚡ طيب، استفسارك يخص فعالية:
+                response = `⚡ طيب، وش نوع المشكلة؟
 
-1️⃣ فعالية إنتهت
-2️⃣ فعالية قادمة
-3️⃣ فعالية خارج السعودية
+1️⃣ التذكرة ما وصلتني
+2️⃣ التذكرة غلط أو فيها مشكلة
+3️⃣ أبي أسترجع المبلغ
+4️⃣ مشكلة ثانية
 
 (أرسل رقم الخيار)`;
-                state.step = 'buy_event_type';
+                state.step = 'buy_after_issue';
             } else {
                 response = `⚠️ الرجاء اختيار:
-1️⃣ قبل الشراء
-2️⃣ بعد الشراء`;
+1️⃣ أبي أشتري تذكرة
+2️⃣ اشتريت وعندي مشكلة`;
             }
             break;
 
         case 'buy_event_name':
             state.data.eventName = messageBody;
-            // إنشاء تذكرة وإرسالها
+            state.data.userProblem = messageBody;
             await createTicket(chatId, state.data);
             response = `✅ وصلنا طلبك!
 بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
             state.step = 'completed';
             break;
 
-        case 'buy_event_type':
-            if (userMessage.includes('انتهت') || userMessage.includes('إنتهت') || userMessage.includes('1')) {
-                state.data.eventType = 'فعالية إنتهت';
-            } else if (userMessage.includes('قادمة') || userMessage.includes('2')) {
-                state.data.eventType = 'فعالية قادمة';
-            } else if (userMessage.includes('خارج') || userMessage.includes('3')) {
-                state.data.eventType = 'فعالية خارج السعودية';
+        case 'buy_after_issue':
+            if (userMessage === '1' || userMessage.includes('وصل')) {
+                state.data.issueType = 'التذكرة ما وصلت';
+            } else if (userMessage === '2' || userMessage.includes('غلط')) {
+                state.data.issueType = 'التذكرة غلط أو فيها مشكلة';
+            } else if (userMessage === '3' || userMessage.includes('استرجاع') || userMessage.includes('استرداد')) {
+                state.data.issueType = 'استرجاع مبلغ';
+            } else if (userMessage === '4') {
+                state.data.issueType = 'مشكلة أخرى';
             } else {
-                response = `⚠️ الرجاء اختيار:
-1️⃣ فعالية إنتهت
-2️⃣ فعالية قادمة
-3️⃣ فعالية خارج السعودية`;
-                break;
+                state.data.issueType = messageBody;
             }
-            response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
-            state.step = 'get_email';
+            response = `📝 لا تشيل هم! اكتب لنا التفاصيل:
+• اسم الفعالية
+• رقم الطلب إذا عندك
+• إيميلك المسجل بالمنصة 💫`;
+            state.step = 'buy_after_describe';
             break;
 
-        case 'get_email':
-            state.data.email = messageBody;
+        case 'buy_after_describe':
+            state.data.userProblem = messageBody;
+            const emailMatch = messageBody.match(/[\w.-]+@[\w.-]+\.\w+/);
+            if (emailMatch) state.data.email = emailMatch[0];
             await createTicket(chatId, state.data);
-            response = `✅ وصلنا طلبك!
-بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
+            response = `✅ وصلنا بلاغك!
+فريق الدعم بيتواصل معك بأسرع وقت إن شاء الله 🙏💙`;
             state.step = 'completed';
             break;
 
-        // ========== مسار البيع - قبل البيع ==========
+        // ========== مسار البيع ==========
         case 'sell_timing':
-            if (userMessage.includes('قبل') || userMessage.includes('1')) {
+            if (userMessage.includes('قبل') || userMessage === '1') {
                 state.data.timing = 'قبل البيع';
                 response = `📋 اختر من القائمة عشان نساعدك:
 
-1️⃣ عرض تذاكري للبيع
+1️⃣ كيف أعرض تذاكري للبيع؟
 2️⃣ تذكرتي لم يتم قبولها
 3️⃣ لا أرى تذكرتي معروضة
-4️⃣ متى يصلني المبلغ؟
-5️⃣ التراجع عن البيع
-6️⃣ إرسال التذكرة بعد البيع
+4️⃣ التراجع عن البيع
+5️⃣ استفسار ثاني
 
 (أرسل رقم الخيار)`;
                 state.step = 'sell_before_options';
-            } else if (userMessage.includes('بعد') || userMessage.includes('2')) {
+            } else if (userMessage.includes('بعد') || userMessage === '2') {
                 state.data.timing = 'بعد البيع';
                 response = `📋 اختر من القائمة عشان نساعدك:
 
-1️⃣ كيفية إرسال التذاكر
-2️⃣ التراجع عن البيع
-3️⃣ لم أستلم المبلغ حتى الآن
+1️⃣ لم أستلم المبلغ 💰
+2️⃣ كيف أرسل التذكرة للمشتري؟
+3️⃣ متى يصلني المبلغ؟
 4️⃣ حالة التذكرة "لم يستلم"
-5️⃣ أخرى
+5️⃣ التراجع عن البيع
+6️⃣ مشكلة ثانية
 
 (أرسل رقم الخيار)`;
                 state.step = 'sell_after_options';
@@ -577,63 +659,74 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
 
         case 'sell_before_options':
             let beforeOption = '';
-            if (userMessage.includes('عرض') || userMessage.includes('1')) {
-                beforeOption = 'عرض تذاكري للبيع';
+            if (userMessage.includes('عرض') || userMessage === '1') {
+                beforeOption = 'كيف أعرض تذاكري للبيع';
                 response = `📌 تقدر تعرض تذكرتك بالخطوات التالية:
 
 1️⃣ اضغط على "المزيد"
 2️⃣ اختر الفعالية
 3️⃣ أكمل البيانات
 
-وتصير تذكرتك معروضة للبيع! 🎫✨`;
-            } else if (userMessage.includes('قبول') || userMessage.includes('2')) {
-                beforeOption = 'تذكرتي لم يتم قبولها';
-                response = `💬 ابشر! بس زودنا بإيميلك المسجل وبنحل الموضوع 💪`;
+وتصير تذكرتك معروضة للبيع! 🎫✨
+
+إذا واجهتك أي مشكلة، اكتبها لنا وبنساعدك 💪`;
                 state.data.sellOption = beforeOption;
-                state.step = 'get_email';
-                break;
-            } else if (userMessage.includes('أرى') || userMessage.includes('ارى') || userMessage.includes('3')) {
+                await createTicket(chatId, state.data);
+                state.step = 'completed';
+            } else if (userMessage.includes('قبول') || userMessage === '2') {
+                beforeOption = 'تذكرتي لم يتم قبولها';
+                response = `💬 ابشر! اكتب لنا تفاصيل التذكرة وإيميلك المسجل بالمنصة وبنحل الموضوع 💪`;
+                state.data.sellOption = beforeOption;
+                state.step = 'sell_describe_issue';
+            } else if (userMessage.includes('أرى') || userMessage.includes('ارى') || userMessage === '3') {
                 beforeOption = 'لا أرى تذكرتي معروضة';
                 response = `✅ لا تشيل هم!
 
-إذا حالة التذكرة "نشطة" يعني هي معروضة للعملاء ويشوفونها 👀🎫`;
-            } else if (userMessage.includes('مبلغ') || userMessage.includes('4')) {
-                beforeOption = 'متى يصلني المبلغ';
-                response = `💰 لا تشيل هم!
+إذا حالة التذكرة "نشطة" يعني هي معروضة للعملاء ويشوفونها 👀🎫
 
-يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
-وبيوصلك إن شاء الله 🙏`;
-            } else if (userMessage.includes('تراجع') || userMessage.includes('5')) {
+إذا مع ذلك ما تظهر، أرسل لنا إيميلك واسم الفعالية وبنتحقق 💙`;
+                state.data.sellOption = beforeOption;
+                await createTicket(chatId, state.data);
+                state.step = 'completed';
+            } else if (userMessage.includes('تراجع') || userMessage === '4') {
                 beforeOption = 'التراجع عن البيع';
-                response = `⚠️ للأسف!
+                response = `⚠️ للأسف ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها.
 
-ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
-
-إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
-            } else if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('6')) {
-                beforeOption = 'إرسال التذكرة بعد البيع';
-                response = `📤 طريقة إرسال التذاكر:
-
-🔹 إذا الفعالية من webook:
-ترسلها من التطبيق مباشرة بعد ما تشوف بيانات المشتري
-
-🔹 إذا منصة ثانية:
-ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
+إذا عندك مشكلة اكتب لنا التفاصيل وبنساعدك 💙`;
+                state.data.sellOption = beforeOption;
+                state.step = 'sell_describe_issue';
+            } else if (userMessage === '5' || userMessage.includes('ثاني')) {
+                beforeOption = 'استفسار ثاني';
+                response = `📝 ابشر! اكتب لنا استفسارك وبنساعدك 💪`;
+                state.data.sellOption = beforeOption;
+                state.step = 'sell_describe_issue';
             } else {
-                response = `⚠️ الرجاء اختيار رقم من 1 إلى 6`;
-                break;
+                response = `⚠️ الرجاء اختيار رقم من 1 إلى 5`;
             }
-            state.data.sellOption = beforeOption;
+            break;
+
+        case 'sell_describe_issue':
+            state.data.userProblem = messageBody;
+            const sellEmailMatch = messageBody.match(/[\w.-]+@[\w.-]+\.\w+/);
+            if (sellEmailMatch) state.data.email = sellEmailMatch[0];
             await createTicket(chatId, state.data);
-            response += `\n\n✅ تم تسجيل استفسارك!`;
+            response = `✅ وصلنا طلبك!
+بنتواصل معك في أقرب وقت إن شاء الله 🙏💙`;
             state.step = 'completed';
             break;
 
         // ========== مسار البيع - بعد البيع ==========
         case 'sell_after_options':
             let afterOption = '';
-            if (userMessage.includes('إرسال') || userMessage.includes('ارسال') || userMessage.includes('1')) {
-                afterOption = 'كيفية إرسال التذاكر';
+            if (userMessage === '1' || (userMessage.includes('استلم') && userMessage.includes('مبلغ'))) {
+                afterOption = 'لم أستلم المبلغ';
+                response = `💰 يتم تحويل المبلغ خلال 24 إلى 48 ساعة من إتمام البيع ⏳
+
+إذا تجاوزت المدة، أرسل لنا إيميلك المسجل + رقم الطلب وبنتابع لك 💪`;
+                state.data.sellOption = afterOption;
+                state.step = 'sell_describe_issue';
+            } else if (userMessage === '2' || userMessage.includes('إرسال') || userMessage.includes('ارسال')) {
+                afterOption = 'كيف أرسل التذكرة للمشتري';
                 response = `📤 طريقة إرسال التذاكر:
 
 🔹 إذا الفعالية من webook:
@@ -641,49 +734,50 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
 
 🔹 إذا منصة ثانية:
 ارفق لنا تفاصيل التذكرة وبنرسلها للمشتري 🎫✨`;
-            } else if (userMessage.includes('تراجع') || userMessage.includes('2')) {
-                afterOption = 'التراجع عن البيع';
-                response = `⚠️ للأسف!
-
-ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها
-
-إذا عندك مشكلة، تواصل معنا وبنساعدك 💙`;
-            } else if (userMessage.includes('مبلغ') || userMessage.includes('3')) {
-                afterOption = 'لم أستلم المبلغ';
+                state.data.sellOption = afterOption;
+                await createTicket(chatId, state.data);
+                state.step = 'completed';
+            } else if (userMessage === '3' || userMessage.includes('متى')) {
+                afterOption = 'متى يصلني المبلغ';
                 response = `💰 لا تشيل هم!
 
 يتم تحويل المبلغ خلال 24 إلى 48 ساعة ⏳
 وبيوصلك إن شاء الله 🙏`;
-            } else if (userMessage.includes('حالة') || userMessage.includes('يستلم') || userMessage.includes('4')) {
+                state.data.sellOption = afterOption;
+                await createTicket(chatId, state.data);
+                state.step = 'completed';
+            } else if (userMessage === '4' || userMessage.includes('حالة') || userMessage.includes('يستلم')) {
                 afterOption = 'حالة التذكرة لم يستلم';
-                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                response = `💬 ابشر! اكتب لنا تفاصيل المشكلة + إيميلك المسجل بالمنصة 💪`;
                 state.data.sellOption = afterOption;
-                state.step = 'get_email';
-                break;
-            } else if (userMessage.includes('أخرى') || userMessage.includes('اخرى') || userMessage.includes('5')) {
-                afterOption = 'أخرى';
-                response = `📧 لا تشيل هم! بس زودنا بإيميلك المسجل بالمنصة عشان نساعدك 💫`;
+                state.step = 'sell_describe_issue';
+            } else if (userMessage === '5' || userMessage.includes('تراجع')) {
+                afterOption = 'التراجع عن البيع';
+                response = `⚠️ للأسف ما يمكن التراجع عن البيع إلا إذا فيه مشكلة بالتذكرة نفسها.
+
+إذا عندك مشكلة اكتب لنا التفاصيل وبنساعدك 💙`;
                 state.data.sellOption = afterOption;
-                state.step = 'get_email';
-                break;
+                state.step = 'sell_describe_issue';
+            } else if (userMessage === '6' || userMessage.includes('ثاني') || userMessage.includes('أخرى') || userMessage.includes('اخرى')) {
+                afterOption = 'مشكلة ثانية';
+                response = `📝 ابشر! اكتب لنا مشكلتك بالتفصيل وبنساعدك 💪`;
+                state.data.sellOption = afterOption;
+                state.step = 'sell_describe_issue';
             } else {
-                response = `⚠️ الرجاء اختيار رقم من 1 إلى 5`;
-                break;
+                response = `⚠️ الرجاء اختيار رقم من 1 إلى 6`;
             }
-            state.data.sellOption = afterOption;
-            await createTicket(chatId, state.data);
-            response += `\n\n✅ تم تسجيل استفسارك!`;
-            state.step = 'completed';
             break;
 
         case 'completed':
-            // إذا أرسل رسالة جديدة بعد الانتهاء، نبدأ من جديد
             response = `✨ أهلاً وسهلاً في قولدن تيكت! 🎫
 
 كيف نقدر نساعدك اليوم؟
 
-1️⃣ شراء تذكرة
-2️⃣ بيع تذكرة
+1️⃣ شراء تذكرة 🛒
+2️⃣ بيع تذكرة 💰
+3️⃣ التذكرة ما وصلتني 🎟️
+4️⃣ مشكلة في الدفع أو التطبيق 📱
+5️⃣ استفسار ثاني ❓
 
 (أرسل رقم الخيار)`;
             state = { step: 'main_choice', data: { contactName, contactPhone }, lastUpdate: Date.now() };
@@ -694,8 +788,11 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
 
 كيف نقدر نساعدك اليوم؟
 
-1️⃣ شراء تذكرة
-2️⃣ بيع تذكرة
+1️⃣ شراء تذكرة 🛒
+2️⃣ بيع تذكرة 💰
+3️⃣ التذكرة ما وصلتني 🎟️
+4️⃣ مشكلة في الدفع أو التطبيق 📱
+5️⃣ استفسار ثاني ❓
 
 (أرسل رقم الخيار)`;
             state = { step: 'main_choice', data: { contactName, contactPhone }, lastUpdate: Date.now() };
@@ -710,21 +807,25 @@ async function handleChatbot(chatId, messageBody, contactName, contactPhone) {
 // إنشاء تذكرة في النظام
 async function createTicket(chatId, data) {
     try {
-        const subject = [
-            data.mainChoice,
-            data.timing,
-            data.eventType,
-            data.eventName,
-            data.sellOption,
-            data.email
-        ].filter(Boolean).join(', ');
+        // بناء الموضوع من مسار المحادثة
+        const subjectParts = [data.mainChoice, data.timing, data.issueType, data.eventType, data.sellOption].filter(Boolean);
+        const subject = subjectParts.join(' → ');
+
+        // بناء الوصف من كلام العميل الفعلي
+        let description = '';
+        if (data.userProblem) {
+            description = data.userProblem;
+        } else {
+            const parts = [data.mainChoice, data.timing, data.issueType, data.eventType, data.eventName, data.sellOption].filter(Boolean);
+            description = parts.join(' - ');
+        }
 
         const ticketData = {
             name: data.contactName || 'عميل واتساب',
             phone: data.contactPhone || chatId,
             email: data.email || '',
             subject: subject,
-            description: `بلاغ من Chatbot\nالمحادثة: ${chatId}`,
+            description: description || 'بلاغ من واتساب',
             category: data.mainChoice || 'استفسار',
             source: 'whatsapp_chatbot'
         };
