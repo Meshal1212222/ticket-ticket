@@ -360,8 +360,7 @@ app.post('/webhook/bevatel/event', async (req, res) => {
 });
 
 // ==================== نظام Chatbot قولدن تيكت ====================
-// ⚠️ معطل - Ultra Msg فقط للإشعارات الداخلية، الشات بوت عن طريق بيفاتل
-let chatbotEnabled = false;
+let chatbotEnabled = true;
 
 // تتبع حالة المحادثات
 const conversationStates = new Map();
